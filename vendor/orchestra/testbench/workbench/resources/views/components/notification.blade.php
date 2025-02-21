@@ -1,1 +1,0 @@
-<div>Notification Component</div>

@@ -1,0 +1,14 @@
+/.idea
+/.fleet
+/.vscode
+/.phpunit.result.cache
+/.phpunit.cache
+/.php-cs-fixer.cache
+/.php-cs-fixer.php
+/composer.lock
+/phpunit.xml
+/vendor/
+*.swp
+*.swo
+/.peck.cache
+/tests/.peck-test.cache

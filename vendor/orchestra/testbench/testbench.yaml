@@ -1,0 +1,17 @@
+providers:
+  - Workbench\App\Providers\WorkbenchServiceProvider
+
+env:
+  APP_NAME: "Testbench"
+
+migrations:
+  - vendor/orchestra/testbench-core/workbench/database/migrations
+
+workbench:
+  discovers:
+    config: true
+    factories: true
+    web: true
+    api: true
+    commands: true
+    views: true

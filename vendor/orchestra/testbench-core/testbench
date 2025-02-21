@@ -1,0 +1,25 @@
+#!/usr/bin/env php
+<?php
+
+if (file_exists(__DIR__.'/vendor/autoload.php')) {
+    // Development environment.
+    require __DIR__.'/vendor/autoload.php';
+} else {
+    // Installation environment.
+    require __DIR__.'/../../autoload.php';
+}
+
+$workingPath = is_string(getenv('TESTBENCH_WORKING_PATH'))
+    ? getenv('TESTBENCH_WORKING_PATH')
+    : getcwd();
+
+define('TESTBENCH_CORE', true);
+define('TESTBENCH_WORKING_PATH', $workingPath);
+
+$config = Orchestra\Testbench\Foundation\Config::loadFromYaml(
+    $workingPath, 'testbench.yaml', ['providers' => [], 'dont-discover' => []]
+);
+
+$commander = new Orchestra\Testbench\Console\Commander($config, $workingPath);
+
+$commander->handle();

@@ -1,54 +1,72 @@
 {
-    "name": "r2luna/brain",
-    "description": "Brain: A process-driven architecture alternative for your Laravel Application.",
-    "keywords": [
-        "r2luna",
-        "brain"
-    ],
-    "homepage": "https://github.com/r2luna/brain",
-    "license": "MIT",
-    "type": "library",
-    "authors": [
-        {
-            "name": "Rafael Lunardelli",
-            "email": "rafael@lunardelli.me",
-            "role": "Developer"
-        }
-    ],
-    "require": {
-        "php": "^7.4|^8.0",
-        "illuminate/support": "^8.0"
-    },
-    "require-dev": {
-        "orchestra/testbench": "^6.0",
-        "phpunit/phpunit": "^9.0"
-    },
-    "autoload": {
-        "psr-4": {
-            "R2luna\\Brain\\": "src"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "R2luna\\Brain\\Tests\\": "tests"
-        }
-    },
-    "scripts": {
-        "test": "vendor/bin/phpunit",
-        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
-
-    },
-    "config": {
-        "sort-packages": true
-    },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "R2luna\\Brain\\BrainServiceProvider"
-            ],
-            "aliases": {
-                "Brain": "R2luna\\Brain\\BrainFacade"
-            }
-        }
+  "name": "r2luna/brain",
+  "description": "Brain: A process-driven architecture alternative for your Laravel Application.",
+  "keywords": [
+    "r2luna",
+    "brain",
+    "laravel",
+    "process drive-development"
+  ],
+  "homepage": "https://github.com/r2luna/brain",
+  "license": "MIT",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Rafael Lunardelli",
+      "email": "rafael@lunardelli.me"
     }
+  ],
+  "require": {
+    "php": "^8.3.0"
+  },
+  "require-dev": {
+    "laravel/pint": "^1.21",
+    "peckphp/peck": "^0.1.2",
+    "pestphp/pest": "^3.7",
+    "pestphp/pest-plugin-type-coverage": "^3.3",
+    "phpstan/phpstan": "^2.1",
+    "rector/rector": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Brain\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Brain\\Tests\\": "tests"
+    }
+  },
+  "scripts": {
+    "refacto": "rector",
+    "lint": "pint",
+    "test:refacto": "rector --dry-run",
+    "test:typos": "peck",
+    "test:lint": "pint --test",
+    "test:types": "phpstan analyse --ansi",
+    "test:unit": "pest --colors=always --coverage --min=88.9",
+    "test": [
+      "@test:refacto",
+      "@test:lint",
+      "@test:types",
+      "@test:typos",
+      "@test:unit"
+    ]
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "R2luna\\Brain\\BrainServiceProvider"
+      ],
+      "aliases": {
+        "Brain": "R2luna\\Brain\\BrainFacade"
+      }
+    }
+  }
 }

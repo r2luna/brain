@@ -1,0 +1,51 @@
+name: Tests
+
+on: ['push', 'pull_request']
+
+jobs:
+  ci:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        php: ['8.3', '8.4']
+        symfony: ['^6.4', '^7.2']
+        dependency-version: [prefer-lowest, prefer-stable]
+
+    name: Tests P${{ matrix.php }} - ${{ matrix.os }} - ${{ matrix.dependency-version }} (Symfony ${{ matrix.symfony }})
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php }}
+        extensions: dom, mbstring, zip
+        coverage: xdebug
+
+    - name: Get Composer cache directory
+      id: composer-cache
+      shell: bash
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: dependencies-php-${{ matrix.php }}-os-${{ matrix.os }}-${{ matrix.dependency-version }}-symfony-${{ matrix.symfony }}-composer-${{ hashFiles('composer.json') }}
+        restore-keys: dependencies-php-${{ matrix.php }}-os-${{ matrix.os }}-${{ matrix.dependency-version }}-symfony-${{ matrix.symfony }}-composer-
+
+    - name: Install Composer dependencies
+      run: |
+        composer update --${{ matrix.dependency-version }} --no-interaction --prefer-dist && \
+        composer update --no-interaction --prefer-dist --with symfony/console:${{ matrix.symfony }} && \
+        composer update --no-interaction --prefer-dist --with \
+          symfony/console:${{ matrix.symfony }} \
+          symfony/finder:${{ matrix.symfony }}
+
+    - name: Integration Tests
+      run: composer test:unit

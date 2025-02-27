@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types = 1);
+
+namespace {{ namespace }};
+
+use Brain\Arch\Tasks\Task;
+
+/**
+ * Task {{ class }}
+ *
+ * @property-read string $example
+ */
+class {{ class }} extends Task
+{
+    public function handle(): self
+    {
+        //
+
+        return $this;
+    }
+}

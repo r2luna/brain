@@ -31,13 +31,6 @@ abstract class Task
     use SerializesModels;
 
     /**
-     * The expected payload keys.
-     *
-     * @var array<int, string>
-     */
-    protected array $expects;
-
-    /**
      * @throws Exception
      */
     public function __construct(
@@ -121,16 +114,12 @@ abstract class Task
     }
 
     /**
-     * Check if the implemented Task has expected payload keys or on
-     * the $this->expects property or on the class doc-block tags:
+     * Check if the implemented Task has expected payload keys on
+     * the class doc-block tags:
      * - Ex.: @ property-read int $userId
      */
     protected function getExpectedPayloadKeys(): array
     {
-        if (isset($this->expects)) {
-            return $this->expects;
-        }
-
         $reflectionClass = new ReflectionClass(static::class);
         $docBlockFactory = DocBlockFactory::createInstance();
         $docBlock = $reflectionClass->getDocComment();

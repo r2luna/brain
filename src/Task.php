@@ -36,17 +36,12 @@ abstract class Task
     public function __construct(
         public array|object|null $payload = null
     ) {
-        if (is_null($this->payload)) {
-            $this->payload = [];
-        }
 
-        if (is_array($this->payload)) {
-            $this->payload = (object) $this->payload;
-        }
+        $this->standardizePayload();
 
         $this->fireEvent(Processing::class);
 
-        $this->validatedPayload();
+        $this->validate();
 
         if (method_exists($this, 'runIn')) {
             $this->delay($this->runIn());
@@ -86,34 +81,6 @@ abstract class Task
     }
 
     /**
-     * Checks if the payload has the expected
-     * payload keys.
-     *
-     * @throws Exception
-     */
-    protected function validatedPayload(): void
-    {
-        if (! $this->payload) {
-            return;
-        }
-
-        $expectedKeys = $this->getExpectedPayloadKeys();
-
-        if ($expectedKeys === []) {
-            return;
-        }
-
-        if (
-            array_intersect(
-                array_keys((array) $this->payload),
-                $expectedKeys,
-            ) === []
-        ) {
-            throw new InvalidPayload('Task '.static::class.' :: Expected keys: '.implode(', ', $expectedKeys));
-        }
-    }
-
-    /**
      * Check if the implemented Task has expected payload keys on
      * the class doc-block tags:
      * - Ex.: @ property-read int $userId
@@ -146,12 +113,43 @@ abstract class Task
         return array_filter($map, fn (?string $item): bool => ! is_null($item));
     }
 
+    /**
+     * Tell's the process to cancel it
+     */
     protected function cancelProcess(): void
     {
         $this->payload = (object) array_merge(
             (array) $this->payload,
             ['cancelProcess' => true]
         );
+    }
+
+    /**
+     * Checks if the payload has the expected
+     * payload keys.
+     *
+     * @throws Exception
+     */
+    private function validate(): void
+    {
+        if (! $this->payload) {
+            return;
+        }
+
+        $expectedKeys = $this->getExpectedPayloadKeys();
+
+        if ($expectedKeys === []) {
+            return;
+        }
+
+        if (
+            array_intersect(
+                array_keys((array) $this->payload),
+                $expectedKeys,
+            ) === []
+        ) {
+            throw new InvalidPayload('Task '.static::class.' :: Expected keys: '.implode(', ', $expectedKeys));
+        }
     }
 
     /**
@@ -170,5 +168,21 @@ abstract class Task
             $runProcessId,
             $meta
         ));
+    }
+
+    /**
+     * Standardizes the payload by ensuring it is always converted to an object.
+     * If the payload is null, it initializes it as an empty array and converts it into an object.
+     * If the payload is an array, it directly converts it into an object.
+     */
+    private function standardizePayload(): void
+    {
+        if (is_null($this->payload)) {
+            $this->payload = [];
+        }
+
+        if (is_array($this->payload)) {
+            $this->payload = (object) $this->payload;
+        }
     }
 }

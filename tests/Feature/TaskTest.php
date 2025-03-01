@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Brain\Exceptions\InvalidPayload;
 use Brain\Task;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -20,3 +21,12 @@ test('make sure that it is using the correct traits', function () {
 
     expect($actualTraits)->toHaveKeys($expectedTraits);
 });
+
+it('should validate the payload of a Task based on the docblock of the class', function () {
+    /**
+     * @property-read string $name
+     */
+    class TempTask extends Task {}
+
+    TempTask::dispatch();
+})->throws(InvalidPayload::class);

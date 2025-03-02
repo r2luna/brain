@@ -11,6 +11,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Context;
 use phpDocumentor\Reflection\DocBlock\Tag;
 use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
@@ -36,15 +37,14 @@ abstract class Task
     public function __construct(
         public array|object|null $payload = null
     ) {
-
         $this->standardizePayload();
 
         $this->fireEvent(Processing::class);
 
         $this->validate();
 
-        if (method_exists($this, 'runIn')) {
-            $this->delay($this->runIn());
+        if ($runIn = $this->runIn()) {
+            $this->delay($runIn);
         }
     }
 
@@ -57,6 +57,15 @@ abstract class Task
         // TODO: needs to understand why the event() is not being fired here
         //        $this->fireEvent(Processed::class);
     }
+
+    /**
+     * For some reason, when I'm testing the class the
+     * __invoke method is not being called, so I'm
+     * calling it here to make sure that the method
+     * exists to be called. Need to investigate why
+     * this is happening.
+     */
+    public function __invoke(): void {}
 
     /**
      * Gets the payload property magically,
@@ -78,6 +87,15 @@ abstract class Task
     public function __set(string $property, mixed $value): void
     {
         $this->payload->$property = $value;
+    }
+
+    /**
+     * This method will set when the task needs to
+     * run for the first time in the future.
+     */
+    protected function runIn(): int|Carbon|null
+    {
+        return null;
     }
 
     /**

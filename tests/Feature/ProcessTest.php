@@ -223,3 +223,41 @@ test('if we get an exception in a process we should rollback any change occoured
     }
 
 });
+
+it('should return the final payload as an object no matter what', function () {
+    class ArrayPayloadTask extends Task
+    {
+        public function handle(): array
+        {
+            return ['value' => 1];
+        }
+    }
+
+    class ObjectPayloadTask extends Task
+    {
+        public function handle(): object
+        {
+            return (object) ['value' => 1];
+        }
+    }
+
+    class ProcessWithArrayPayload extends Process
+    {
+        protected array $tasks = [
+            ArrayPayloadTask::class,
+        ];
+    }
+
+    class ProcessWithObjectPayload extends Process
+    {
+        protected array $tasks = [
+            ObjectPayloadTask::class,
+        ];
+    }
+
+    $arrayPayload = ProcessWithArrayPayload::dispatchSync([]);
+    $objectPayload = ProcessWithObjectPayload::dispatchSync([]);
+
+    expect($arrayPayload)->toBeObject();
+    expect($objectPayload)->toBeObject();
+});

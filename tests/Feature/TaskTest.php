@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Carbon;
 
 test('make sure that it is using the correct traits', function () {
     $expectedTraits = [
@@ -45,4 +46,49 @@ it('should make sure that we standardize the payload in an object', function () 
     expect($task->getJob()->payload)->toBeObject();
 });
 
-it('should delay the task if the runIn method is set', function () {});
+it('should delay the task if the runIn method is set', function () {
+    class DelayTask extends Task
+    {
+        public function runIn(): int
+        {
+            return 10;
+        }
+    }
+
+    $task = DelayTask::dispatch();
+    expect($task->getJob()->delay)->toBe(10);
+});
+
+it('s possible to return int or a Carbon instance', function () {
+    class DelayIntTask extends Task
+    {
+        public function runIn(): int
+        {
+            return 10;
+        }
+    }
+
+    $task = DelayIntTask::dispatch();
+    expect($task->getJob()->delay)->toBe(10);
+
+    Carbon::setTestNow('2021-01-01 01:00:00');
+
+    class DelayCarbonTask extends Task
+    {
+        public function runIn(): Carbon
+        {
+            return now()->addSeconds(10);
+        }
+    }
+
+    $task = DelayCarbonTask::dispatch();
+    expect($task->getJob()->delay)->toBeInstanceOf(Carbon::class);
+    expect($task->getJob()->delay)->format('Y-m-d h:i:s')->toBe('2021-01-01 01:00:10');
+});
+
+test('if runIn is not set delay should be null', function () {
+    class NoDelayTask extends Task {}
+
+    $task = NoDelayTask::dispatch();
+    expect($task->getJob()->delay)->toBeNull();
+});

@@ -91,7 +91,9 @@ abstract class Task
 
     /**
      * This method will set when the task needs to
-     * run for the first time in the future.
+     * run for the first time in the future
+     *
+     * @return int|Carbon|null Return seconds or carbon instance in future date
      */
     protected function runIn(): int|Carbon|null
     {

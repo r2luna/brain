@@ -152,3 +152,45 @@ test('when process is set as chain we need to dispatch a chained bus', function 
     ]);
 
 });
+
+it('should unser cancelProcess from the payload if the next _task_ is a process', function () {
+    // ---
+    // Meaning that if we have a sub process that is cancelled
+    // the main process should continue to run the next task
+    // ---
+
+    class SubProcessCancelTask extends Task
+    {
+        public function handle(): self
+        {
+            $this->cancelProcess();
+
+            return $this;
+        }
+    }
+
+    class CancelProcess extends Process
+    {
+        protected array $tasks = [
+            CancelSubProcess::class,
+            SimpleTask::class,
+        ];
+    }
+
+    class CancelSubProcess extends Process
+    {
+        protected array $tasks = [
+            SubProcessCancelTask::class,
+        ];
+    }
+
+    Bus::fake([SimpleTask::class]);
+
+    CancelProcess::dispatch([]);
+
+    Bus::assertDispatched(SimpleTask::class, function (SimpleTask $task) {
+        expect($task->payload)->not->toHaveKey('cancelProcess');
+
+        return true;
+    });
+});

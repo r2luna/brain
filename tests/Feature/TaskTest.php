@@ -92,3 +92,20 @@ test('if runIn is not set delay should be null', function () {
     $task = NoDelayTask::dispatch();
     expect($task->getJob()->delay)->toBeNull();
 });
+
+it('should add cancelProcess to the payload when cancelProcess method is called', function () {
+    class CancelTask extends Task
+    {
+        public function handle(): self
+        {
+            $this->cancelProcess();
+
+            return $this;
+        }
+    }
+
+    $task = CancelTask::dispatchSync();
+
+    expect($task->payload)->toHaveKey('cancelProcess');
+    expect($task->payload->cancelProcess)->toBeTrue();
+});

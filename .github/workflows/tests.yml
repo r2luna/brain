@@ -11,7 +11,6 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         php: ['8.3', '8.4']
         dependency-version: [prefer-lowest, prefer-stable]
-        symfony: ['5.4', '6.0']
 
     name: Tests P${{ matrix.php }} - ${{ matrix.os }} - ${{ matrix.dependency-version }} (Symfony ${{ matrix.symfony }})
 
@@ -41,11 +40,7 @@ jobs:
 
     - name: Install Composer dependencies
       run: |
-        composer update --${{ matrix.dependency-version }} --no-interaction --prefer-dist && \
-        composer update --no-interaction --prefer-dist --with symfony/console:${{ matrix.symfony }} && \
-        composer update --no-interaction --prefer-dist --with \
-          symfony/console:${{ matrix.symfony }} \
-          symfony/finder:${{ matrix.symfony }}
+        composer update --${{ matrix.dependency-version }} --no-interaction --prefer-dist
 
     - name: Integration Tests
       run: composer test:unit

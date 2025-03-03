@@ -152,10 +152,6 @@ abstract class Task
      */
     private function validate(): void
     {
-        if (! $this->payload) {
-            return;
-        }
-
         $expectedKeys = $this->getExpectedPayloadKeys();
 
         if ($expectedKeys === []) {

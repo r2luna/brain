@@ -30,6 +30,12 @@ it('should validate the payload of a Task based on the docblock of the class', f
     TempTask::dispatch();
 })->throws(InvalidPayload::class);
 
+it('should return void if there is nothing to validate', function () {
+    class ValidateVoidTask extends Task {}
+
+    $task = ValidateVoidTask::dispatch();
+})->throwsNoExceptions();
+
 it('should make sure that we standardize the payload in an object', function (): void {
     /** @property-read string $name */
     class ArrayTask extends Task {}

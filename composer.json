@@ -18,10 +18,10 @@
     ],
     "require": {
         "php": "^8.3.0",
+        "laravel/framework": ">10",
         "phpdocumentor/reflection": "^6.1"
     },
     "require-dev": {
-        "laravel/framework": "^11.43",
         "laravel/pint": "^1.21",
         "orchestra/testbench": "^9.11",
         "peckphp/peck": "^0.1.2",

@@ -11,6 +11,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         php: ['8.3', '8.4']
         dependency-version: [prefer-lowest, prefer-stable]
+        symfony: ['5.4', '6.0']
 
     name: Tests P${{ matrix.php }} - ${{ matrix.os }} - ${{ matrix.dependency-version }} (Symfony ${{ matrix.symfony }})
 

@@ -109,3 +109,35 @@ it('should add cancelProcess to the payload when cancelProcess method is called'
     expect($task->payload)->toHaveKey('cancelProcess');
     expect($task->payload->cancelProcess)->toBeTrue();
 });
+
+test('from inside a task we should be able to access payload data magically using __get method', function () {
+    /** @property-read string $name */
+    class MagicTask extends Task
+    {
+        public function handle(): self
+        {
+            expect($this->name)->toBe('John Doe');
+
+            return $this;
+        }
+    }
+
+    MagicTask::dispatch(['name' => 'John Doe']);
+});
+
+it('should be able to set any property in the payload magically using __set method', function () {
+    /** @property string $name */
+    class Magic2Task extends Task
+    {
+        public function handle(): self
+        {
+            $this->name = 'John Doe';
+
+            return $this;
+        }
+    }
+
+    $task = Magic2Task::dispatchSync();
+
+    expect($task->name)->toBe('John Doe');
+});

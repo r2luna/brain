@@ -8,6 +8,7 @@ use Brain\Processes\Events\Processing;
 use Brain\Task;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Tests\Feature\Fixtures\QueuedTask;
 use Tests\Feature\Fixtures\SimpleTask;
@@ -193,4 +194,33 @@ it('should unser cancelProcess from the payload if the next _task_ is a process'
 
         return true;
     });
+});
+
+test('if we get an exception in a process we should rollback any change occoured in the database', function () {
+
+    class ExceptionTask extends Task
+    {
+        public function handle(): self
+        {
+            throw new Exception('Task failed');
+        }
+    }
+
+    class ExceptionProcess extends Process
+    {
+        protected array $tasks = [
+            ExceptionTask::class,
+        ];
+    }
+
+    DB::shouldReceive('beginTransaction')->once();
+    DB::shouldReceive('rollBack')->once();
+
+    try {
+        ExceptionProcess::dispatchSync([]);
+    } catch (Throwable $th) {
+        // throw $th;
+    }
+
+});
 });

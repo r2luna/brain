@@ -223,4 +223,3 @@ test('if we get an exception in a process we should rollback any change occoured
     }
 
 });
-});

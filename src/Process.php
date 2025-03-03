@@ -23,9 +23,22 @@ use Throwable;
  * Class Process
  * Run a list of tasks in a specific order.
  */
-final class Process
+class Process
 {
     use Dispatchable;
+
+    /**
+     * When chain is set to true, the tasks will be dispatched as a chain.
+     * And it will be always send a queue.
+     */
+    protected bool $chain = false;
+
+    /**
+     * List of all tasks to be executed.
+     *
+     * @var array <int, string>
+     */
+    protected array $tasks = [];
 
     /**
      * When running the process we will assign am uuid
@@ -33,19 +46,6 @@ final class Process
      * related tasks and sub-processes
      */
     private ?string $uuid = null;
-
-    /**
-     * List of all tasks to be executed.
-     *
-     * @var array <int, string>
-     */
-    private array $tasks = [];
-
-    /**
-     * When chain is set to true, the tasks will be dispatched as a chain.
-     * And it will be always send a queue.
-     */
-    private bool $chain = false;
 
     /**
      * Process constructor.
@@ -102,7 +102,7 @@ final class Process
         $this->fireEvent(Processing::class);
 
         $output = $this->chain
-            ? $this->chain($this->payload)
+            ? $this->runInChain($this->payload)
             : $this->run($this->payload);
 
         $this->fireEvent(Processed::class);
@@ -114,12 +114,20 @@ final class Process
      * Chain all tasks in the order that they were added, and
      * use Bus::chain to dispatch them.
      */
-    private function chain(object $payload): ?object
+    private function runInChain(?object $payload = null): ?object
     {
-        Bus::chain(array_map(fn (string $task): object => new $task($payload), $this->tasks))
+        Bus::chain($this->getChainedTasks())
             ->dispatch();
 
         return $payload;
+    }
+
+    /**
+     * Get all tasks as objects to be dispatched in the chain.
+     */
+    private function getChainedTasks(): array
+    {
+        return array_map(fn (string $task): object => new $task($this->payload), $this->tasks);
     }
 
     /**

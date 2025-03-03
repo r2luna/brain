@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Brain\Arch\Tasks\Console;
 
-use Brain\Arch\Console\BaseCommand;
+use Brain\Console\BaseCommand;
 use Override;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;

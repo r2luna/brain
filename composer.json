@@ -65,10 +65,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "R2luna\\Brain\\BrainServiceProvider"
+                "R2Luna\\Brain\\BrainServiceProvider"
             ],
             "aliases": {
-                "Brain": "R2luna\\Brain\\BrainFacade"
+                "Brain": "R2Luna\\Brain\\BrainFacade"
             }
         }
     }

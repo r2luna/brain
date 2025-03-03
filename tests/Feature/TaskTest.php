@@ -10,7 +10,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
 
-test('make sure that it is using the correct traits', function () {
+test('make sure that it is using the correct traits', function (): void {
     $expectedTraits = [
         Dispatchable::class,
         InteractsWithQueue::class,
@@ -23,14 +23,14 @@ test('make sure that it is using the correct traits', function () {
     expect($actualTraits)->toHaveKeys($expectedTraits);
 });
 
-it('should validate the payload of a Task based on the docblock of the class', function () {
+it('should validate the payload of a Task based on the docblock of the class', function (): void {
     /** @property-read string $name */
     class TempTask extends Task {}
 
     TempTask::dispatch();
 })->throws(InvalidPayload::class);
 
-it('should make sure that we standardize the payload in an object', function () {
+it('should make sure that we standardize the payload in an object', function (): void {
     /** @property-read string $name */
     class ArrayTask extends Task {}
     $task = ArrayTask::dispatch(['name' => 'John Doe']);
@@ -46,7 +46,7 @@ it('should make sure that we standardize the payload in an object', function () 
     expect($task->getJob()->payload)->toBeObject();
 });
 
-it('should delay the task if the runIn method is set', function () {
+it('should delay the task if the runIn method is set', function (): void {
     class DelayTask extends Task
     {
         public function runIn(): int
@@ -59,7 +59,7 @@ it('should delay the task if the runIn method is set', function () {
     expect($task->getJob()->delay)->toBe(10);
 });
 
-it('s possible to return int or a Carbon instance', function () {
+it('s possible to return int or a Carbon instance', function (): void {
     class DelayIntTask extends Task
     {
         public function runIn(): int
@@ -86,14 +86,14 @@ it('s possible to return int or a Carbon instance', function () {
     expect($task->getJob()->delay)->format('Y-m-d h:i:s')->toBe('2021-01-01 01:00:10');
 });
 
-test('if runIn is not set delay should be null', function () {
+test('if runIn is not set delay should be null', function (): void {
     class NoDelayTask extends Task {}
 
     $task = NoDelayTask::dispatch();
     expect($task->getJob()->delay)->toBeNull();
 });
 
-it('should add cancelProcess to the payload when cancelProcess method is called', function () {
+it('should add cancelProcess to the payload when cancelProcess method is called', function (): void {
     class CancelTask extends Task
     {
         public function handle(): self

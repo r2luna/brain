@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Event;
 use Tests\Feature\Fixtures\QueuedTask;
 use Tests\Feature\Fixtures\SimpleTask;
 
-test('process can be instantiated with payload', function () {
+test('process can be instantiated with payload', function (): void {
     $payload = ['test' => 'value'];
     $process = new Process($payload);
 
@@ -19,7 +19,7 @@ test('process can be instantiated with payload', function () {
         ->and($process->getTasks())->toBeEmpty();
 });
 
-test('process fires events when handled', function () {
+test('process fires events when handled', function (): void {
     Event::fake();
     $process = new Process(['test' => 'value']);
 
@@ -29,7 +29,7 @@ test('process fires events when handled', function () {
     Event::assertDispatched(Processed::class);
 });
 
-test('process can run tasks synchronously', function () {
+test('process can run tasks synchronously', function (): void {
     $payload = (object) ['value' => 0];
     $process = new Process($payload);
     $process->addTask(SimpleTask::class);
@@ -39,7 +39,7 @@ test('process can run tasks synchronously', function () {
     expect($result->value)->toBe(1);
 });
 
-test('process can chain tasks', function () {
+test('process can chain tasks', function (): void {
     Bus::fake();
 
     $payload = (object) ['test' => 'value'];
@@ -60,7 +60,7 @@ test('process can chain tasks', function () {
     ]);
 });
 
-test('queued tasks are dispatched separately', function () {
+test('queued tasks are dispatched separately', function (): void {
     Bus::fake();
 
     $payload = (object) ['test' => 'value'];
@@ -72,7 +72,7 @@ test('queued tasks are dispatched separately', function () {
     Bus::assertDispatched(QueuedTask::class);
 });
 
-test('process can be cancelled during execution', function () {
+test('process can be cancelled during execution', function (): void {
     $payload = (object) [
         'value' => 0,
         'cancelProcess' => true,
@@ -87,7 +87,7 @@ test('process can be cancelled during execution', function () {
     expect($result->value)->toBe(0);
 });
 
-test('process maintains task order', function () {
+test('process maintains task order', function (): void {
     $payload = (object) ['value' => 0];
     $process = new Process($payload);
 
@@ -97,13 +97,13 @@ test('process maintains task order', function () {
         ->and($process->getTasks()[0])->toBe(SimpleTask::class);
 });
 
-test('process can handle null payload', function () {
+test('process can handle null payload', function (): void {
     $process = new Process(null);
 
-    expect(fn () => $process->handle())->not->toThrow(Exception::class);
+    expect(fn (): object|array|null => $process->handle())->not->toThrow(Exception::class);
 });
 
-test('process converts array payload to object', function () {
+test('process converts array payload to object', function (): void {
     $process = new Process(['key' => 'value']);
     $process->addTask(SimpleTask::class);
 

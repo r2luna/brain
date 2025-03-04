@@ -1,0 +1,49 @@
+
+<?php
+
+use Brain\Console\BaseCommand;
+use Brain\Processes\Console\MakeProcessCommand;
+use Illuminate\Filesystem\Filesystem;
+
+test('extends BaseCommand', function () {
+    // ----------------------------------------------------------
+    // by extending BaseCommand, MakeProcessCommand will have
+    // access to the possibleDomains method and enhiert all the
+    // power of the GeneratorCommand class. And since that is
+    // maintained by Laravel, we can trust that it will work
+    // as expected.
+    // ----------------------------------------------------------
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+
+    expect($command)->toBeInstanceOf(BaseCommand::class);
+});
+
+test('name should be make:process', function () {
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+
+    expect($command->getName())->toBe('make:process');
+});
+
+test('description should be \'Create a new process class\'', function () {
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+
+    expect($command->getDescription())->toBe('Create a new process class');
+});
+
+test('stub should be __DIR__./stubs/process/stub', function () {
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+
+    $reflection = new ReflectionClass($command);
+    $method = $reflection->getMethod('getStub');
+    $method->setAccessible(true);
+    $stubPath = $method->invoke($command);
+
+    $expectedPath = realpath(__DIR__.'/../../../src/Processes/Console/stubs/process.stub');
+    $actualPath = realpath($stubPath);
+
+    expect($actualPath)->toBe($expectedPath);
+});

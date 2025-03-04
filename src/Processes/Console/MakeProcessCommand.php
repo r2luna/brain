@@ -12,7 +12,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
  * Class ProcessesMakeCommand
  */
 #[AsCommand(name: 'make:process')]
-final class ProcessesMakeCommand extends BaseCommand
+final class MakeProcessCommand extends BaseCommand
 {
     /**
      * The name and signature of the console command.

@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types = 1);
+
+namespace {{ namespace }};
+
+use Brain\Query;
+use Illuminate\Support\Collection;
+use stdClass;
+
+class {{ class }} extends Query
+{
+    public function __construct() {
+        //
+    }
+
+    public function handle(): Collection | stdClass
+    {
+        return DummyModel::query()
+            ->select([
+                // Remember to add the fields you want to select
+                // to make the query more efficient
+            ])
+            // Add your clauses here
+            ->getQuery()
+            ->get();
+    }
+}
+

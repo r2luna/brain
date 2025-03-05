@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Brain\Arch\Tasks\Console;
+namespace Brain\Tasks\Console;
 
 use Brain\Console\BaseCommand;
 use Override;
@@ -15,7 +15,7 @@ use Symfony\Component\Console\Input\InputArgument;
  * This command is designed to generate a new task class.
  */
 #[AsCommand(name: 'make:task')]
-final class TaskMakeCommand extends BaseCommand
+final class MakeTaskCommand extends BaseCommand
 {
     /**
      * The name of the command.
@@ -57,9 +57,9 @@ final class TaskMakeCommand extends BaseCommand
     #[Override]
     protected function getDefaultNamespace($rootNamespace): string // @pest-ignore-type
     {
-        $domain = $this->argument('domain');
+        $domain = $this->hasArgument('domain') ? $this->argument('domain') : 'TempDomain';
 
-        return "$rootNamespace\Brain\\$domain\Tasks";
+        return "{$rootNamespace}Brain\\$domain\Tasks";
     }
 
     /**

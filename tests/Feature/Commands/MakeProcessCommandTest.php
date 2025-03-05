@@ -4,7 +4,7 @@
 use Brain\Console\BaseCommand;
 use Brain\Processes\Console\MakeProcessCommand;
 use Illuminate\Filesystem\Filesystem;
-use Symfony\Component\Console\Input\ArrayInput;
+use Tests\Feature\Fixtures\TestInput;
 
 test('extends BaseCommand', function () {
     // ----------------------------------------------------------
@@ -49,3 +49,34 @@ test('stub should be __DIR__./stubs/process/stub', function () {
     expect($actualPath)->toBe($expectedPath);
 });
 
+test('get defaultNamespace', function () {
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+
+    $reflection = new ReflectionClass($command);
+    $method = $reflection->getMethod('getDefaultNamespace');
+    $method->setAccessible(true);
+
+    $input = new TestInput(['domain' => 'Domain']);
+    $command->setInput($input);
+
+    $defaultNamespace = $method->invoke($command, 'App\\');
+
+    expect($defaultNamespace)->toBe('App\Brain\\Domain\\Processes');
+});
+
+test('get defaultNamespace with no domain', function () {
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+
+    $reflection = new ReflectionClass($command);
+    $method = $reflection->getMethod('getDefaultNamespace');
+    $method->setAccessible(true);
+
+    $input = new TestInput([]);
+    $command->setInput($input);
+
+    $defaultNamespace = $method->invoke($command, 'App\\');
+
+    expect($defaultNamespace)->toBe('App\Brain\TempDomain\Processes');
+});

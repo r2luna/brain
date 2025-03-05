@@ -53,6 +53,6 @@ final class MakeProcessCommand extends BaseCommand
     {
         $domain = $this->hasArgument('domain') ? $this->argument('domain') : 'TempDomain';
 
-        return "$rootNamespace\Brain\\$domain\Processes";
+        return "{$rootNamespace}Brain\\$domain\Processes";
     }
 }

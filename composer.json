@@ -49,7 +49,7 @@
         "test:types": "phpstan analyse --ansi src/",
         "test:unit": "pest --colors=always --coverage --min=88.9",
         "test": [
-            "@test:refacto",
+            "@test:refactor",
             "@test:lint",
             "@test:types",
             "@test:typos",

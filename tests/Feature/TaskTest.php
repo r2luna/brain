@@ -30,7 +30,7 @@ it('should validate the payload of a Task based on the docblock of the class', f
     TempTask::dispatch();
 })->throws(InvalidPayload::class);
 
-it('should return void if there is nothing to validate', function () {
+it('should return void if there is nothing to validate', function (): void {
     class ValidateVoidTask extends Task {}
 
     $task = ValidateVoidTask::dispatch();
@@ -116,7 +116,7 @@ it('should add cancelProcess to the payload when cancelProcess method is called'
     expect($task->payload->cancelProcess)->toBeTrue();
 });
 
-test('from inside a task we should be able to access payload data magically using __get method', function () {
+test('from inside a task we should be able to access payload data magically using __get method', function (): void {
     /** @property-read string $name */
     class MagicTask extends Task
     {
@@ -131,7 +131,7 @@ test('from inside a task we should be able to access payload data magically usin
     MagicTask::dispatch(['name' => 'John Doe']);
 });
 
-it('should be able to set any property in the payload magically using __set method', function () {
+it('should be able to set any property in the payload magically using __set method', function (): void {
     /** @property string $name */
     class Magic2Task extends Task
     {

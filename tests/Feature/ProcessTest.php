@@ -115,7 +115,7 @@ test('process converts array payload to object', function (): void {
     expect($result)->toBeObject();
 });
 
-it('should be possible to set the process as chain', function () {
+it('should be possible to set the process as chain', function (): void {
     class ChainProcess extends Process
     {
         protected bool $chain = true;
@@ -127,7 +127,7 @@ it('should be possible to set the process as chain', function () {
     expect($process->isChained())->toBeTrue();
 });
 
-test('when process is set as chain we need to dispatch a chained bus', function () {
+test('when process is set as chain we need to dispatch a chained bus', function (): void {
     class QueueableTask extends Task implements ShouldQueue {}
     class Queueable2Task extends Task implements ShouldQueue {}
     class Chain2Process extends Process
@@ -154,7 +154,7 @@ test('when process is set as chain we need to dispatch a chained bus', function 
 
 });
 
-it('should unser cancelProcess from the payload if the next _task_ is a process', function () {
+it('should unser cancelProcess from the payload if the next _task_ is a process', function (): void {
     // ---
     // Meaning that if we have a sub process that is cancelled
     // the main process should continue to run the next task
@@ -189,14 +189,14 @@ it('should unser cancelProcess from the payload if the next _task_ is a process'
 
     CancelProcess::dispatch([]);
 
-    Bus::assertDispatched(SimpleTask::class, function (SimpleTask $task) {
+    Bus::assertDispatched(SimpleTask::class, function (SimpleTask $task): true {
         expect($task->payload)->not->toHaveKey('cancelProcess');
 
         return true;
     });
 });
 
-test('if we get an exception in a process we should rollback any change occoured in the database', function () {
+test('if we get an exception in a process we should rollback any change occoured in the database', function (): void {
 
     class ExceptionTask extends Task
     {
@@ -218,13 +218,13 @@ test('if we get an exception in a process we should rollback any change occoured
 
     try {
         ExceptionProcess::dispatchSync([]);
-    } catch (Throwable $th) {
+    } catch (Throwable) {
         // throw $th;
     }
 
 });
 
-it('should return the final payload as an object no matter what', function () {
+it('should return the final payload as an object no matter what', function (): void {
     class ArrayPayloadTask extends Task
     {
         public function handle(): array

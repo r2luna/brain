@@ -6,7 +6,7 @@ use Brain\Processes\Console\MakeProcessCommand;
 use Illuminate\Filesystem\Filesystem;
 use Tests\Feature\Fixtures\TestInput;
 
-test('extends BaseCommand', function () {
+test('extends BaseCommand', function (): void {
     // ----------------------------------------------------------
     // by extending BaseCommand, MakeProcessCommand will have
     // access to the possibleDomains method and enhiert all the
@@ -20,21 +20,21 @@ test('extends BaseCommand', function () {
     expect($command)->toBeInstanceOf(BaseCommand::class);
 });
 
-test('name should be make:process', function () {
+test('name should be make:process', function (): void {
     $files = app(Filesystem::class);
     $command = new MakeProcessCommand($files);
 
     expect($command->getName())->toBe('make:process');
 });
 
-test('description should be \'Create a new process class\'', function () {
+test('description should be \'Create a new process class\'', function (): void {
     $files = app(Filesystem::class);
     $command = new MakeProcessCommand($files);
 
     expect($command->getDescription())->toBe('Create a new process class');
 });
 
-test('stub should be __DIR__./stubs/process/stub', function () {
+test('stub should be __DIR__./stubs/process/stub', function (): void {
     $files = app(Filesystem::class);
     $command = new MakeProcessCommand($files);
 
@@ -49,7 +49,7 @@ test('stub should be __DIR__./stubs/process/stub', function () {
     expect($actualPath)->toBe($expectedPath);
 });
 
-test('get defaultNamespace', function () {
+test('get defaultNamespace', function (): void {
     $files = app(Filesystem::class);
     $command = new MakeProcessCommand($files);
 
@@ -65,7 +65,7 @@ test('get defaultNamespace', function () {
     expect($defaultNamespace)->toBe('App\Brain\\Domain\\Processes');
 });
 
-test('get defaultNamespace with no domain', function () {
+test('get defaultNamespace with no domain', function (): void {
     $files = app(Filesystem::class);
     $command = new MakeProcessCommand($files);
 

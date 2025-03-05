@@ -24,7 +24,7 @@ class TestInput extends Input
     public function getFirstArgument(): ?string
     {
         return collect($this->parameters)
-            ->filter(fn ($value) => ! str($value)->startsWith('--'))
+            ->filter(fn ($value): bool => ! str($value)->startsWith('--'))
             ->first();
     }
 
@@ -39,7 +39,7 @@ class TestInput extends Input
     {
         return collect($this->parameters)
             ->filter(fn ($value, $key) => str($key)->startsWith('--'))
-            ->filter(fn ($value) => in_array($value, (array) $values))
+            ->filter(fn ($value): bool => in_array($value, (array) $values))
             ->first();
     }
 

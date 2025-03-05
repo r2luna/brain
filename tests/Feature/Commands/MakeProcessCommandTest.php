@@ -4,6 +4,7 @@
 use Brain\Console\BaseCommand;
 use Brain\Processes\Console\MakeProcessCommand;
 use Illuminate\Filesystem\Filesystem;
+use Symfony\Component\Console\Input\ArrayInput;
 
 test('extends BaseCommand', function () {
     // ----------------------------------------------------------
@@ -47,3 +48,4 @@ test('stub should be __DIR__./stubs/process/stub', function () {
 
     expect($actualPath)->toBe($expectedPath);
 });
+

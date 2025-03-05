@@ -51,7 +51,7 @@ final class MakeProcessCommand extends BaseCommand
     #[Override]
     protected function getDefaultNamespace($rootNamespace): string // @pest-ignore-type
     {
-        $domain = $this->argument('domain');
+        $domain = $this->hasArgument('domain') ? $this->argument('domain') : 'TempDomain';
 
         return "$rootNamespace\Brain\\$domain\Processes";
     }

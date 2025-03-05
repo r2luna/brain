@@ -2,7 +2,6 @@
 <?php
 
 use Brain\Console\BaseCommand;
-use Brain\Processes\Console\MakeProcessCommand;
 use Brain\Tasks\Console\MakeTaskCommand;
 use Illuminate\Filesystem\Filesystem;
 use Tests\Feature\Fixtures\TestInput;

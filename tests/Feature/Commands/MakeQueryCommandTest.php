@@ -81,3 +81,20 @@ test('get defaultNamespace with no domain', function (): void {
 
     expect($defaultNamespace)->toBe('App\Brain\TempDomain\Queries');
 });
+
+it('should replace DumyModel in the stub with the given argument model', function () {
+    $files = app(Filesystem::class);
+    $input = new TestInput(['model' => 'Jeremias']);
+    $command = new MakeQueryCommand($files);
+    $command->setInput($input);
+    $command->setLaravel(app());
+
+    $reflection = new ReflectionClass($command);
+    $method = $reflection->getMethod('buildClass');
+    $method->setAccessible(true);
+
+    $output = $method->invoke($command, 'UserQuery');
+    expect($output)->toBe(
+        file_get_contents(__DIR__.'/../Fixtures/user-query.stub')
+    );
+});

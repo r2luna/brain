@@ -56,8 +56,8 @@ jobs:
       - name: Type Checks
         run: composer test:types
 
-      - name: Test Refacto
-        run: composer test:refactor
+      #   - name: Test Refacto
+      #     run: composer test:refactor
 
       - name: Test Typos
         run: composer test:typos

@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 use Brain\Query;
 
-test('run method executes handle method', function () {
+test('run method executes handle method', function (): void {
     class TestQuery extends Query
     {
-        private $value;
-
-        public function __construct($value)
+        public function __construct(private $value)
         {
-            $this->value = $value;
         }
 
         public function handle(): mixed
@@ -24,17 +21,11 @@ test('run method executes handle method', function () {
     expect($result)->toBe('testValue');
 });
 
-test('run method accepts multiple arguments', function () {
+test('run method accepts multiple arguments', function (): void {
     class MultiArgQuery extends Query
     {
-        private $arg1;
-
-        private $arg2;
-
-        public function __construct($arg1, $arg2)
+        public function __construct(private $arg1, private $arg2)
         {
-            $this->arg1 = $arg1;
-            $this->arg2 = $arg2;
         }
 
         public function handle(): mixed

@@ -8,29 +8,29 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Console\Input\InputArgument;
 
-test('BaseCommand is abstract', function () {
+test('BaseCommand is abstract', function (): void {
     $reflection = new ReflectionClass(BaseCommand::class);
     expect($reflection->isAbstract())->toBeTrue();
 });
 
-test('BaseCommand has possibleDomains method', function () {
+test('BaseCommand has possibleDomains method', function (): void {
     $reflection = new ReflectionClass(BaseCommand::class);
     $method = $reflection->getMethod('possibleDomains');
     expect($method)->not->toBeNull();
 });
 
-test('possibleDomains method returns array', function () {
+test('possibleDomains method returns array', function (): void {
     $files = app(Filesystem::class);
     $command = new class($files) extends BaseCommand
     {
-        public function handle() {}
+        public function handle(): void {}
 
         public function getStub()
         {
             return '';
         }
 
-        protected function configure()
+        protected function configure(): void
         {
             $this->setName('test:command');
         }
@@ -48,18 +48,18 @@ test('possibleDomains method returns array', function () {
     expect($domains)->toBe(['Processes', 'Queries', 'Tasks']);
 });
 
-it('should create brain directory if it doesnt exists', function () {
+it('should create brain directory if it doesnt exists', function (): void {
     $files = app(Filesystem::class);
     $command = new class($files) extends BaseCommand
     {
-        public function handle() {}
+        public function handle(): void {}
 
         public function getStub()
         {
             return '';
         }
 
-        protected function configure()
+        protected function configure(): void
         {
             $this->setName('test:command');
         }
@@ -76,21 +76,21 @@ it('should create brain directory if it doesnt exists', function () {
     expect(File::exists($modelPath))->toBeTrue();
 });
 
-test('check if we open a suggestion box', function () {
+test('check if we open a suggestion box', function (): void {
 
     $files = app(Filesystem::class);
     $command = new class($files) extends BaseCommand
     {
         protected $type = 'Test';
 
-        public function handle() {}
+        public function handle(): void {}
 
         public function getStub()
         {
             return '';
         }
 
-        protected function configure()
+        protected function configure(): void
         {
             $this->setName('test:command');
         }
@@ -115,21 +115,21 @@ test('check if we open a suggestion box', function () {
         ->assertExitCode(0);
 });
 
-it('should cancel the criation if the name of the element is a reserved name', function () {
+it('should cancel the criation if the name of the element is a reserved name', function (): void {
 
     $files = app(Filesystem::class);
     $command = new class($files) extends BaseCommand
     {
         protected $type = 'Test';
 
-        public function handle() {}
+        public function handle(): void {}
 
         public function getStub()
         {
             return '';
         }
 
-        protected function configure()
+        protected function configure(): void
         {
             $this->setName('test:command');
         }

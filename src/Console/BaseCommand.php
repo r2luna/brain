@@ -28,7 +28,7 @@ abstract class BaseCommand extends GeneratorCommand
         }
 
         return collect(File::directories($modelPath))
-            ->map(fn (string $file) => basename($file))
+            ->map(fn (string $file): string => basename($file))
             ->sort()
             ->values()
             ->all();

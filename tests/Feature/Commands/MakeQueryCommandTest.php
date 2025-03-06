@@ -82,7 +82,7 @@ test('get defaultNamespace with no domain', function (): void {
     expect($defaultNamespace)->toBe('App\Brain\TempDomain\Queries');
 });
 
-it('should replace DumyModel in the stub with the given argument model', function () {
+it('should replace DumyModel in the stub with the given argument model', function (): void {
     $files = app(Filesystem::class);
     $input = new TestInput(['model' => 'Jeremias']);
     $command = new MakeQueryCommand($files);

@@ -19,8 +19,9 @@ use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 
 /**
- * Class Task: Task class to be used as a
- * base for all tasks.
+ * Class Task
+ *
+ * Task class to be used as a base for all tasks.
  *
  * @property-read bool $cancelProcess
  */

@@ -7,9 +7,7 @@ use Brain\Query;
 test('run method executes handle method', function (): void {
     class TestQuery extends Query
     {
-        public function __construct(private $value)
-        {
-        }
+        public function __construct(private $value) {}
 
         public function handle(): mixed
         {
@@ -24,9 +22,7 @@ test('run method executes handle method', function (): void {
 test('run method accepts multiple arguments', function (): void {
     class MultiArgQuery extends Query
     {
-        public function __construct(private $arg1, private $arg2)
-        {
-        }
+        public function __construct(private $arg1, private $arg2) {}
 
         public function handle(): mixed
         {

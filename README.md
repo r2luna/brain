@@ -10,7 +10,7 @@
 
 ---
 
-**Brain** is an elegant PHP package that helps you organize your Laravel application using Domain-Driven Design principles through a simple command-line interface.
+**Brain** is an elegant Laravel Package that helps you organize your Laravel application using Domain-Driven Design principles through a simple command-line interface.
 
 ## Features
 
@@ -37,14 +37,6 @@ php artisan make:process CreateUserProcess --domain=Users
 
 This will create a new process class in `app/Brain/Users/Processes/CreateUserProcess.php`
 
-### Creating a Query
-
-```bash
-php artisan make:query GetUserByEmailQuery --domain=Users
-```
-
-This will create a new query class in `app/Brain/Users/Queries/GetUserByEmailQuery.php`
-
 ### Creating a Task
 
 ```bash
@@ -53,11 +45,30 @@ php artisan make:task SendWelcomeEmailTask --domain=Users
 
 This will create a new task class in `app/Brain/Users/Tasks/SendWelcomeEmailTask.php`
 
+### Creating a Query
+
+```bash
+php artisan make:query GetUserByEmailQuery --domain=Users
+```
+
+This will create a new query class in `app/Brain/Users/Queries/GetUserByEmailQuery.php`
+
 ## Example Usage
 
 ```php
 // Using a Query
 $user = GetUserByEmailQuery::run('john@example.com');
+
+// Setting up a Process
+class CreateUserProcess extends Process
+{
+    protected array $tasks = [
+        RegisterUserTask::class,
+        SendWelcomeEmailTask::class, // Async task
+        NotifyStaffTask::class, // Async task
+        SubProcess::class
+    ];
+}
 
 // Using a Process
 CreateUserProcess::dispatch([
@@ -65,7 +76,7 @@ CreateUserProcess::dispatch([
     'email' => 'john@example.com'
 ]);
 
-// Using a Task
+// Using a Task without a process
 SendWelcomeEmailTask::dispatch($user);
 ```
 
@@ -75,7 +86,7 @@ Brain helps you organize your code into three main concepts:
 
 - **Processes**: Complex business operations that might involve multiple steps
 - **Queries**: Database queries and data retrieval operations
-- **Tasks**: Background jobs and queue operations
+- **Tasks**: Sync/Async operations that can be called as part of a process or not
 
 Each concept is organized within its respective domain, promoting clean architecture and separation of concerns.
 

@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Brain\Console;
 
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Support\Facades\File;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\SplFileInfo;
 
 use function Laravel\Prompts\suggest;
 
@@ -22,10 +21,14 @@ abstract class BaseCommand extends GeneratorCommand
      */
     public function possibleDomains(): array
     {
-        $modelPath = app_path('Brain');
+        $modelPath = app()->path('Brain');
 
-        return collect(Finder::create()->directories()->depth(0)->in($modelPath))
-            ->map(fn (SplFileInfo $file) => $file->getFilename())
+        if (! File::exists($modelPath)) {
+            File::makeDirectory($modelPath, 0755, true);
+        }
+
+        return collect(File::directories($modelPath))
+            ->map(fn (string $file) => basename($file))
             ->sort()
             ->values()
             ->all();

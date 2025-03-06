@@ -22,6 +22,7 @@
         "phpdocumentor/reflection": "^6.1"
     },
     "require-dev": {
+        "laradumps/laradumps": "4.x-dev",
         "laravel/pint": "^1.21",
         "orchestra/testbench": "^9.11",
         "peckphp/peck": "^0.1.2",
@@ -71,5 +72,6 @@
                 "Brain": "R2Luna\\Brain\\BrainFacade"
             }
         }
-    }
+    },
+    "minimum-stability": "dev"
 }

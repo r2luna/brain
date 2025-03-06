@@ -114,3 +114,126 @@ test('check if we open a suggestion box', function () {
         ->expectsQuestion('What domain this belongs to?', 'Tasks')
         ->assertExitCode(0);
 });
+
+it('should cancel the criation if the name of the element is a reserved name', function () {
+
+    $files = app(Filesystem::class);
+    $command = new class($files) extends BaseCommand
+    {
+        protected $type = 'Test';
+
+        public function handle() {}
+
+        public function getStub()
+        {
+            return '';
+        }
+
+        protected function configure()
+        {
+            $this->setName('test:command');
+        }
+
+        #[Override]
+        protected function getArguments(): array
+        {
+            return [
+                ['name', InputArgument::REQUIRED, 'The name of the query'],
+                ['model', InputArgument::OPTIONAL, 'The name of the model'],
+                ['domain', InputArgument::OPTIONAL, 'The name of the domain. Ex.: PTO'],
+            ];
+        }
+    };
+
+    Artisan::registerCommand($command);
+
+    foreach ([
+        '__halt_compiler',
+        'abstract',
+        'and',
+        'array',
+        'as',
+        'break',
+        'callable',
+        'case',
+        'catch',
+        'class',
+        'clone',
+        'const',
+        'continue',
+        'declare',
+        'default',
+        'die',
+        'do',
+        'echo',
+        'else',
+        'elseif',
+        'empty',
+        'enddeclare',
+        'endfor',
+        'endforeach',
+        'endif',
+        'endswitch',
+        'endwhile',
+        'enum',
+        'eval',
+        'exit',
+        'extends',
+        'false',
+        'final',
+        'finally',
+        'fn',
+        'for',
+        'foreach',
+        'function',
+        'global',
+        'goto',
+        'if',
+        'implements',
+        'include',
+        'include_once',
+        'instanceof',
+        'insteadof',
+        'interface',
+        'isset',
+        'list',
+        'match',
+        'namespace',
+        'new',
+        'or',
+        'parent',
+        'print',
+        'private',
+        'protected',
+        'public',
+        'readonly',
+        'require',
+        'require_once',
+        'return',
+        'self',
+        'static',
+        'switch',
+        'throw',
+        'trait',
+        'true',
+        'try',
+        'unset',
+        'use',
+        'var',
+        'while',
+        'xor',
+        'yield',
+        '__CLASS__',
+        '__DIR__',
+        '__FILE__',
+        '__FUNCTION__',
+        '__LINE__',
+        '__METHOD__',
+        '__NAMESPACE__',
+        '__TRAIT__',
+    ] as $reservedName) {
+        $this->artisan('test:command')
+            ->expectsQuestion('What should the test be named?', $reservedName)
+            ->assertExitCode(0);
+    }
+});

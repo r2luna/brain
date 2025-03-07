@@ -20,7 +20,6 @@ test('extends BaseCommand', function (): void {
     expect($command)->toBeInstanceOf(BaseCommand::class);
 });
 
-
 test('name should be make:task', function (): void {
     $files = app(Filesystem::class);
     $command = new MakeTaskCommand($files);

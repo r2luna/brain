@@ -16,6 +16,7 @@
             "email": "rafael@lunardelli.me"
         }
     ],
+    "version": "1.0.2",
     "require": {
         "php": "^8.3.0",
         "laravel/framework": ">10",

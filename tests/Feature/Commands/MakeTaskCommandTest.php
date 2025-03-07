@@ -20,11 +20,19 @@ test('extends BaseCommand', function (): void {
     expect($command)->toBeInstanceOf(BaseCommand::class);
 });
 
+
 test('name should be make:task', function (): void {
     $files = app(Filesystem::class);
     $command = new MakeTaskCommand($files);
 
-    expect($command->getName())->toBe('make:task');
+    expect($command->getName())->toBe('brain:make:task');
+});
+
+it('should have aliases for command signature', function () {
+    $files = app(Filesystem::class);
+    $command = new MakeTaskCommand($files);
+
+    expect($command->getAliases())->toBe(['make:task']);
 });
 
 test('description should be \'Create a new task class\'', function (): void {

@@ -7,7 +7,6 @@ namespace Brain\Queries\Console;
 use Brain\Console\BaseCommand;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Override;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 
 /**
@@ -15,7 +14,6 @@ use Symfony\Component\Console\Input\InputArgument;
  *
  * This command is designed to generate a new query class.
  */
-#[AsCommand(name: 'make:query')]
 class MakeQueryCommand extends BaseCommand
 {
     /**
@@ -23,7 +21,14 @@ class MakeQueryCommand extends BaseCommand
      *
      * @var string
      */
-    protected $name = 'make:query';
+    protected $name = 'brain:make:query';
+
+    /**
+     * The console command name aliases.
+     *
+     * @var array
+     */
+    protected $aliases = ['make:query'];
 
     /**
      * The description of the command.
@@ -60,7 +65,9 @@ class MakeQueryCommand extends BaseCommand
     {
         $domain = $this->hasArgument('domain') ? $this->argument('domain') : 'TempDomain';
 
-        return "{$rootNamespace}Brain\\$domain\Queries";
+        $rootNamespace = str($rootNamespace)->replace('\\', '')->toString();
+
+        return "{$rootNamespace}\Brain\\$domain\Queries";
     }
 
     /**

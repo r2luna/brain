@@ -24,7 +24,14 @@ test('name should be make:process', function (): void {
     $files = app(Filesystem::class);
     $command = new MakeProcessCommand($files);
 
-    expect($command->getName())->toBe('make:process');
+    expect($command->getName())->toBe('brain:make:process');
+});
+
+it('should have aliases for command signature', function () {
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+
+    expect($command->getAliases())->toBe(['make:process']);
 });
 
 test('description should be \'Create a new process class\'', function (): void {
@@ -62,7 +69,7 @@ test('get defaultNamespace', function (): void {
 
     $defaultNamespace = $method->invoke($command, 'App\\');
 
-    expect($defaultNamespace)->toBe('App\Brain\\Domain\\Processes');
+    expect($defaultNamespace)->toBe('App\Brain\Domain\Processes');
 });
 
 test('get defaultNamespace with no domain', function (): void {

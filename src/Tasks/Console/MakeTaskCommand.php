@@ -6,7 +6,6 @@ namespace Brain\Tasks\Console;
 
 use Brain\Console\BaseCommand;
 use Override;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 
 /**
@@ -14,7 +13,6 @@ use Symfony\Component\Console\Input\InputArgument;
  *
  * This command is designed to generate a new task class.
  */
-#[AsCommand(name: 'make:task')]
 final class MakeTaskCommand extends BaseCommand
 {
     /**
@@ -22,7 +20,14 @@ final class MakeTaskCommand extends BaseCommand
      *
      * @var string
      */
-    protected $name = 'make:task';
+    protected $name = 'brain:make:task';
+
+    /**
+     * The console command name aliases.
+     *
+     * @var array
+     */
+    protected $aliases = ['make:task'];
 
     /**
      * The description of the command.
@@ -59,7 +64,9 @@ final class MakeTaskCommand extends BaseCommand
     {
         $domain = $this->hasArgument('domain') ? $this->argument('domain') : 'TempDomain';
 
-        return "{$rootNamespace}Brain\\$domain\Tasks";
+        $rootNamespace = str($rootNamespace)->replace('\\', '')->toString();
+
+        return "{$rootNamespace}\Brain\\$domain\Tasks";
     }
 
     /**

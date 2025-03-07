@@ -6,12 +6,11 @@ namespace Brain\Processes\Console;
 
 use Brain\Console\BaseCommand;
 use Override;
-use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputArgument;
 
 /**
  * Class ProcessesMakeCommand
  */
-#[AsCommand(name: 'make:process')]
 final class MakeProcessCommand extends BaseCommand
 {
     /**
@@ -19,7 +18,14 @@ final class MakeProcessCommand extends BaseCommand
      *
      * @var string
      */
-    protected $name = 'make:process';
+    protected $name = 'brain:make:process';
+
+    /**
+     * The console command name aliases.
+     *
+     * @var array
+     */
+    protected $aliases = ['make:process'];
 
     /**
      * The console command description.
@@ -53,6 +59,22 @@ final class MakeProcessCommand extends BaseCommand
     {
         $domain = $this->hasArgument('domain') ? $this->argument('domain') : 'TempDomain';
 
-        return "{$rootNamespace}Brain\\$domain\Processes";
+        $rootNamespace = str($rootNamespace)->replace('\\', '')->toString();
+
+        return "{$rootNamespace}\Brain\\$domain\Processes";
+    }
+
+    /**
+     * Get the console command arguments required for this command.
+     *
+     * @return array<int, array<string, int, string>> An array of arguments with their details
+     */
+    #[Override]
+    protected function getArguments(): array
+    {
+        return [
+            ['name', InputArgument::REQUIRED, 'The name of the query'],
+            ['domain', InputArgument::OPTIONAL, 'The name of the domain. Ex.: PTO'],
+        ];
     }
 }

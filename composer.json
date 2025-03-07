@@ -66,11 +66,8 @@
     "extra": {
         "laravel": {
             "providers": [
-                "R2Luna\\Brain\\BrainServiceProvider"
-            ],
-            "aliases": {
-                "Brain": "R2Luna\\Brain\\BrainFacade"
-            }
+                "Brain\\BrainServiceProvider"
+            ]
         }
     },
     "minimum-stability": "dev"

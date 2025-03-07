@@ -18,6 +18,12 @@
 - 🔍 **Query Objects**: Create dedicated query classes for database operations
 - ⚡ **Task Management**: Generate task classes for background jobs and queue operations
 
+## Gains
+
+- ♻️ **Code Reusability**: By using tasks, you can easily reuse code across different processes, reducing duplication and enhancing maintainability.
+- 🧩 **Clear Domain Understanding**: The structured approach provides a better understanding of each domain's processes, making it easier to manage and scale your application.
+- 🔧 **Improved Maintainability**: With well-defined domains and processes, maintaining and updating your application becomes more straightforward and less error-prone.
+
 ## Installation
 
 You can install the package via composer:

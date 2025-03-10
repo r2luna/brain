@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Brain;
 
+use Brain\Console\ShowBrainCommand;
 use Brain\Processes\Console\MakeProcessCommand;
 use Brain\Queries\Console\MakeQueryCommand;
 use Brain\Tasks\Console\MakeTaskCommand;
@@ -44,6 +45,7 @@ class BrainServiceProvider extends ServiceProvider
     private function registerCommands(): void
     {
         $this->commands([
+            ShowBrainCommand::class,
             MakeProcessCommand::class,
             MakeTaskCommand::class,
             MakeQueryCommand::class,

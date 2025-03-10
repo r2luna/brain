@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
@@ -24,9 +26,8 @@ class ShowBrainCommand extends Command
      */
     protected $signature = '
         brain:show
-        {--domain=}
-        {--process=}
-        {--task=}
+        {--filter=}
+        {--v}
     ';
 
     /**
@@ -37,15 +38,37 @@ class ShowBrainCommand extends Command
     protected $description = 'Show Brain Mapping';
 
     /**
+     * Available Colors
+     *
+     * @var array
+     */
+    protected $verbColors = [
+        'ANY' => 'red',
+        'GET' => 'blue',
+        'HEAD' => '#6C7280',
+        'OPTIONS' => '#6C7280',
+        'POST' => 'yellow',
+        'PUT' => 'yellow',
+        'PATCH' => 'yellow',
+        'DELETE' => 'red',
+    ];
+
+    /**
      * Execute the console command.
      */
     public function handle(): void
     {
         $map = $this->getBrainMap();
 
-        ds($map);
-
         $this->displayBrain($map);
+    }
+
+    /**
+     * Get the terminal width.
+     */
+    private static function getTerminalWidth(): int
+    {
+        return (new Terminal)->getWidth();
     }
 
     private function displayBrain(Collection $map): void
@@ -60,33 +83,98 @@ class ShowBrainCommand extends Command
             USER        RegisterUserProcess .......................................................
                         1.  RegisterUserTask ......................................................
                         Properties:
-                        ⇂ name: string
-                        ⇂ email: string
-                        ⇂ password: string
+                        ⇣ name: string
+                        ⇣ email: string
+                        ⇣ password: string
 
                         Output:
-                        ⇂ user: User
+                        ⇡ user: User
 
                         2. SendWelcomeEmailTask .................................... queued.default
                         3. NotifyStaffTask ................................................. queued
          */
         $lines = [];
         $terminalWidth = $this->getTerminalWidth();
-        $tasksInUse = [];
 
         foreach ($map as $domain) {
             $currentDomain = $domain['domain'];
             $maxDomain = mb_strlen($map->sortByDesc(fn ($value) => mb_strlen($value['domain']))->first()['domain']);
 
             foreach ($domain['processes'] as $process) {
-                $spaces = $this->printProcess($lines, $process, $maxDomain, $currentDomain, $terminalWidth);
+
+                $spaces = str_repeat(' ', max($maxDomain + 4 - mb_strlen($currentDomain), 0));
+                $processName = $process['name'];
+                $inChain = $process['chain'] ? ' chained' : '.';
+
+                $dots = str_repeat('.', max(
+                    $terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain) - 5,
+                    0
+                ));
+                $dots = empty($dots) ? $dots : " $dots";
+
+                $lines[] = [
+                    sprintf(
+                        '  <fg=blue;options=bold>%s</> %s<fg=white>%s</><fg=#6C7280>%s%s</>',
+                        strtoupper($currentDomain),
+                        $spaces,
+                        $processName,
+                        $dots,
+                        $inChain
+                    ),
+                ];
 
                 foreach ($process['tasks'] as $taskIndex => $task) {
-                    $tasksInUse[] = $task['fullName'];
+                    $taskIndex++;
+                    $taskIndex = "{$taskIndex}. ";
+                    $taskName = $task['name'];
+                    $taskSpaces = str_repeat(' ', 3 + mb_strlen($currentDomain) + mb_strlen($spaces));
+                    $taskQueued = $task['queue'] ? ' queued' : '.';
+                    $taskDots = str_repeat('.', $terminalWidth - mb_strlen($taskSpaces.$taskIndex.$taskName) - mb_strlen($taskQueued) - 2);
+                    $taskDots = empty($taskDots) ? $taskDots : " $taskDots";
 
-                    $taskSpaces = $this->printTask($lines, $task, $currentDomain, $spaces, $terminalWidth, $taskIndex);
+                    $lines[] = [
+                        sprintf(
+                            '%s<fg=white>%s%s</><fg=#6C7280>%s%s</>',
+                            $taskSpaces,
+                            $taskIndex,
+                            $taskName,
+                            $taskDots,
+                            $taskQueued
+                        ),
+                    ];
 
+                    $lines[] = [
+                        sprintf(
+                            '%s   <fg=#6C7280>%s</>',
+                            $taskSpaces,
+                            'Required Properties'
+                        ),
+                    ];
+
+                    foreach ($task['properties'] as $property) {
+                        /**
+                        1.  RegisterUserTask ......................................................
+                        ⇣ name: string
+                        ⇣ email: string
+                        ⇣ password: string
+                        ⇡ user: User
+                         */
+                        $propertyIndex = $property['output'] ? '⇡ ' : '⇂ ';
+                        $propertyName = $property['name'];
+                        $propertyType = $property['type'];
+
+                        $lines[] = [
+                            sprintf(
+                                '%s   <fg=white>%s%s</><fg=#6C7280>: %s</>',
+                                $taskSpaces,
+                                $propertyIndex,
+                                $propertyName,
+                                $propertyType
+                            ),
+                        ];
+                    }
                 }
+
             }
         }
 
@@ -96,152 +184,17 @@ class ShowBrainCommand extends Command
     }
 
     /**
-     * Print Process
-     */
-    private function printProcess(array &$lines, array $process, string $maxDomain, string $currentDomain, int $terminalWidth): string
-    {
-        $spaces = str_repeat(' ', max($maxDomain + 4 - mb_strlen($currentDomain), 0));
-        $processName = $process['name'];
-        $inChain = $process['chain'] ? ' chained' : '.';
-
-        $dots = str_repeat('.', max(
-            $terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain) - 5,
-            0
-        ));
-
-        $dots = empty($dots) ? $dots : " $dots";
-
-        $lines[] = [
-            sprintf(
-                '  <fg=blue;options=bold>%s</> %s<fg=yellow>%s</><fg=#6C7280>%s%s</>',
-                strtoupper($currentDomain),
-                $spaces,
-                $processName,
-                $dots,
-                $inChain
-            ),
-        ];
-
-        return $spaces;
-    }
-
-    /**
-     * Print task
-     */
-    private function printTask(array &$lines, array $task, string $currentDomain, string $spaces, int $terminalWidth, int $taskIndex): string
-    {
-        $taskIndex++;
-        $taskIndex = "{$taskIndex}. ";
-        $taskName = $task['name'];
-        $taskSpaces = str_repeat(' ', 3 + mb_strlen($currentDomain) + mb_strlen($spaces));
-        $taskQueued = $task['queue'] ? ' queued' : '.';
-        $taskDots = str_repeat('.', $terminalWidth - mb_strlen($taskSpaces.$taskIndex.$taskName) - mb_strlen($taskQueued) - 2);
-        $taskDots = empty($taskDots) ? $taskDots : " $taskDots";
-
-        $lines[] = [
-            sprintf(
-                '%s<fg=white>%s%s</><fg=#6C7280>%s%s</>',
-                $taskSpaces,
-                $taskIndex,
-                $taskName,
-                $taskDots,
-                $taskQueued
-            ),
-        ];
-
-        if ($this->output->isVerbose()) {
-
-            $lines[] = [
-                sprintf(
-                    '%s   <fg=#6C7280>%s</>',
-                    $taskSpaces,
-                    'Properties'
-                ),
-            ];
-
-            foreach ($task['properties'] as $property) {
-                if ($property['output']) {
-                    continue;
-                }
-
-                $this->printProperty($lines, $property, $taskSpaces);
-            }
-
-            if (collect($task['properties'])->where('output', true)->count() > 0) {
-                $lines[] = [''];
-                $lines[] = [
-                    sprintf(
-                        '%s   <fg=#6C7280>%s</>',
-                        $taskSpaces,
-                        'Output'
-                    ),
-                ];
-
-                foreach ($task['properties'] as $property) {
-                    if (! $property['output']) {
-                        continue;
-                    }
-
-                    $this->printProperty($lines, $property, $taskSpaces);
-                }
-
-            }
-            $lines[] = [''];
-        }
-
-        return $taskSpaces;
-    }
-
-    /**
-     * Print property tasks
-     */
-    private function printProperty(array &$lines, array $property, string $taskSpaces): void
-    {
-        /**
-        1.  RegisterUserTask ......................................................
-        Properties:
-        ⇂ name: string
-        ⇂ email: string
-        ⇂ password: string
-
-        Output:
-        ⇂ user: User
-         */
-        $propertyName = $property['name'];
-        $propertyType = $property['type'];
-
-        $lines[] = [
-            sprintf(
-                '%s   <fg=white>%s%s</><fg=#6C7280>: %s</>',
-                $taskSpaces,
-                '⇂ ',
-                $propertyName,
-                $propertyType
-            ),
-        ];
-    }
-
-    /**
-     * Get the terminal width.
-     */
-    private static function getTerminalWidth(): int
-    {
-        return (new Terminal)->getWidth();
-    }
-
-    /**
      * Get the map of domains, processes, and tasks.
      */
     private function getBrainMap(): Collection
     {
-        $domains = $this->getDomains();
+        $domains = $this->domains();
         $map = [];
 
         foreach ($domains as $basename => $path) {
             $map[] = [
                 'domain' => $basename,
                 'processes' => $this->getProcessesFor($path),
-                'tasks' => $this->getTasksFor($path),
             ];
         }
 
@@ -253,10 +206,10 @@ class ShowBrainCommand extends Command
      *
      * @return <string, string>[]
      */
-    private function getDomains(): array
+    private function domains(): array
     {
         return collect(File::directories(app_path('Brain')))
-            ->when($this->option('domain'), fn ($collection) => $collection->filter(fn ($value) => basename($value) === $this->option('domain')))
+            ->when($this->option('filter'), fn ($collection) => $collection->filter(fn ($value) => basename($value) === $this->option('filter')))
             ->flatMap(fn ($value) => [basename($value) => $value])
             ->toArray();
     }
@@ -281,82 +234,65 @@ class ShowBrainCommand extends Command
                     'name' => basename($value, '.php'),
                     'chain' => $chainValue,
                     'tasks' => collect($reflection->getProperty('tasks')->getValue(new $reflection->name([])))
-                        ->map(fn ($task) => $this->getTask($task))
+                        ->map(function ($task) {
+                            $reflection = $this->getReflectionClass($task, true);
+                            $reflection->implementsInterface(ShouldQueue::class);
+
+                            $docBlockFactory = DocBlockFactory::createInstance();
+                            $docBlock = $reflection->getDocComment();
+
+                            if (is_bool($docBlock)) {
+                                return null;
+                            }
+
+                            $classDocBlock = $docBlockFactory->create($docBlock);
+
+                            $properties = collect($classDocBlock->getTags())
+                                ->map(function (Tag $tag) {
+                                    if ($tag instanceof PropertyRead) {
+                                        return [
+                                            'name' => $tag->getVariableName(),
+                                            'type' => $tag->getType(),
+                                            'output' => false,
+                                        ];
+                                    }
+
+                                    if ($tag instanceof Property) {
+                                        return [
+                                            'name' => $tag->getVariableName(),
+                                            'type' => $tag->getType(),
+                                            'output' => true,
+                                        ];
+                                    }
+
+                                    return null;
+                                })
+                                ->filter()
+                                ->sortBy('output')
+                                ->values()
+                                ->toArray();
+
+                            return empty($properties) ? null : [
+                                'name' => $reflection->getShortName(),
+                                'fullName' => $reflection->name,
+                                'queue' => $reflection->implementsInterface(ShouldQueue::class),
+                                'properties' => $properties,
+                            ];
+                        })
                         ->filter()
-                        ->when($this->option('task'), fn ($collection) => $collection->filter(fn ($value) => $value['name'] === $this->option('task')))
                         ->values()
                         ->toArray(),
                 ];
             })
-            ->when($this->option('process'), fn ($collection) => $collection->filter(fn ($value) => $value['name'] === $this->option('process')))
-            ->toArray();
-    }
-
-    private function getTask(SplFileInfo|string $task): ?array
-    {
-        $reflection = $this->getReflectionClass($task);
-        $reflection->implementsInterface(ShouldQueue::class);
-
-        $docBlockFactory = DocBlockFactory::createInstance();
-        $docBlock = $reflection->getDocComment();
-
-        if (is_bool($docBlock)) {
-            return null;
-        }
-
-        $classDocBlock = $docBlockFactory->create($docBlock);
-
-        $properties = collect($classDocBlock->getTags())
-            ->map(function (Tag $tag) {
-                if ($tag instanceof PropertyRead) {
-                    return [
-                        'name' => $tag->getVariableName(),
-                        'type' => $tag->getType(),
-                        'output' => false,
-                    ];
-                }
-
-                if ($tag instanceof Property) {
-                    return [
-                        'name' => $tag->getVariableName(),
-                        'type' => $tag->getType(),
-                        'output' => true,
-                    ];
-                }
-
-                return null;
-            })
-            ->filter()
-            ->sortBy('output')
-            ->values()
-            ->toArray();
-
-        return [
-            'name' => $reflection->getShortName(),
-            'fullName' => $reflection->name,
-            'queue' => $reflection->implementsInterface(ShouldQueue::class),
-            'properties' => $properties,
-        ];
-    }
-
-    private function getTasksFor(string $domain): array
-    {
-        $path = $domain.DIRECTORY_SEPARATOR.'Tasks';
-
-        return collect(File::files($path))
-            ->map(fn ($task) => $this->getTask($task))
-            ->filter()
-            ->when($this->option('task'), fn ($collection) => $collection->filter(fn ($value) => $value['name'] === $this->option('task')))
-            ->values()
             ->toArray();
     }
 
     /**
      * Get the reflection class for the given value.
      */
-    private function getReflectionClass(SplFileInfo|string $value): ReflectionClass
+    private function getReflectionClass(SplFileInfo|string $value, bool $isClass = false): ReflectionClass
     {
-        if (is_string($value)) {
+        if ($isClass) {
             $class = $value;
         } else {
             $value = $value instanceof SplFileInfo ? $value->getPathname() : $value;
@@ -388,5 +324,29 @@ class ShowBrainCommand extends Command
         $return = '\\'.($namespace ? $namespace.'\\'.$class : $class);
 
         return $return;
+    }
+
+    /**
+     * Get the list of directoreies for the given domain.
+     *
+     * @return <string, string>[]
+     */
+    private function domainDirectories(string $path): array
+    {
+        return collect(File::directories($path))
+            ->flatMap(fn ($value) => [basename($value) => $value])
+            ->toArray();
+    }
+
+    /**
+     * Get the list of files for the given directory.
+     *
+     * @return string[]
+     */
+    private function files(string $path): array
+    {
+        return collect(File::files($path))
+            ->map(fn ($value) => basename($value, '.php'))
+            ->toArray();
     }
 }

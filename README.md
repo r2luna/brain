@@ -1,4 +1,4 @@
-![Untitled design](https://github.com/user-attachments/assets/fdffd499-66ff-4f02-99ca-2449fffd91c4)
+![banner](https://github.com/user-attachments/assets/f66d2e4d-d851-44c5-a567-9733318b2707)
 
 <p align="center">
     <a href="https://github.com/r2luna/brain/actions"><img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/r2luna/brain/main.yml?branch=main"></a>

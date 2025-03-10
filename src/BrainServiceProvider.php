@@ -45,10 +45,10 @@ class BrainServiceProvider extends ServiceProvider
     private function registerCommands(): void
     {
         $this->commands([
-            ShowBrainCommand::class,
             MakeProcessCommand::class,
             MakeTaskCommand::class,
             MakeQueryCommand::class,
+            ShowBrainCommand::class,
         ]);
     }
 

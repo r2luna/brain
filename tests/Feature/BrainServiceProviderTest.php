@@ -8,11 +8,11 @@ use Brain\Queries\Console\MakeQueryCommand;
 use Brain\Tasks\Console\MakeTaskCommand;
 use Illuminate\Support\Facades\Artisan;
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->provider = new BrainServiceProvider($this->app);
 });
 
-test('service provider registers all make commands', function () {
+test('service provider registers all make commands', function (): void {
     $this->provider->boot();
 
     $registeredCommands = array_keys(Artisan::all());
@@ -22,7 +22,7 @@ test('service provider registers all make commands', function () {
     expect($registeredCommands)->toContain('make:query');
 });
 
-test('registered commands are of correct instance type', function () {
+test('registered commands are of correct instance type', function (): void {
     $this->provider->boot();
     $commands = Artisan::all();
 

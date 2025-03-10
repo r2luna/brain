@@ -28,7 +28,7 @@ test('name should be make:query', function (): void {
     expect($command->getName())->toBe('brain:make:query');
 });
 
-it('should have aliases for command signature', function () {
+it('should have aliases for command signature', function (): void {
     $files = app(Filesystem::class);
     $command = new MakeQueryCommand($files);
 

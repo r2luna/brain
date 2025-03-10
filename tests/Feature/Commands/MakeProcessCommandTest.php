@@ -27,7 +27,7 @@ test('name should be make:process', function (): void {
     expect($command->getName())->toBe('brain:make:process');
 });
 
-it('should have aliases for command signature', function () {
+it('should have aliases for command signature', function (): void {
     $files = app(Filesystem::class);
     $command = new MakeProcessCommand($files);
 

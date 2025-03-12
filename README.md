@@ -1,4 +1,4 @@
-![banner](https://github.com/user-attachments/assets/f66d2e4d-d851-44c5-a567-9733318b2707)
+![Untitled design](https://github.com/user-attachments/assets/fdffd499-66ff-4f02-99ca-2449fffd91c4)
 
 <p align="center">
     <a href="https://github.com/r2luna/brain/actions"><img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/r2luna/brain/main.yml?branch=main"></a>
@@ -13,16 +13,16 @@
 
 ## Features
 
-- 🎯 **Domain-Driven Structure**: Easily create new domains with proper architecture
-- 🔄 **Process Management**: Generate process classes for complex business operations
-- 🔍 **Query Objects**: Create dedicated query classes for database operations
-- ⚡ **Task Management**: Generate task classes for background jobs and queue operations
+-   🎯 **Domain-Driven Structure**: Easily create new domains with proper architecture
+-   🔄 **Process Management**: Generate process classes for complex business operations
+-   🔍 **Query Objects**: Create dedicated query classes for database operations
+-   ⚡ **Task Management**: Generate task classes for background jobs and queue operations
 
 ## Gains
 
-- ♻️ **Code Reusability**: By using tasks, you can easily reuse code across different processes, reducing duplication and enhancing maintainability.
-- 🧩 **Clear Domain Understanding**: The structured approach provides a better understanding of each domain's processes, making it easier to manage and scale your application.
-- 🔧 **Improved Maintainability**: With well-defined domains and processes, maintaining and updating your application becomes more straightforward and less error-prone.
+-   ♻️ **Code Reusability**: By using tasks, you can easily reuse code across different processes, reducing duplication and enhancing maintainability.
+-   🧩 **Clear Domain Understanding**: The structured approach provides a better understanding of each domain's processes, making it easier to manage and scale your application.
+-   🔧 **Improved Maintainability**: With well-defined domains and processes, maintaining and updating your application becomes more straightforward and less error-prone.
 
 ## Installation
 
@@ -82,16 +82,18 @@ CreateUserProcess::dispatch([
 ]);
 
 // Using a Task without a process
-SendWelcomeEmailTask::dispatch($user);
+SendWelcomeEmailTask::dispatch([
+    'user' => $user
+]);
 ```
 
 ## Architecture
 
 Brain helps you organize your code into three main concepts:
 
-- **Processes**: Complex business operations that might involve multiple steps
-- **Queries**: Database queries and data retrieval operations
-- **Tasks**: Sync/Async operations that can be called as part of a process or not
+-   **Processes**: Complex business operations that might involve multiple steps
+-   **Queries**: Database queries and data retrieval operations
+-   **Tasks**: Sync/Async operations that can be called as part of a process or not
 
 Each concept is organized within its respective domain, promoting clean architecture and separation of concerns.
 
@@ -111,8 +113,8 @@ If you discover any security-related issues, please email rafael@lunardelli.me i
 
 ## Credits
 
-- [Rafael Lunardelli](https://github.com/r2luna)
-- [All Contributors](../../contributors)
+-   [Rafael Lunardelli](https://github.com/r2luna)
+-   [All Contributors](../../contributors)
 
 ## License
 

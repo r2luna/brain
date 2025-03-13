@@ -213,6 +213,10 @@ class ShowBrainCommand extends Command
                 $chainProperty = $hasChainProperty ? $reflection->getProperty('chain') : null;
                 $chainValue = $chainProperty->getValue(new $reflection->name([]));
 
+                if ($value instanceof SplFileInfo) {
+                    $value = $value->getPathname();
+                }
+
                 return [
                     'name' => basename($value, '.php'),
                     'chain' => $chainValue,
@@ -290,7 +294,7 @@ class ShowBrainCommand extends Command
      */
     private function getClassFullNameFromFile(string $filePath): string
     {
-        $content = file_get_contents($filePath);
+        $content = File::get($filePath);
         $namespace = '';
         $class = '';
 

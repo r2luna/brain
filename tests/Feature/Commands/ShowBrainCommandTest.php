@@ -53,7 +53,7 @@ test('command displays processes and tasks correctly', function () {
     File::shouldReceive('files')
         ->with(app_path('Brain/Users/Processes'))
         ->andReturn([
-            new SplFileInfo(app_path('Brain/Users/Processes/RegisterUserProcess.php')),
+            'Brain/Users/Processes/RegisterUserProcess.php',
         ]);
 
     // Mock process file content

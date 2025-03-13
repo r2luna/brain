@@ -362,7 +362,7 @@ class ShowBrainCommand extends Command
     }
 
     /**
-     * Get the list of directoreies for the given domain.
+     * Get the list of directories for the given domain.
      *
      * @return <string, string>[]
      */

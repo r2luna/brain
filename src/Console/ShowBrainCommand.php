@@ -34,17 +34,13 @@ class ShowBrainCommand extends Command
 
     /**
      * The lines to display.
-     *
-     * @var array
      */
-    private $lines = [];
+    private array $lines = [];
 
     /**
      * The terminal width.
-     *
-     * @var int|null
      */
-    private $terminalWidth = null;
+    private ?int $terminalWidth = null;
 
     /**
      * Execute the console command.
@@ -77,9 +73,9 @@ class ShowBrainCommand extends Command
             $maxDomain = $this->getDomainWithLongerName($map);
 
             foreach ($domain['processes'] as $process) {
-                $spaces = str_repeat(' ', max($maxDomain + 4 - mb_strlen($currentDomain), 0));
+                $spaces = str_repeat(' ', max($maxDomain + 4 - mb_strlen((string) $currentDomain), 0));
 
-                $this->addProcessLine($process, $currentDomain, $maxDomain, $spaces);
+                $this->addProcessLine($process, $currentDomain, $spaces);
 
                 foreach ($process['tasks'] as $taskIndex => $task) {
                     $taskIndex++;
@@ -95,12 +91,12 @@ class ShowBrainCommand extends Command
     /**
      * Add a process line to the lines array.
      */
-    private function addProcessLine(array $process, string $currentDomain, string $maxDomain, string $spaces): void
+    private function addProcessLine(array $process, string $currentDomain, string $spaces): void
     {
         $processName = $process['name'];
         $inChain = $process['chain'] ? ' chained' : '.';
         $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain) - 5, 0));
-        $dots = empty($dots) ? $dots : " $dots";
+        $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
 
         $this->lines[] = [
             sprintf(
@@ -118,7 +114,7 @@ class ShowBrainCommand extends Command
     /**
      * Add a properties line to the lines array.
      */
-    private function addPropertiesLine(string $taskSpaces, array $task)
+    private function addPropertiesLine(string $taskSpaces, array $task): void
     {
         if (! $this->output->isVerbose()) {
             return;
@@ -179,7 +175,7 @@ class ShowBrainCommand extends Command
         $taskSpaces = str_repeat(' ', 3 + mb_strlen($currentDomain) + mb_strlen($spaces));
         $taskQueued = $task['queue'] ? ' queued' : '.';
         $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$taskIndex.$taskName) - mb_strlen($taskQueued) - 2);
-        $taskDots = empty($taskDots) ? $taskDots : " $taskDots";
+        $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
 
         $this->lines[] = [
             sprintf(
@@ -213,7 +209,7 @@ class ShowBrainCommand extends Command
     private function getDomainWithLongerName(Collection $map): string
     {
         return mb_strlen(
-            $map->sortByDesc(fn ($value) => mb_strlen($value['domain']))
+            (string) $map->sortByDesc(fn ($value): int => mb_strlen((string) $value['domain']))
                 ->first()['domain']
         );
     }
@@ -252,8 +248,8 @@ class ShowBrainCommand extends Command
     private function domains(): array
     {
         return collect(File::directories(app_path('Brain')))
-            ->when($this->option('filter'), fn ($collection) => $collection->filter(fn ($value) => basename($value) === $this->option('filter')))
-            ->flatMap(fn ($value) => [basename($value) => $value])
+            ->when($this->option('filter'), fn ($collection) => $collection->filter(fn ($value): bool => basename((string) $value) === $this->option('filter')))
+            ->flatMap(fn ($value) => [basename((string) $value) => $value])
             ->toArray();
     }
 
@@ -277,7 +273,7 @@ class ShowBrainCommand extends Command
                     'name' => basename($value, '.php'),
                     'chain' => $chainValue,
                     'tasks' => collect($reflection->getProperty('tasks')->getValue(new $reflection->name([])))
-                        ->map(function ($task) {
+                        ->map(function ($task): ?array {
                             $reflection = $this->getReflectionClass($task, true);
                             $reflection->implementsInterface(ShouldQueue::class);
 
@@ -291,7 +287,7 @@ class ShowBrainCommand extends Command
                             $classDocBlock = $docBlockFactory->create($docBlock);
 
                             $properties = collect($classDocBlock->getTags())
-                                ->map(function (Tag $tag) {
+                                ->map(function (Tag $tag): ?array {
                                     if ($tag instanceof PropertyRead) {
                                         return [
                                             'name' => $tag->getVariableName(),
@@ -342,9 +338,7 @@ class ShowBrainCommand extends Command
             $class = $this->getClassFullNameFromFile($value);
         }
 
-        $reflection = new ReflectionClass($class);
-
-        return $reflection;
+        return new ReflectionClass($class);
     }
 
     /**
@@ -364,9 +358,7 @@ class ShowBrainCommand extends Command
             $class = $matches[1];
         }
 
-        $return = '\\'.($namespace ? $namespace.'\\'.$class : $class);
-
-        return $return;
+        return '\\'.($namespace !== '' && $namespace !== '0' ? $namespace.'\\'.$class : $class);
     }
 
     /**
@@ -377,7 +369,7 @@ class ShowBrainCommand extends Command
     private function domainDirectories(string $path): array
     {
         return collect(File::directories($path))
-            ->flatMap(fn ($value) => [basename($value) => $value])
+            ->flatMap(fn ($value) => [basename((string) $value) => $value])
             ->toArray();
     }
 
@@ -389,7 +381,7 @@ class ShowBrainCommand extends Command
     private function files(string $path): array
     {
         return collect(File::files($path))
-            ->map(fn ($value) => basename($value, '.php'))
+            ->map(fn ($value): string => basename((string) $value, '.php'))
             ->toArray();
     }
 }

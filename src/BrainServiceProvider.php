@@ -41,7 +41,7 @@ class BrainServiceProvider extends ServiceProvider
      * This method binds the specified command classes to the application's
      * command registry, making them available for execution via the
      * command line interface.
-     */
+     **/
     private function registerCommands(): void
     {
         $this->commands([

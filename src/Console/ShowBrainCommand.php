@@ -263,7 +263,7 @@ class ShowBrainCommand extends Command
         $path = $path.DIRECTORY_SEPARATOR.'Processes';
 
         return collect(File::files($path))
-            ->map(function ($value): array {
+            ->map(function ($value) use ($path): array {
                 $reflection = $this->getReflectionClass($value);
                 $hasChainProperty = $reflection->hasProperty('chain');
                 $chainProperty = $hasChainProperty ? $reflection->getProperty('chain') : null;
@@ -276,58 +276,93 @@ class ShowBrainCommand extends Command
                 return [
                     'name' => basename($value, '.php'),
                     'chain' => $chainValue,
-                    'tasks' => collect($reflection->getProperty('tasks')->getValue(new $reflection->name([])))
-                        ->map(function ($task): ?array {
-                            $reflection = $this->getReflectionClass($task, true);
-                            $reflection->implementsInterface(ShouldQueue::class);
-
-                            $docBlockFactory = DocBlockFactory::createInstance();
-                            $docBlock = $reflection->getDocComment();
-
-                            if (is_bool($docBlock)) {
-                                return null;
-                            }
-
-                            $classDocBlock = $docBlockFactory->create($docBlock);
-
-                            $properties = collect($classDocBlock->getTags())
-                                ->map(function (Tag $tag): ?array {
-                                    if ($tag instanceof PropertyRead) {
-                                        return [
-                                            'name' => $tag->getVariableName(),
-                                            'type' => $tag->getType(),
-                                            'output' => false,
-                                        ];
-                                    }
-
-                                    if ($tag instanceof Property) {
-                                        return [
-                                            'name' => $tag->getVariableName(),
-                                            'type' => $tag->getType(),
-                                            'output' => true,
-                                        ];
-                                    }
-
-                                    return null;
-                                })
-                                ->filter()
-                                ->sortBy('output')
-                                ->values()
-                                ->toArray();
-
-                            return empty($properties) ? null : [
-                                'name' => $reflection->getShortName(),
-                                'fullName' => $reflection->name,
-                                'queue' => $reflection->implementsInterface(ShouldQueue::class),
-                                'properties' => $properties,
-                            ];
-                        })
-                        ->filter()
-                        ->values()
-                        ->toArray(),
+                    'queries' => $this->getQueriesFor($path),
+                    'tasks' => $this->getTasksFor($reflection),
                 ];
             })
             ->toArray();
+    }
+
+    /**
+     * Get the list of queries for the given domain.
+     */
+    private function getQueriesFor(string $domain): ?array
+    {
+        $path = $domain.DIRECTORY_SEPARATOR.'Queries';
+
+        if (! File::isDirectory($path)) {
+            return null;
+        }
+
+        return collect(File::files($path))
+            ->map(function (SplFileInfo $file): array {
+                $reflection = $this->getReflectionClass($file, true);
+
+                return [
+                    'name' => basename($file->getPathname(), '.php'),
+                    'properties' => $this->getPropertiesFor($reflection),
+                ];
+            })
+            ->toArray();
+    }
+
+    /**
+     * Get the properties for the given reflection class.
+     */
+    private function getPropertiesFor(ReflectionClass $reflection): ?array
+    {
+        $docBlockFactory = DocBlockFactory::createInstance();
+        $docBlock = $reflection->getDocComment();
+
+        if (is_bool($docBlock)) {
+            return null;
+        }
+
+        $classDocBlock = $docBlockFactory->create($docBlock);
+
+        return collect($classDocBlock->getTags())
+            ->map(function (Tag $tag): ?array {
+                if ($tag instanceof PropertyRead) {
+                    return [
+                        'name' => $tag->getVariableName(),
+                        'type' => $tag->getType(),
+                        'output' => false,
+                    ];
+                }
+
+                if ($tag instanceof Property) {
+                    return [
+                        'name' => $tag->getVariableName(),
+                        'type' => $tag->getType(),
+                        'output' => true,
+                    ];
+                }
+
+                return null;
+            })
+            ->filter()
+            ->sortBy('output')
+            ->values()
+            ->toArray();
+    }
+
+    private function getTasksFor(object $process): array
+    {
+        return collect($process->getProperty('tasks')->getValue(new $process->name([])))
+            ->map(function ($task): ?array {
+                $reflection = $this->getReflectionClass($task, true);
+
+                return empty($properties) ? null : [
+                    'name' => $reflection->getShortName(),
+                    'fullName' => $reflection->name,
+                    'queue' => $reflection->implementsInterface(ShouldQueue::class),
+                    'properties' => $this->getPropertiesFor($reflection),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->toArray();
+
     }
 
     /**

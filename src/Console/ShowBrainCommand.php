@@ -70,10 +70,10 @@ class ShowBrainCommand extends Command
     {
         foreach ($map as $domain) {
             $currentDomain = $domain['domain'];
-            $maxDomain = $this->getDomainWithLongerName($map);
+            $longestDomain = $this->getLengthOfTheLongestDomain($map);
 
             foreach ($domain['processes'] as $process) {
-                $spaces = str_repeat(' ', max($maxDomain + 4 - mb_strlen((string) $currentDomain), 0));
+                $spaces = str_repeat(' ', max($longestDomain + 4 - mb_strlen((string) $currentDomain), 0));
 
                 $this->addProcessLine($process, $currentDomain, $spaces);
 
@@ -206,7 +206,7 @@ class ShowBrainCommand extends Command
     /**
      * Get domain with longer name to set the max width for the domain column.
      */
-    private function getDomainWithLongerName(Collection $map): string
+    private function getLengthOfTheLongestDomain(Collection $map): int
     {
         return mb_strlen(
             (string) $map->sortByDesc(fn ($value): int => mb_strlen((string) $value['domain']))
@@ -268,6 +268,10 @@ class ShowBrainCommand extends Command
                 $hasChainProperty = $reflection->hasProperty('chain');
                 $chainProperty = $hasChainProperty ? $reflection->getProperty('chain') : null;
                 $chainValue = $chainProperty->getValue(new $reflection->name([]));
+
+                if ($value instanceof SplFileInfo) {
+                    $value = $value->getPathname();
+                }
 
                 return [
                     'name' => basename($value, '.php'),

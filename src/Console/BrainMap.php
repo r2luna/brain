@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Brain\Console;
 
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\File;
+use phpDocumentor\Reflection\DocBlock\Tag;
+use phpDocumentor\Reflection\DocBlock\Tags\Property;
+use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
+use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 use SplFileInfo;
 
@@ -21,10 +26,11 @@ class BrainMap
     {
         $domains = collect(File::directories(app_path('Brain')))
             ->flatMap(fn ($value) => [basename((string) $value) => $value])
-            ->map(fn ($value, $key) => [
-                'domain' => $key,
-                'path' => $value,
-                'processes' => $this->loadProcessesFor($value),
+            ->map(fn ($domainPath, $domain) => [
+                'domain' => $domain,
+                'path' => $domainPath,
+                'processes' => $this->loadProcessesFor($domainPath),
+                'tasks' => $this->loadTasksFor($domainPath),
             ])
             ->toArray();
 
@@ -36,7 +42,7 @@ class BrainMap
         $path = $domainPath.DIRECTORY_SEPARATOR.'Processes';
 
         return collect(File::files($path))
-            ->map(function ($value) use ($domainPath): array {
+            ->map(function ($value): array {
                 $reflection = $this->getReflectionClass($value);
                 $hasChainProperty = $reflection->hasProperty('chain');
                 $chainProperty = $hasChainProperty ? $reflection->getProperty('chain') : null;
@@ -52,7 +58,6 @@ class BrainMap
                 ];
             })
             ->toArray();
-
     }
 
     /**
@@ -88,5 +93,60 @@ class BrainMap
         }
 
         return '\\'.($namespace !== '' && $namespace !== '0' ? $namespace.'\\'.$class : $class);
+    }
+
+    private function loadTasksFor(string $domainPath): array
+    {
+        $path = $domainPath.DIRECTORY_SEPARATOR.'Tasks';
+
+        return collect(File::files($path))
+            ->map(function ($task): array {
+                $reflection = $this->getReflectionClass($task);
+
+                return [
+                    'name' => $reflection->getShortName(),
+                    'fullName' => $reflection->name,
+                    'queue' => $reflection->implementsInterface(ShouldQueue::class),
+                    'properties' => $this->getPropertiesFor($reflection),
+                ];
+            })
+            ->toArray();
+    }
+
+    private function getPropertiesFor(ReflectionClass $reflection): ?array
+    {
+        $docBlockFactory = DocBlockFactory::createInstance();
+        $docBlock = $reflection->getDocComment();
+
+        if (is_bool($docBlock)) {
+            return null;
+        }
+
+        $classDocBlock = $docBlockFactory->create($docBlock);
+
+        return collect($classDocBlock->getTags())
+            ->map(function (Tag $tag): ?array {
+                if ($tag instanceof PropertyRead) {
+                    return [
+                        'name' => $tag->getVariableName(),
+                        'type' => $tag->getType(),
+                        'direction' => 'output',
+                    ];
+                }
+
+                if ($tag instanceof Property) {
+                    return [
+                        'name' => $tag->getVariableName(),
+                        'type' => $tag->getType(),
+                        'direction' => 'input',
+                    ];
+                }
+
+                return null;
+            })
+            ->filter()
+            ->sortBy('direction')
+            ->values()
+            ->toArray();
     }
 }

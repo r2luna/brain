@@ -42,30 +42,25 @@ class BrainMap
         $path = $domainPath.DIRECTORY_SEPARATOR.'Processes';
 
         return collect(File::files($path))
-            ->map(function ($value): array {
+            ->map(function (SplFileInfo $value) use ($domainPath): array {
                 $reflection = $this->getReflectionClass($value);
                 $hasChainProperty = $reflection->hasProperty('chain');
                 $chainProperty = $hasChainProperty ? $reflection->getProperty('chain') : null;
                 $chainValue = $chainProperty->getValue(new $reflection->name([]));
-
-                if ($value instanceof SplFileInfo) {
-                    $value = $value->getPathname();
-                }
+                $value = $value->getPathname();
 
                 return [
                     'name' => basename($value, '.php'),
                     'chain' => $chainValue,
+                    'tasks' => $this->loadTasksFor($domainPath),
                 ];
             })
             ->toArray();
     }
 
-    /**
-     * Get the reflection class for the given value.
-     */
-    private function getReflectionClass(SplFileInfo|string $value, bool $isClass = false): ReflectionClass
+    private function getReflectionClass(SplFileInfo|string $value): ReflectionClass
     {
-        if ($isClass) {
+        if (is_string($value)) {
             $class = $value;
         } else {
             $value = $value instanceof SplFileInfo ? $value->getPathname() : $value;
@@ -75,9 +70,6 @@ class BrainMap
         return new ReflectionClass($class);
     }
 
-    /**
-     * Get the full class name from a file.
-     */
     private function getClassFullNameFromFile(string $filePath): string
     {
         $content = file_get_contents($filePath);

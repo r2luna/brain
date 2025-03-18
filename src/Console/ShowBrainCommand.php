@@ -22,6 +22,7 @@ class ShowBrainCommand extends Command
      * The name and signature of the console command.
      *
      * @var string
+     *
      */
     protected $signature = 'brain:show {--filter=}';
 
@@ -31,16 +32,6 @@ class ShowBrainCommand extends Command
      * @var string
      */
     protected $description = 'Show Brain Mapping';
-
-    /**
-     * The lines to display.
-     */
-    private array $lines = [];
-
-    /**
-     * The terminal width.
-     */
-    private ?int $terminalWidth = null;
 
     /**
      * Colors that represent the different elements.
@@ -53,10 +44,24 @@ class ShowBrainCommand extends Command
     ];
 
     /**
+     * The lines to display.
+     */
+    private array $lines = [];
+
+    /**
+     * The terminal width.
+     */
+    private ?int $terminalWidth = null;
+
+    /**
      * Execute the console command.
      */
     public function handle(): void
     {
+        $map = new BrainMap();
+
+        dd($map);
+
         if (empty($brain = $this->getBrainMap())) {
             $this->components->error('Your brain is empty. You should start adding some processes, tasks, and queries.');
 
@@ -123,7 +128,7 @@ class ShowBrainCommand extends Command
     {
         $processName = $process['name'];
         $inChain = $process['chain'] ? ' chained' : '.';
-        $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain . $processName . $spaces . $inChain . 'PROC  ') - 5, 0));
+        $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - 5, 0));
         $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
 
         $this->lines[] = [
@@ -204,7 +209,7 @@ class ShowBrainCommand extends Command
         $index = '';
         $queryName = $query['name'];
         $querySpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
-        $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces . $index . $queryName . 'QERY ') - 2);
+        $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces.$index.$queryName.'QERY ') - 2);
 
         $this->lines[] = [
             sprintf(
@@ -230,7 +235,7 @@ class ShowBrainCommand extends Command
         $taskName = $task['name'];
         $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
         $taskQueued = $task['queue'] ? ' queued' : '.';
-        $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces . $taskIndex . $taskName . 'TASK  ') - mb_strlen($taskQueued) - 2);
+        $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$taskIndex.$taskName.'TASK  ') - mb_strlen($taskQueued) - 2);
         $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
 
         $this->lines[] = [
@@ -267,7 +272,7 @@ class ShowBrainCommand extends Command
     private function getLengthOfTheLongestDomain(Collection $map): int
     {
         return mb_strlen(
-            (string) $map->sortByDesc(fn($value): int => mb_strlen((string) $value['domain']))
+            (string) $map->sortByDesc(fn ($value): int => mb_strlen((string) $value['domain']))
                 ->first()['domain']
         );
     }
@@ -306,8 +311,8 @@ class ShowBrainCommand extends Command
     private function domains(): array
     {
         return collect(File::directories(app_path('Brain')))
-            ->when($this->option('filter'), fn($collection) => $collection->filter(fn($value): bool => basename((string) $value) === $this->option('filter')))
-            ->flatMap(fn($value) => [basename((string) $value) => $value])
+            ->when($this->option('filter'), fn ($collection) => $collection->filter(fn ($value): bool => basename((string) $value) === $this->option('filter')))
+            ->flatMap(fn ($value) => [basename((string) $value) => $value])
             ->toArray();
     }
 
@@ -318,7 +323,7 @@ class ShowBrainCommand extends Command
      */
     private function getProcessesFor(string $domainPath): array
     {
-        $path = $domainPath . DIRECTORY_SEPARATOR . 'Processes';
+        $path = $domainPath.DIRECTORY_SEPARATOR.'Processes';
 
         return collect(File::files($path))
             ->map(function ($value) use ($domainPath): array {
@@ -346,7 +351,7 @@ class ShowBrainCommand extends Command
      */
     private function getQueriesFor(string $domain): ?array
     {
-        $path = $domain . DIRECTORY_SEPARATOR . 'Queries';
+        $path = $domain.DIRECTORY_SEPARATOR.'Queries';
 
         if (! File::isDirectory($path)) {
             return null;
@@ -454,7 +459,7 @@ class ShowBrainCommand extends Command
             $class = $matches[1];
         }
 
-        return '\\' . ($namespace !== '' && $namespace !== '0' ? $namespace . '\\' . $class : $class);
+        return '\\'.($namespace !== '' && $namespace !== '0' ? $namespace.'\\'.$class : $class);
     }
 
     /**
@@ -465,7 +470,7 @@ class ShowBrainCommand extends Command
     private function domainDirectories(string $path): array
     {
         return collect(File::directories($path))
-            ->flatMap(fn($value) => [basename((string) $value) => $value])
+            ->flatMap(fn ($value) => [basename((string) $value) => $value])
             ->toArray();
     }
 
@@ -477,7 +482,7 @@ class ShowBrainCommand extends Command
     private function files(string $path): array
     {
         return collect(File::files($path))
-            ->map(fn($value): string => basename((string) $value, '.php'))
+            ->map(fn ($value): string => basename((string) $value, '.php'))
             ->toArray();
     }
 }

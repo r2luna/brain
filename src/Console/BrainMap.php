@@ -45,18 +45,13 @@ class BrainMap
 {
     protected array $domains;
 
-    public function __construct()
-    {
-        $this->loadDomains();
-    }
-
     /**
      * Constructs a new instance of the BrainMap class and initializes the loaded domains.
      *
      * Upon construction, the class automatically invokes the `loadDomains` method
      * to populate the `$domains` property with metadata for each domain in the application.
      */
-    private function loadDomains(): void
+    public function load(): void
     {
         $domains = collect(File::directories(app_path('Brain')))
             ->flatMap(fn ($value) => [basename((string) $value) => $value])

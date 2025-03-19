@@ -22,7 +22,6 @@ class ShowBrainCommand extends Command
      * The name and signature of the console command.
      *
      * @var string
-     *
      */
     protected $signature = 'brain:show {--filter=}';
 
@@ -58,9 +57,10 @@ class ShowBrainCommand extends Command
      */
     public function handle(): void
     {
-        $map = new BrainMap();
+        $map = new BrainMap;
 
-        dd($map);
+        ds($map)
+            ->die();
 
         if (empty($brain = $this->getBrainMap())) {
             $this->components->error('Your brain is empty. You should start adding some processes, tasks, and queries.');
@@ -69,220 +69,6 @@ class ShowBrainCommand extends Command
         }
 
         $this->displayBrain($brain);
-    }
-
-    /**
-     * Display the output lines.
-     */
-    private function displayBrain(Collection $brain): void
-    {
-        $this->getTerminalWidth();
-
-        $this->createLines($brain);
-
-        $this->output->writeln(
-            collect($this->lines)->flatten()
-        );
-    }
-
-    /**
-     * Create the lines to display, based on the given map.
-     */
-    private function createLines(Collection $map): void
-    {
-        foreach ($map as $domain) {
-            $currentDomain = $domain['domain'];
-            $longestDomain = $this->getLengthOfTheLongestDomain($map);
-
-            foreach ($domain['processes'] as $process) {
-                $spaces = str_repeat(' ', max($longestDomain + 2 - mb_strlen((string) $currentDomain), 0));
-
-                $this->addProcessLine($process, $currentDomain, $spaces);
-
-                if ($process['tasks'] !== null) {
-
-                    foreach ($process['tasks'] as $taskIndex => $task) {
-                        $taskIndex++;
-                        $taskSpaces = $this->addTaskLine($task, $taskIndex, $currentDomain, $spaces);
-                        $this->addPropertiesLine($taskSpaces, $task);
-                    }
-                }
-
-                if ($process['queries'] !== null) {
-                    foreach ($process['queries'] as $index => $query) {
-                        $index++;
-                        $querySpaces = $this->addQueryLine($query, $index, $currentDomain, $spaces);
-                        $this->addPropertiesLine($querySpaces, $query);
-                    }
-                }
-
-                $this->addNewLine();
-            }
-        }
-    }
-
-    /**
-     * Add a process line to the lines array.
-     */
-    private function addProcessLine(array $process, string $currentDomain, string $spaces): void
-    {
-        $processName = $process['name'];
-        $inChain = $process['chain'] ? ' chained' : '.';
-        $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - 5, 0));
-        $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
-
-        $this->lines[] = [
-            sprintf(
-                '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  <fg=%s;options=bold>%s</><fg=#6C7280>%s%s</>',
-                $this->elemColors['DOMAIN'],
-                strtoupper($currentDomain),
-                $spaces,
-                $this->elemColors['PROC'],
-                'PROC',
-                'white',
-                $processName,
-                $dots,
-                $inChain
-            ),
-        ];
-    }
-
-    /**
-     * Add a properties line to the lines array.
-     */
-    private function addPropertiesLine(string $taskSpaces, array $task): void
-    {
-        if (! $this->output->isVerbose()) {
-            return;
-        }
-
-        if (collect($task['properties'])->contains('output', false)) {
-            $this->addProperties($task, $taskSpaces);
-        }
-
-        if (collect($task['properties'])->contains('output', true)) {
-            $this->addProperties($task, $taskSpaces, true);
-        }
-    }
-
-    /**
-     * Add properties to the lines array.
-     */
-    private function addProperties(array $task, string $taskSpaces, bool $output = false): void
-    {
-        $this->lines[] = [
-            sprintf(
-                '%s   <fg=#6C7280>%s</>',
-                $taskSpaces,
-                $output ? 'Output' : 'Required Properties'
-            ),
-        ];
-
-        foreach ($task['properties'] as $property) {
-            if ($output && $property['output']) {
-                continue;
-            }
-
-            $propertyIndex = '⇂ ';
-            $propertyName = $property['name'];
-            $propertyType = $property['type'];
-
-            $this->lines[] = [
-                sprintf(
-                    '%s   <fg=white>%s%s</><fg=#6C7280>: %s</>',
-                    $taskSpaces,
-                    $propertyIndex,
-                    $propertyName,
-                    $propertyType
-                ),
-            ];
-        }
-
-        $this->addNewLine();
-    }
-
-    /**
-     *  Add a query line to the lines array.
-     */
-    private function addQueryLine(array $query, int $index, string $currentDomain, string $spaces): string
-    {
-        $index = '';
-        $queryName = $query['name'];
-        $querySpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
-        $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces.$index.$queryName.'QERY ') - 2);
-
-        $this->lines[] = [
-            sprintf(
-                '%s<fg=%s;options=bold>%s</>  <fg=white;options=bold>%s%s</><fg=#6C7280>%s</>',
-                $querySpaces,
-                $this->elemColors['QERY'],
-                'QERY',
-                $index,
-                $queryName,
-                $queryDots
-            ),
-        ];
-
-        return $querySpaces;
-    }
-
-    /**
-     *  Add a task line to the lines array.
-     */
-    private function addTaskLine(array $task, int $taskIndex, string $currentDomain, string $spaces): string
-    {
-        $taskIndex = "{$taskIndex}. ";
-        $taskName = $task['name'];
-        $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
-        $taskQueued = $task['queue'] ? ' queued' : '.';
-        $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$taskIndex.$taskName.'TASK  ') - mb_strlen($taskQueued) - 2);
-        $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
-
-        $this->lines[] = [
-            sprintf(
-                '%s<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
-                $taskSpaces,
-                $this->elemColors['TASK'],
-                'TASK',
-                $taskIndex,
-                $taskName,
-                $taskDots,
-                $taskQueued
-            ),
-        ];
-
-        return $taskSpaces;
-    }
-
-    /**
-     * Add a new line to the lines array.
-     */
-    private function addNewLine(): void
-    {
-        if (end($this->lines) === ['']) {
-            return;
-        }
-
-        $this->lines[] = [''];
-    }
-
-    /**
-     * Get domain with longer name to set the max width for the domain column.
-     */
-    private function getLengthOfTheLongestDomain(Collection $map): int
-    {
-        return mb_strlen(
-            (string) $map->sortByDesc(fn ($value): int => mb_strlen((string) $value['domain']))
-                ->first()['domain']
-        );
-    }
-
-    /**
-     * Get the terminal width.
-     */
-    private function getTerminalWidth(): void
-    {
-        $this->terminalWidth = (new Terminal)->getWidth();
     }
 
     /**
@@ -344,6 +130,53 @@ class ShowBrainCommand extends Command
                 ];
             })
             ->toArray();
+    }
+
+    /**
+     * Get the list of files for the given directory.
+     *
+     * @return string[]
+     */
+    private function files(string $path): array
+    {
+        return collect(File::files($path))
+            ->map(fn ($value): string => basename((string) $value, '.php'))
+            ->toArray();
+    }
+
+    /**
+     * Get the reflection class for the given value.
+     */
+    private function getReflectionClass(SplFileInfo|string $value, bool $isClass = false): ReflectionClass
+    {
+        if ($isClass) {
+            $class = $value;
+        } else {
+            $value = $value instanceof SplFileInfo ? $value->getPathname() : $value;
+            $class = $this->getClassFullNameFromFile($value);
+        }
+
+        return new ReflectionClass($class);
+    }
+
+    /**
+     * Get the full class name from a file.
+     */
+    private function getClassFullNameFromFile(string $filePath): string
+    {
+        $content = file_get_contents($filePath);
+        $namespace = '';
+        $class = '';
+
+        if (preg_match('/namespace\s+(.+?);/', $content, $matches)) {
+            $namespace = $matches[1];
+        }
+
+        if (preg_match('/class\s+(\w+)/', $content, $matches)) {
+            $class = $matches[1];
+        }
+
+        return '\\'.($namespace !== '' && $namespace !== '0' ? $namespace.'\\'.$class : $class);
     }
 
     /**
@@ -428,38 +261,217 @@ class ShowBrainCommand extends Command
     }
 
     /**
-     * Get the reflection class for the given value.
+     * Display the output lines.
      */
-    private function getReflectionClass(SplFileInfo|string $value, bool $isClass = false): ReflectionClass
+    private function displayBrain(Collection $brain): void
     {
-        if ($isClass) {
-            $class = $value;
-        } else {
-            $value = $value instanceof SplFileInfo ? $value->getPathname() : $value;
-            $class = $this->getClassFullNameFromFile($value);
-        }
+        $this->getTerminalWidth();
 
-        return new ReflectionClass($class);
+        $this->createLines($brain);
+
+        $this->output->writeln(
+            collect($this->lines)->flatten()
+        );
     }
 
     /**
-     * Get the full class name from a file.
+     * Get the terminal width.
      */
-    private function getClassFullNameFromFile(string $filePath): string
+    private function getTerminalWidth(): void
     {
-        $content = file_get_contents($filePath);
-        $namespace = '';
-        $class = '';
+        $this->terminalWidth = (new Terminal)->getWidth();
+    }
 
-        if (preg_match('/namespace\s+(.+?);/', $content, $matches)) {
-            $namespace = $matches[1];
+    /**
+     * Create the lines to display, based on the given map.
+     */
+    private function createLines(Collection $map): void
+    {
+        foreach ($map as $domain) {
+            $currentDomain = $domain['domain'];
+            $longestDomain = $this->getLengthOfTheLongestDomain($map);
+
+            foreach ($domain['processes'] as $process) {
+                $spaces = str_repeat(' ', max($longestDomain + 2 - mb_strlen((string) $currentDomain), 0));
+
+                $this->addProcessLine($process, $currentDomain, $spaces);
+
+                if ($process['tasks'] !== null) {
+
+                    foreach ($process['tasks'] as $taskIndex => $task) {
+                        $taskIndex++;
+                        $taskSpaces = $this->addTaskLine($task, $taskIndex, $currentDomain, $spaces);
+                        $this->addPropertiesLine($taskSpaces, $task);
+                    }
+                }
+
+                if ($process['queries'] !== null) {
+                    foreach ($process['queries'] as $index => $query) {
+                        $index++;
+                        $querySpaces = $this->addQueryLine($query, $index, $currentDomain, $spaces);
+                        $this->addPropertiesLine($querySpaces, $query);
+                    }
+                }
+
+                $this->addNewLine();
+            }
+        }
+    }
+
+    /**
+     * Get domain with longer name to set the max width for the domain column.
+     */
+    private function getLengthOfTheLongestDomain(Collection $map): int
+    {
+        return mb_strlen(
+            (string) $map->sortByDesc(fn ($value): int => mb_strlen((string) $value['domain']))
+                ->first()['domain']
+        );
+    }
+
+    /**
+     * Add a process line to the lines array.
+     */
+    private function addProcessLine(array $process, string $currentDomain, string $spaces): void
+    {
+        $processName = $process['name'];
+        $inChain = $process['chain'] ? ' chained' : '.';
+        $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - 5, 0));
+        $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
+
+        $this->lines[] = [
+            sprintf(
+                '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  <fg=%s;options=bold>%s</><fg=#6C7280>%s%s</>',
+                $this->elemColors['DOMAIN'],
+                strtoupper($currentDomain),
+                $spaces,
+                $this->elemColors['PROC'],
+                'PROC',
+                'white',
+                $processName,
+                $dots,
+                $inChain
+            ),
+        ];
+    }
+
+    /**
+     *  Add a task line to the lines array.
+     */
+    private function addTaskLine(array $task, int $taskIndex, string $currentDomain, string $spaces): string
+    {
+        $taskIndex = "{$taskIndex}. ";
+        $taskName = $task['name'];
+        $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
+        $taskQueued = $task['queue'] ? ' queued' : '.';
+        $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$taskIndex.$taskName.'TASK  ') - mb_strlen($taskQueued) - 2);
+        $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
+
+        $this->lines[] = [
+            sprintf(
+                '%s<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
+                $taskSpaces,
+                $this->elemColors['TASK'],
+                'TASK',
+                $taskIndex,
+                $taskName,
+                $taskDots,
+                $taskQueued
+            ),
+        ];
+
+        return $taskSpaces;
+    }
+
+    /**
+     * Add a properties line to the lines array.
+     */
+    private function addPropertiesLine(string $taskSpaces, array $task): void
+    {
+        if (! $this->output->isVerbose()) {
+            return;
         }
 
-        if (preg_match('/class\s+(\w+)/', $content, $matches)) {
-            $class = $matches[1];
+        if (collect($task['properties'])->contains('output', false)) {
+            $this->addProperties($task, $taskSpaces);
         }
 
-        return '\\'.($namespace !== '' && $namespace !== '0' ? $namespace.'\\'.$class : $class);
+        if (collect($task['properties'])->contains('output', true)) {
+            $this->addProperties($task, $taskSpaces, true);
+        }
+    }
+
+    /**
+     * Add properties to the lines array.
+     */
+    private function addProperties(array $task, string $taskSpaces, bool $output = false): void
+    {
+        $this->lines[] = [
+            sprintf(
+                '%s   <fg=#6C7280>%s</>',
+                $taskSpaces,
+                $output ? 'Output' : 'Required Properties'
+            ),
+        ];
+
+        foreach ($task['properties'] as $property) {
+            if ($output && $property['output']) {
+                continue;
+            }
+
+            $propertyIndex = '⇂ ';
+            $propertyName = $property['name'];
+            $propertyType = $property['type'];
+
+            $this->lines[] = [
+                sprintf(
+                    '%s   <fg=white>%s%s</><fg=#6C7280>: %s</>',
+                    $taskSpaces,
+                    $propertyIndex,
+                    $propertyName,
+                    $propertyType
+                ),
+            ];
+        }
+
+        $this->addNewLine();
+    }
+
+    /**
+     * Add a new line to the lines array.
+     */
+    private function addNewLine(): void
+    {
+        if (end($this->lines) === ['']) {
+            return;
+        }
+
+        $this->lines[] = [''];
+    }
+
+    /**
+     *  Add a query line to the lines array.
+     */
+    private function addQueryLine(array $query, int $index, string $currentDomain, string $spaces): string
+    {
+        $index = '';
+        $queryName = $query['name'];
+        $querySpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
+        $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces.$index.$queryName.'QERY ') - 2);
+
+        $this->lines[] = [
+            sprintf(
+                '%s<fg=%s;options=bold>%s</>  <fg=white;options=bold>%s%s</><fg=#6C7280>%s</>',
+                $querySpaces,
+                $this->elemColors['QERY'],
+                'QERY',
+                $index,
+                $queryName,
+                $queryDots
+            ),
+        ];
+
+        return $querySpaces;
     }
 
     /**
@@ -471,18 +483,6 @@ class ShowBrainCommand extends Command
     {
         return collect(File::directories($path))
             ->flatMap(fn ($value) => [basename((string) $value) => $value])
-            ->toArray();
-    }
-
-    /**
-     * Get the list of files for the given directory.
-     *
-     * @return string[]
-     */
-    private function files(string $path): array
-    {
-        return collect(File::files($path))
-            ->map(fn ($value): string => basename((string) $value, '.php'))
             ->toArray();
     }
 }

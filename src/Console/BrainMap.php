@@ -30,20 +30,25 @@ use SplFileInfo;
  * - Utilize reflection to analyze PHP class structure and properties.
  *
  * Properties:
- * - `domains`: An array containing mappings of loaded domains with their metadata.
+ * - `map`: An array containing mappings of loaded domains with their metadata.
  *
  * Methods:
- * - `__construct()`: Initializes the class and loads the domains.
- * - `loadDomains()`: Loads all available domains and their respective components.
+ * - `load()`: Loads all available domains and their respective components into the `map` property.
+ * - `getProcessesTasks(ReflectionClass $process)`: Retrieves tasks associated with a specific process.
  * - `loadProcessesFor(string $domainPath)`: Retrieves process metadata for a given domain path.
  * - `loadTasksFor(string $domainPath)`: Retrieves task metadata for a given domain path.
  * - `loadQueriesFor(string $domainPath)`: Retrieves query metadata for a given domain path.
+ * - `getTask(SplFileInfo|string $task)`: Extracts metadata for a specific task.
  * - `getPropertiesFor(ReflectionClass $reflection)`: Extracts properties metadata for a given class through docblock parsing.
  * - `getReflectionClass(SplFileInfo|string $value)`: Creates and returns a ReflectionClass instance for a given file or class.
+ * - `getClassFullNameFromFile(string $filePath)`: Retrieves the fully qualified class name from a file.
  */
 class BrainMap
 {
-    protected array $domains;
+    /**
+     * Where the final map will store
+     */
+    public array $map;
 
     /**
      * Constructs a new instance of the BrainMap class and initializes the loaded domains.
@@ -53,9 +58,9 @@ class BrainMap
      */
     public function load(): void
     {
-        $domains = collect(File::directories(app_path('Brain')))
-            ->flatMap(fn($value) => [basename((string) $value) => $value])
-            ->map(fn($domainPath, $domain) => [
+        $domains = collect(File::directories(config('brain.root')))
+            ->flatMap(fn ($value) => [basename((string) $value) => $value])
+            ->map(fn ($domainPath, $domain) => [
                 'domain' => $domain,
                 'path' => $domainPath,
                 'processes' => $this->loadProcessesFor($domainPath),
@@ -64,13 +69,13 @@ class BrainMap
             ])
             ->toArray();
 
-        $this->domains = $domains;
+        $this->map = $domains;
     }
 
     public function getProcessesTasks(ReflectionClass $process): array
     {
         return collect($process->getProperty('tasks')->getValue(new $process->name([])))
-            ->map(fn(string $task): array => $this->getTask($task))
+            ->map(fn (string $task): array => $this->getTask($task))
             ->filter()
             ->values()
             ->toArray();
@@ -91,7 +96,7 @@ class BrainMap
      */
     private function loadProcessesFor(string $domainPath): array
     {
-        $path = $domainPath . DIRECTORY_SEPARATOR . 'Processes';
+        $path = $domainPath.DIRECTORY_SEPARATOR.'Processes';
 
         if (! is_dir($path)) {
             return [];
@@ -131,14 +136,14 @@ class BrainMap
      */
     private function loadTasksFor(string $domainPath): array
     {
-        $path = $domainPath . DIRECTORY_SEPARATOR . 'Tasks';
+        $path = $domainPath.DIRECTORY_SEPARATOR.'Tasks';
 
         if (! is_dir($path)) {
             return [];
         }
 
         return collect(File::files($path))
-            ->map(fn(SplFileInfo $task): array => $this->getTask($task))
+            ->map(fn (SplFileInfo $task): array => $this->getTask($task))
             ->toArray();
     }
 
@@ -216,7 +221,7 @@ class BrainMap
      */
     private function loadQueriesFor(string $domainPath): array
     {
-        $path = $domainPath . DIRECTORY_SEPARATOR . 'Queries';
+        $path = $domainPath.DIRECTORY_SEPARATOR.'Queries';
 
         if (! is_dir($path)) {
             return [];
@@ -294,7 +299,7 @@ class BrainMap
             $class = $matches[1];
         }
 
-        return '\\' . ($namespace !== '' && $namespace !== '0' ? $namespace . '\\' . $class : $class);
+        return '\\'.($namespace !== '' && $namespace !== '0' ? $namespace.'\\'.$class : $class);
     }
 
     // endregion

@@ -16,14 +16,27 @@ use Illuminate\Support\ServiceProvider;
  * class provided by Laravel.
  *
  * Methods:
+ * - register(): Merges the package's configuration file with the application's configuration, ensuring that the configuration values defined in 'config/brain.php' are available under the 'brain' namespace.
  * - boot(): Called after all other service providers have been registered. It is used to register any commands or perform any bootstrapping tasks.
  * - registerCommands(): Registers the console commands for the application, binding the specified command classes to the application's command registry.
- *
- * TODO:
- * - offerPublishing(): Method to publish the entire Architecture folder inside the project for user modification. Currently commented out and not implemented.
  */
 class BrainServiceProvider extends ServiceProvider
 {
+    /**
+     * Register any application services.
+     *
+     * This method merges the package's configuration file with the application's
+     * configuration. It ensures that the configuration values defined in
+     * 'config/brain.php' are available under the 'brain' namespace.
+     */
+    public function register(): void
+    {
+        $this->mergeConfigFrom(
+            __DIR__.'/../config/brain.php',
+            'brain'
+        );
+    }
+
     /**
      * Boot the service provider.
      *
@@ -33,6 +46,7 @@ class BrainServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerCommands();
+        $this->offerPublishing();
     }
 
     /**
@@ -53,19 +67,18 @@ class BrainServiceProvider extends ServiceProvider
     }
 
     /**
-     * ----------------------------------------------------
-     * TODO: Publish the entire Architecture folder
-     * ----------------------------------------------------
-     * There is no config file for now
-     * However, we can publish the entire Archtecture
-     * folder inside the project and let the user modify it
-     * according to their needs
-     * ----------------------------------------------------
+     * Offer the publishing of configuration files for the package.
+     *
+     * This method registers the publishing of the package's configuration file
+     * to the application's configuration directory, allowing users to customize
+     * the package's behavior.
      */
-    // private function offerPublishing(): void
-    // {
-    //     if (! $this->app->runningInConsole()) {
-    //         return;
-    //     }
-    // }
+    private function offerPublishing(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../config/brain.php' => config_path('brain.php'),
+            ]);
+        }
+    }
 }

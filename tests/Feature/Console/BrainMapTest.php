@@ -69,6 +69,15 @@ describe('getPropertiesFor testsuite', function () {
             ->and($output)
             ->toMatchArray([]);
     });
+
+    it('should return null if there is no docblock', function () {
+        $reflection = new ReflectionClass('\Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4');
+
+        $method = $this->reflection->getMethod('getPropertiesFor');
+        $output = $method->invokeArgs($this->object, [$reflection]);
+
+        expect($output)->toBeNull();
+    });
 });
 
 describe('loadQueriesFor testsuite', function () {

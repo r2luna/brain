@@ -33,7 +33,17 @@ describe('loadProcessesFor testsuite', function () {
         expect($output)->toHaveCount(0);
     });
 
-    it('should check if the process is in chain', function () {})->todo();
+    it('should check if the process is in chain', function () {
+        $method = $this->reflection->getMethod('loadProcessesFor');
+        $path = __DIR__ . '/../Fixtures/Brain/Example2';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(1)
+            ->and($output[0])->toMatchArray([
+                'name' => 'ExampleProcess2',
+                'chain' => true,
+            ]);
+    });
 });
 
 describe('loadTasksFor testsuite', function () {

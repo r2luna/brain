@@ -154,7 +154,7 @@ class BrainMap
         $docBlock = $reflection->getDocComment();
 
         if (is_bool($docBlock)) {
-            return null;
+            return [];
         }
 
         $classDocBlock = $docBlockFactory->create($docBlock);

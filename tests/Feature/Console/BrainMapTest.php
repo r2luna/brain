@@ -7,6 +7,57 @@ beforeEach(function () {
     $this->reflection = new ReflectionClass(get_class($this->object));
 });
 
+describe('loadTasksFor testsuite', function () {
+    it('should load tasks from a given path', function () {
+        $method = $this->reflection->getMethod('loadTasksFor');
+        $path = __DIR__.'/../Fixtures/Brain/Example';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(4)
+            ->and($output)->toMatchArray([
+                [
+                    'name' => 'ExampleTask',
+                    'fullName' => 'Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask',
+                    'queue' => false,
+                    'properties' => [
+                        ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
+                        ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
+                    ],
+                ],
+                [
+                    'name' => 'ExampleTask2',
+                    'fullName' => 'Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask2',
+                    'queue' => false,
+                    'properties' => [
+                        ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
+                        ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
+                        ['name' => 'id', 'type' => 'int', 'direction' => 'input'],
+                    ],
+                ],
+                [
+                    'name' => 'ExampleTask3',
+                    'fullName' => 'Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask3',
+                    'queue' => false,
+                    'properties' => [],
+                ],
+                [
+                    'name' => 'ExampleTask4',
+                    'fullName' => 'Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4',
+                    'queue' => true,
+                    'properties' => [],
+                ],
+            ]);
+    });
+
+    it('should return an empty array if the directory does not exists', function () {
+        $method = $this->reflection->getMethod('loadTasksFor');
+        $path = __DIR__.'/../Fixtures/Brain/Example3';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(0);
+    });
+});
+
 describe('getPropertiesFor testsuite', function () {
     it('should get properties from a dockblock', function () {
         $reflection = new ReflectionClass('\Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask');
@@ -74,7 +125,7 @@ describe('getPropertiesFor testsuite', function () {
         $method = $this->reflection->getMethod('getPropertiesFor');
         $output = $method->invokeArgs($this->object, [$reflection]);
 
-        expect($output)->toBeNull();
+        expect($output)->toBeEmpty();
     });
 });
 

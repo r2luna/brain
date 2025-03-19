@@ -38,6 +38,19 @@ describe('loadQueriesFor testsuite', function () {
                 ],
             ]);
     });
+
+    it('should return an empty array when there is no construct', function () {
+        $method = $this->reflection->getMethod('loadQueriesFor');
+        $path = __DIR__ . '/../Fixtures/Brain/Example2';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(1)
+            ->and($output[0])->toMatchArray([
+                'name' => 'ExampleQuery',
+                'fullName' => 'Tests\Feature\Fixtures\Brain\Example2\Queries\ExampleQuery',
+                'properties' => [],
+            ]);
+    });
 });
 
 describe('getReflectionClass testsuite', function () {

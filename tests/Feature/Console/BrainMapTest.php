@@ -8,11 +8,32 @@ beforeEach(function () {
 });
 
 describe('loadProcessesFor testsuite', function () {
-    it('should list all processes in a dir', function () {})->todo();
+    it('should list all processes in a dir', function () {
+        $method = $this->reflection->getMethod('loadProcessesFor');
+        $path = __DIR__ . '/../Fixtures/Brain/Example';
+        $output = $method->invokeArgs($this->object, [$path]);
 
-    it('should return an empty array if dir doesnt exists', function () {})->todo();
+        expect($output)->toHaveCount(1)
+            ->and($output)->toMatchArray([
+                [
+                    'name' => 'ExampleProcess',
+                    'chain' => false,
+                    'tasks' => [
+                        ['name' => 'ExampleTask4', 'fullName' => 'Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4', 'queue' => true, 'properties' => []],
+                    ],
+                ],
+            ]);
+    });
 
-    it('should check if the process is in chain', function () {});
+    it('should return an empty array if dir doesnt exists', function () {
+        $method = $this->reflection->getMethod('loadProcessesFor');
+        $path = __DIR__ . '/../Fixtures/Brain/Example3';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(0);
+    });
+
+    it('should check if the process is in chain', function () {})->todo();
 });
 
 describe('loadTasksFor testsuite', function () {

@@ -54,8 +54,8 @@ class BrainMap
     public function load(): void
     {
         $domains = collect(File::directories(app_path('Brain')))
-            ->flatMap(fn ($value) => [basename((string) $value) => $value])
-            ->map(fn ($domainPath, $domain) => [
+            ->flatMap(fn($value) => [basename((string) $value) => $value])
+            ->map(fn($domainPath, $domain) => [
                 'domain' => $domain,
                 'path' => $domainPath,
                 'processes' => $this->loadProcessesFor($domainPath),
@@ -65,6 +65,15 @@ class BrainMap
             ->toArray();
 
         $this->domains = $domains;
+    }
+
+    public function getProcessesTasks(ReflectionClass $process): array
+    {
+        return collect($process->getProperty('tasks')->getValue(new $process->name([])))
+            ->map(fn(string $task): array => $this->getTask($task))
+            ->filter()
+            ->values()
+            ->toArray();
     }
 
     /**
@@ -82,14 +91,14 @@ class BrainMap
      */
     private function loadProcessesFor(string $domainPath): array
     {
-        $path = $domainPath.DIRECTORY_SEPARATOR.'Processes';
+        $path = $domainPath . DIRECTORY_SEPARATOR . 'Processes';
 
         if (! is_dir($path)) {
             return [];
         }
 
         return collect(File::files($path))
-            ->map(function (SplFileInfo $value) use ($domainPath): array {
+            ->map(function (SplFileInfo $value): array {
                 $reflection = $this->getReflectionClass($value);
                 $hasChainProperty = $reflection->hasProperty('chain');
                 $chainProperty = $hasChainProperty ? $reflection->getProperty('chain') : null;
@@ -99,7 +108,7 @@ class BrainMap
                 return [
                     'name' => basename($value, '.php'),
                     'chain' => $chainValue,
-                    'tasks' => $this->loadTasksFor($domainPath),
+                    'tasks' => $this->getProcessesTasks($reflection),
                 ];
             })
             ->toArray();
@@ -122,24 +131,37 @@ class BrainMap
      */
     private function loadTasksFor(string $domainPath): array
     {
-        $path = $domainPath.DIRECTORY_SEPARATOR.'Tasks';
+        $path = $domainPath . DIRECTORY_SEPARATOR . 'Tasks';
 
         if (! is_dir($path)) {
             return [];
         }
 
         return collect(File::files($path))
-            ->map(function ($task): array {
-                $reflection = $this->getReflectionClass($task);
-
-                return [
-                    'name' => $reflection->getShortName(),
-                    'fullName' => $reflection->name,
-                    'queue' => $reflection->implementsInterface(ShouldQueue::class),
-                    'properties' => $this->getPropertiesFor($reflection),
-                ];
-            })
+            ->map(fn(SplFileInfo $task): array => $this->getTask($task))
             ->toArray();
+    }
+
+    /**
+     * Retrieves task details from the given file.
+     *
+     * @param  SplFileInfo|string  $task  The file containing the task class.
+     * @return array An associative array containing:
+     *               - 'name': The short name of the class.
+     *               - 'fullName': The fully qualified name of the class.
+     *               - 'queue': A boolean indicating if the class implements the ShouldQueue interface.
+     *               - 'properties': An array of properties for the class.
+     */
+    private function getTask(SplFileInfo|string $task): array
+    {
+        $reflection = $this->getReflectionClass($task);
+
+        return [
+            'name' => $reflection->getShortName(),
+            'fullName' => $reflection->name,
+            'queue' => $reflection->implementsInterface(ShouldQueue::class),
+            'properties' => $this->getPropertiesFor($reflection),
+        ];
     }
 
     /**
@@ -194,7 +216,7 @@ class BrainMap
      */
     private function loadQueriesFor(string $domainPath): array
     {
-        $path = $domainPath.DIRECTORY_SEPARATOR.'Queries';
+        $path = $domainPath . DIRECTORY_SEPARATOR . 'Queries';
 
         if (! is_dir($path)) {
             return [];
@@ -272,7 +294,7 @@ class BrainMap
             $class = $matches[1];
         }
 
-        return '\\'.($namespace !== '' && $namespace !== '0' ? $namespace.'\\'.$class : $class);
+        return '\\' . ($namespace !== '' && $namespace !== '0' ? $namespace . '\\' . $class : $class);
     }
 
     // endregion

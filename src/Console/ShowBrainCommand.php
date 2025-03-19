@@ -23,7 +23,7 @@ class ShowBrainCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'brain:show {--filter=}';
+    protected $signature = 'brain:show';
 
     /**
      * The console command description.
@@ -57,18 +57,15 @@ class ShowBrainCommand extends Command
      */
     public function handle(): void
     {
-        $map = new BrainMap;
+        $brain = (new BrainMap)->load();
 
-        ds($map)
-            ->die();
-
-        if (empty($brain = $this->getBrainMap())) {
+        if (empty($brain->map)) {
             $this->components->error('Your brain is empty. You should start adding some processes, tasks, and queries.');
 
             return;
         }
 
-        $this->displayBrain($brain);
+        $this->displayBrain($brain->map);
     }
 
     /**
@@ -263,7 +260,7 @@ class ShowBrainCommand extends Command
     /**
      * Display the output lines.
      */
-    private function displayBrain(Collection $brain): void
+    private function displayBrain($brain): void
     {
         $this->getTerminalWidth();
 
@@ -285,7 +282,7 @@ class ShowBrainCommand extends Command
     /**
      * Create the lines to display, based on the given map.
      */
-    private function createLines(Collection $map): void
+    private function createLines($map): void
     {
         foreach ($map as $domain) {
             $currentDomain = $domain['domain'];

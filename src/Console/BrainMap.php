@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Brain\Console;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use phpDocumentor\Reflection\DocBlock\Tag;
 use phpDocumentor\Reflection\DocBlock\Tags\Property;
@@ -48,7 +49,7 @@ class BrainMap
     /**
      * Where the final map will store
      */
-    public array $map;
+    public Collection $map;
 
     /**
      * Constructs a new instance of the BrainMap class and initializes the loaded domains.
@@ -56,7 +57,7 @@ class BrainMap
      * Upon construction, the class automatically invokes the `loadDomains` method
      * to populate the `$domains` property with metadata for each domain in the application.
      */
-    public function load(): void
+    public function load(): self
     {
         $domains = collect(File::directories(config('brain.root')))
             ->flatMap(fn ($value) => [basename((string) $value) => $value])
@@ -69,7 +70,9 @@ class BrainMap
             ])
             ->toArray();
 
-        $this->map = $domains;
+        $this->map = collect($domains);
+
+        return $this;
     }
 
     public function getProcessesTasks(ReflectionClass $process): array

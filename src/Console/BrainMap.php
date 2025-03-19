@@ -164,7 +164,7 @@ class BrainMap
                 if ($tag instanceof PropertyRead) {
                     return [
                         'name' => $tag->getVariableName(),
-                        'type' => $tag->getType(),
+                        'type' => $tag->getType()->__toString(),
                         'direction' => 'output',
                     ];
                 }
@@ -172,7 +172,7 @@ class BrainMap
                 if ($tag instanceof Property) {
                     return [
                         'name' => $tag->getVariableName(),
-                        'type' => $tag->getType(),
+                        'type' => $tag->getType()->__toString(),
                         'direction' => 'input',
                     ];
                 }
@@ -180,7 +180,7 @@ class BrainMap
                 return null;
             })
             ->filter()
-            ->sortBy('direction')
+            ->sortByDesc('direction')
             ->values()
             ->toArray();
     }

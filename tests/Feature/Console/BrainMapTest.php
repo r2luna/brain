@@ -2,9 +2,73 @@
 
 declare(strict_types=1);
 
+use Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask;
+
 beforeEach(function () {
     $this->object = new Brain\Console\BrainMap;
     $this->reflection = new ReflectionClass(get_class($this->object));
+});
+
+describe('getPropertiesFor testsuite', function () {
+    it('should get properties from a dockblock', function () {
+        $reflection = new ReflectionClass('\Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask');
+
+        $method = $this->reflection->getMethod('getPropertiesFor');
+        $output = $method->invokeArgs($this->object, [$reflection]);
+
+        expect($output)->toHaveCount(2)
+            ->and($output)
+            ->toMatchArray([
+                [
+                    'name' => 'email',
+                    'type' => 'string',
+                    'direction' => 'output',
+                ],
+                [
+                    'name' => 'paymentId',
+                    'type' => 'int',
+                    'direction' => 'output',
+                ],
+            ]);
+    });
+
+    it('directions should be based on the read and non read properties', function () {
+        $reflection = new ReflectionClass('\Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask2');
+
+        $method = $this->reflection->getMethod('getPropertiesFor');
+        $output = $method->invokeArgs($this->object, [$reflection]);
+
+        expect($output)->toHaveCount(3)
+            ->and($output)
+            ->toMatchArray([
+                [
+                    'name' => 'email',
+                    'type' => 'string',
+                    'direction' => 'output',
+                ],
+                [
+                    'name' => 'paymentId',
+                    'type' => 'int',
+                    'direction' => 'output',
+                ],
+                [
+                    'name' => 'id',
+                    'type' => 'int',
+                    'direction' => 'input',
+                ]
+            ]);
+    });
+
+    it('should return null if there is any tag that is not property-read or property', function () {
+        $reflection = new ReflectionClass('\Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask3');
+
+        $method = $this->reflection->getMethod('getPropertiesFor');
+        $output = $method->invokeArgs($this->object, [$reflection]);
+
+        expect($output)->toHaveCount(0)
+            ->and($output)
+            ->toMatchArray([]);
+    });
 });
 
 describe('loadQueriesFor testsuite', function () {
@@ -51,6 +115,14 @@ describe('loadQueriesFor testsuite', function () {
                 'properties' => [],
             ]);
     });
+
+    it('should return an empty array if the directory does not exists', function () {
+        $method = $this->reflection->getMethod('loadQueriesFor');
+        $path = __DIR__ . '/../Fixtures/Brain/Example3';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(0);
+    });
 });
 
 describe('getReflectionClass testsuite', function () {
@@ -77,6 +149,8 @@ describe('getClassFullNameFromFile testsuite', function () {
 <?php
 
 namespace MyApp\Services;
+
+use Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask;
 
 class TestClass
 {

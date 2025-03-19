@@ -1,7 +1,8 @@
 <?php
 
-namespace Tests\Feature\Fixtures\Brain\Example\Tasks;
+declare(strict_types=1);
 
+namespace Tests\Feature\Fixtures\Brain\Example\Tasks;
 
 use Brain\Task;
 

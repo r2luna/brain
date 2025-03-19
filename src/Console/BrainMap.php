@@ -54,8 +54,8 @@ class BrainMap
     public function load(): void
     {
         $domains = collect(File::directories(app_path('Brain')))
-            ->flatMap(fn($value) => [basename((string) $value) => $value])
-            ->map(fn($domainPath, $domain) => [
+            ->flatMap(fn ($value) => [basename((string) $value) => $value])
+            ->map(fn ($domainPath, $domain) => [
                 'domain' => $domain,
                 'path' => $domainPath,
                 'processes' => $this->loadProcessesFor($domainPath),
@@ -82,7 +82,7 @@ class BrainMap
      */
     private function loadProcessesFor(string $domainPath): array
     {
-        $path = $domainPath . DIRECTORY_SEPARATOR . 'Processes';
+        $path = $domainPath.DIRECTORY_SEPARATOR.'Processes';
 
         if (! is_dir($path)) {
             return [];
@@ -122,7 +122,7 @@ class BrainMap
      */
     private function loadTasksFor(string $domainPath): array
     {
-        $path = $domainPath . DIRECTORY_SEPARATOR . 'Tasks';
+        $path = $domainPath.DIRECTORY_SEPARATOR.'Tasks';
 
         if (! is_dir($path)) {
             return [];
@@ -194,7 +194,7 @@ class BrainMap
      */
     private function loadQueriesFor(string $domainPath): array
     {
-        $path = $domainPath . DIRECTORY_SEPARATOR . 'Queries';
+        $path = $domainPath.DIRECTORY_SEPARATOR.'Queries';
 
         if (! is_dir($path)) {
             return [];
@@ -221,7 +221,7 @@ class BrainMap
                 return [
                     'name' => $reflection->getShortName(),
                     'fullName' => $reflection->name,
-                    'properties' => $properties
+                    'properties' => $properties,
                 ];
             })
             ->toArray();
@@ -272,7 +272,7 @@ class BrainMap
             $class = $matches[1];
         }
 
-        return '\\' . ($namespace !== '' && $namespace !== '0' ? $namespace . '\\' . $class : $class);
+        return '\\'.($namespace !== '' && $namespace !== '0' ? $namespace.'\\'.$class : $class);
     }
 
     // endregion

@@ -32,7 +32,7 @@ class Printer
     private array $lines = [];
 
     public function __construct(
-        private readonly BrainMap $map
+        private readonly BrainMap $brain
     ) {
         $this->getTerminalWidth();
     }
@@ -52,6 +52,24 @@ class Printer
         });
 
         $this->output->writeln($flattenedLines);
+    }
+
+    /**
+     * Calculates the length of the longest domain in the brain's map.
+     *
+     * This method iterates through the brain's map, sorts the entries
+     * in descending order based on the length of the 'domain' value,
+     * and retrieves the length of the longest domain.
+     *
+     * @return int The length of the longest domain.
+     */
+    private function getLengthOfTheLongestDomain(): int
+    {
+        return mb_strlen(
+            (string) data_get($this->brain->map
+                ->sortByDesc(fn ($value): int => mb_strlen((string) $value['domain']))
+                ->first(), 'domain')
+        );
     }
 
     /**

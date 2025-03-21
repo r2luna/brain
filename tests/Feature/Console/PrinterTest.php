@@ -36,3 +36,27 @@ it('should print lines to the terminal', function () {
 
     $this->printer->print();
 });
+
+it('should return 0 when brain map is empty', function () {
+    $this->map->map = collect([]);
+    expect($this->printerReflection->run('getLengthOfTheLongestDomain'))->toBe(0);
+});
+
+it('should return correct length of longest domain', function () {
+    $this->map->map = collect([
+        ['domain' => 'short.com'],
+        ['domain' => 'verylongdomain.com'],
+        ['domain' => 'medium.com'],
+    ]);
+
+    expect($this->printerReflection->run('getLengthOfTheLongestDomain'))->toBe(18);
+});
+
+it('should handle null domain values', function () {
+    $this->map->map = collect([
+        ['domain' => null],
+        ['domain' => 'example.com'],
+    ]);
+
+    expect($this->printerReflection->run('getLengthOfTheLongestDomain'))->toBe(11);
+});

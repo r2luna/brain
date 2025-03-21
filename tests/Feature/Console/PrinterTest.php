@@ -21,3 +21,18 @@ it('should load the current terminal width', function () {
 
     expect($this->printerReflection->get('terminalWidth'))->toBe(200);
 });
+
+it('should print lines to the terminal', function () {
+    $mockOutput = Mockery::mock(Illuminate\Console\OutputStyle::class);
+
+    $this->printerReflection->set('output', $mockOutput);
+
+    $this->printerReflection->set('lines', [
+        ['Line 1', 'Line 2'],
+        ['Line 3'],
+    ]);
+
+    $mockOutput->shouldReceive('writeln')->once();
+
+    $this->printer->print();
+});

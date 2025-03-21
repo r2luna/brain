@@ -31,4 +31,12 @@ class PrinterReflection
 
         return $property->getValue($this->printer);
     }
+
+    public function set(string $property, mixed $value): void
+    {
+        $property = $this->reflection->getProperty($property);
+        $property->setAccessible(true);
+
+        $property->setValue($this->printer, $value);
+    }
 }

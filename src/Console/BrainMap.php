@@ -49,7 +49,7 @@ class BrainMap
     /**
      * Where the final map will store
      */
-    public Collection $map;
+    public ?Collection $map = null;
 
     /**
      * Constructs a new instance of the BrainMap class and initializes the loaded domains.
@@ -57,7 +57,7 @@ class BrainMap
      * Upon construction, the class automatically invokes the `loadDomains` method
      * to populate the `$domains` property with metadata for each domain in the application.
      */
-    public function load(): self
+    public function __construct()
     {
         $domains = collect(File::directories(config('brain.root')))
             ->flatMap(fn ($value) => [basename((string) $value) => $value])
@@ -71,11 +71,20 @@ class BrainMap
             ->toArray();
 
         $this->map = collect($domains);
-
-        return $this;
     }
 
-    public function getProcessesTasks(ReflectionClass $process): array
+    /**
+     * Retrieves and processes the tasks associated with a given process.
+     *
+     * This method uses reflection to access the 'tasks' property of the provided
+     * process class, initializes the process with an empty array, and retrieves
+     * the tasks. Each task is then processed using the `getTask` method, filtered
+     * for non-empty results, and returned as an array.
+     *
+     * @param  ReflectionClass  $process  The reflection class instance representing the process.
+     * @return array An array of processed tasks.
+     */
+    private function getProcessesTasks(ReflectionClass $process): array
     {
         return collect($process->getProperty('tasks')->getValue(new $process->name([])))
             ->map(fn (string $task): array => $this->getTask($task))

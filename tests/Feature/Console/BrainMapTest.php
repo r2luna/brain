@@ -16,7 +16,6 @@ describe('load testsuite', function () {
 
     it('should return a list of the entire set of domains', function () {
         $brain = new BrainMap;
-        $brain->load();
 
         $data = [
             'Example' => [

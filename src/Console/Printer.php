@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Brain\Console;
 
 use Brain\Facades\Terminal;
+use Exception;
 use Illuminate\Console\Concerns\InteractsWithIO;
 
 class Printer
@@ -27,6 +28,11 @@ class Printer
     private int $terminalWidth;
 
     /**
+     * @var int The length of the longest domain in the brain's map.
+     */
+    private int $lengthLongestDomain = 0;
+
+    /**
      * @var array The lines to be printed to the terminal.
      */
     private array $lines = [];
@@ -34,7 +40,9 @@ class Printer
     public function __construct(
         private readonly BrainMap $brain
     ) {
+        $this->checkIfBrainMapIsEmpty();
         $this->getTerminalWidth();
+        $this->getLengthOfTheLongestDomain();
     }
 
     /**
@@ -54,18 +62,45 @@ class Printer
         $this->output->writeln($flattenedLines);
     }
 
+    private function checkIfBrainMapIsEmpty(): void
+    {
+        if (empty($this->brain->map)) {
+            throw new Exception('The brain map is empty.');
+        }
+    }
+
+    private function createLines(): void
+    {
+        $this->brain->map->each(function ($domainData) {
+            $domain = data_get($domainData, 'domain');
+
+            $this->addNewLine();
+        });
+    }
+
+    /**
+     * Adds a new empty line to the lines array if the last line is not already empty.
+     * This ensures that there is a separation or spacing between lines when needed.
+     */
+    private function addNewLine(): void
+    {
+        if (end($this->lines) === ['']) {
+            return;
+        }
+
+        $this->lines[] = [''];
+    }
+
     /**
      * Calculates the length of the longest domain in the brain's map.
      *
      * This method iterates through the brain's map, sorts the entries
      * in descending order based on the length of the 'domain' value,
      * and retrieves the length of the longest domain.
-     *
-     * @return int The length of the longest domain.
      */
-    private function getLengthOfTheLongestDomain(): int
+    private function getLengthOfTheLongestDomain(): void
     {
-        return mb_strlen(
+        $this->lengthLongestDomain = mb_strlen(
             (string) data_get($this->brain->map
                 ->sortByDesc(fn ($value): int => mb_strlen((string) $value['domain']))
                 ->first(), 'domain')

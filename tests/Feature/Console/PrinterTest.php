@@ -37,19 +37,21 @@ it('should print lines to the terminal', function () {
     $this->printer->print();
 });
 
-it('should return 0 when brain map is empty', function () {
+it('should set length to 0 when brain map is empty', function () {
     $this->map->map = collect([]);
-    expect($this->printerReflection->run('getLengthOfTheLongestDomain'))->toBe(0);
+    $this->printerReflection->run('getLengthOfTheLongestDomain');
+    expect($this->printerReflection->get('lengthLongestDomain'))->toBe(0);
 });
 
-it('should return correct length of longest domain', function () {
+it('should set correct length of longest domain', function () {
     $this->map->map = collect([
         ['domain' => 'short.com'],
         ['domain' => 'verylongdomain.com'],
         ['domain' => 'medium.com'],
     ]);
 
-    expect($this->printerReflection->run('getLengthOfTheLongestDomain'))->toBe(18);
+    $this->printerReflection->run('getLengthOfTheLongestDomain');
+    expect($this->printerReflection->get('lengthLongestDomain'))->toBe(18);
 });
 
 it('should handle null domain values', function () {
@@ -58,5 +60,39 @@ it('should handle null domain values', function () {
         ['domain' => 'example.com'],
     ]);
 
-    expect($this->printerReflection->run('getLengthOfTheLongestDomain'))->toBe(11);
+    $this->printerReflection->run('getLengthOfTheLongestDomain');
+    expect($this->printerReflection->get('lengthLongestDomain'))->toBe(11);
+});
+
+it('should check if if creating all the correct lines to be printed', function () {
+    $this->printerReflection->run('createLines');
+
+    ds($this->printerReflection->get('lines'));
+});
+
+it('should not add new line when last line is already empty', function () {
+    $this->printerReflection->set('lines', [
+        ['Some content'],
+        [''],
+    ]);
+
+    $this->printerReflection->run('addNewLine');
+
+    expect($this->printerReflection->get('lines'))->toBe([
+        ['Some content'],
+        [''],
+    ]);
+});
+
+it('should add new line when last line is not empty', function () {
+    $this->printerReflection->set('lines', [
+        ['Some content'],
+    ]);
+
+    $this->printerReflection->run('addNewLine');
+
+    expect($this->printerReflection->get('lines'))->toBe([
+        ['Some content'],
+        [''],
+    ]);
 });

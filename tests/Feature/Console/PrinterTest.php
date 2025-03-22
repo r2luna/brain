@@ -65,9 +65,18 @@ it('should handle null domain values', function () {
 });
 
 it('should check if if creating all the correct lines to be printed', function () {
+    Terminal::shouldReceive('cols')->andReturn(71);
+    $this->printerReflection->run('getTerminalWidth');
     $this->printerReflection->run('createLines');
 
-    ds($this->printerReflection->get('lines'));
+    $lines = $this->printerReflection->get('lines');
+
+    expect($lines)->toBe([
+        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white;options=bold>ExampleProcess</><fg=#6C7280> ....................................</>'],
+        [''],
+        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white;options=bold>ExampleProcess2</><fg=#6C7280> ........................... chained</>'],
+        [''],
+    ]);
 });
 
 it('should not add new line when last line is already empty', function () {

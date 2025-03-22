@@ -72,10 +72,79 @@ class Printer
     private function createLines(): void
     {
         $this->brain->map->each(function ($domainData) {
+
+            /** Example
+             * 1. $domainSpaces
+             * 2. Type
+             * 3. ClassName
+             * 4. Dots
+             * 5. Mixed Properties like: chained, queued
+             | 1    |2   |  3                | 5                   | 6   |
+              USER   PROC   CreateUserProcess ............................
+                     TASK   CreateUser ...................................
+                     TASK   WelcomeNofication ..................... queued
+             */
             $domain = data_get($domainData, 'domain');
+            $domainSpaces = $this->getDomainSpaces($domain);
+
+            $this->addProcessesLine($domainData, $domain, $domainSpaces);
+            // $this->addTasksLines($process, $domain, $domainSpaces);
 
             $this->addNewLine();
         });
+    }
+
+    /**
+     * Adds a formatted line for each process in the given domain data to the output lines.
+     *
+     * This method iterates over the processes in the provided domain data and constructs
+     * a formatted string for each process. The string includes the domain name, process name,
+     * and additional metadata such as whether the process is part of a chain. The formatted
+     * string is styled with terminal colors and added to the `$lines` property.
+     *
+     * @param  array  $domainData  An associative array containing domain data, including a 'processes' key.
+     *                             Each process should have a 'name' key and a 'chain' key.
+     * @param  string  $currentDomain  The name of the current domain being processed.
+     * @param  string  $spaces  A string of spaces used for alignment in the output.
+     */
+    private function addProcessesLine(array $domainData, string $currentDomain, string $spaces): void
+    {
+        foreach ($domainData['processes'] as $process) {
+            $processName = data_get($process, 'name');
+            $inChain = $process['chain'] ? ' chained' : '.';
+            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - 5, 0));
+            $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
+
+            $this->lines[] = [
+                sprintf(
+                    '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  <fg=%s;options=bold>%s</><fg=#6C7280>%s%s</>',
+                    $this->elemColors['DOMAIN'],
+                    strtoupper($currentDomain),
+                    $spaces,
+                    $this->elemColors['PROC'],
+                    'PROC',
+                    'white',
+                    $processName,
+                    $dots,
+                    $inChain
+                ),
+            ];
+        }
+    }
+
+    /**
+     * Generates a string of spaces to align domain names for console output.
+     *
+     * This method calculates the number of spaces needed to align a given domain
+     * name based on the length of the longest domain name and returns a string
+     * containing that many spaces.
+     *
+     * @param  string  $domain  The domain name for which to calculate the spacing.
+     * @return string A string of spaces for alignment.
+     */
+    private function getDomainSpaces(string $domain): string
+    {
+        return str_repeat(' ', max($this->lengthLongestDomain + 2 - mb_strlen((string) $domain), 0));
     }
 
     /**

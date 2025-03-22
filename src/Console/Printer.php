@@ -88,7 +88,7 @@ class Printer
             $domainSpaces = $this->getDomainSpaces($domain);
 
             $this->addProcessesLine($domainData, $domain, $domainSpaces);
-            // $this->addTasksLines($process, $domain, $domainSpaces);
+            $this->addTasksLine($domainData, $domain, $domainSpaces);
 
             $this->addNewLine();
         });
@@ -109,7 +109,7 @@ class Printer
      */
     private function addProcessesLine(array $domainData, string $currentDomain, string $spaces): void
     {
-        foreach ($domainData['processes'] as $process) {
+        foreach (data_get($domainData, 'processes') as $process) {
             $processName = data_get($process, 'name');
             $inChain = $process['chain'] ? ' chained' : '.';
             $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - 5, 0));
@@ -127,6 +127,32 @@ class Printer
                     $processName,
                     $dots,
                     $inChain
+                ),
+            ];
+        }
+    }
+
+    private function addTasksLine(array $domainData, string $currentDomain, string $spaces, bool $numberedIndex = false): void
+    {
+        foreach (data_get($domainData, 'tasks') as $taskIndex => $task) {
+            $taskIndex++;
+            $prefix = $numberedIndex ? "{$taskIndex}. " : '';
+            $taskName = $task['name'];
+            $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
+            $taskQueued = $task['queue'] ? ' queued' : '.';
+            $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$prefix.$taskName.'TASK  ') - mb_strlen($taskQueued) - 2);
+            $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
+
+            $this->lines[] = [
+                sprintf(
+                    '%s<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
+                    $taskSpaces,
+                    $this->elemColors['TASK'],
+                    'TASK',
+                    $prefix,
+                    $taskName,
+                    $taskDots,
+                    $taskQueued
                 ),
             ];
         }

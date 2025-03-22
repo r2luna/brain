@@ -111,3 +111,10 @@ it('should add new line when last line is not empty', function () {
         [''],
     ]);
 });
+
+it('should throw exception if brain is empty', function () {
+    config()->set('brain.root', __DIR__.'/../Fixtures/EmptyBrain');
+
+    $map = new BrainMap;
+    $printer = new Printer($map);
+})->throws(Exception::class, 'The brain map is empty.');

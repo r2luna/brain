@@ -64,7 +64,7 @@ class Printer
 
     private function checkIfBrainMapIsEmpty(): void
     {
-        if (empty($this->brain->map)) {
+        if (empty($this->brain->map) || $this->brain->map->isEmpty()) {
             throw new Exception('The brain map is empty.');
         }
     }

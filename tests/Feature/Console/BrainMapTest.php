@@ -9,6 +9,11 @@ beforeEach(function () {
     $this->reflection = new ReflectionClass(get_class($this->object));
 });
 
+it('should throw exception when dir do not exists', function () {
+    config()->set('brain.root', __DIR__.'/../Fixtures/Brain2');
+    $brain = new BrainMap;
+})->throws(Exception::class, 'Brain directory not found');
+
 describe('load testsuite', function () {
     beforeEach(function () {
         config()->set('brain.root', __DIR__.'/../Fixtures/Brain');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Brain\Console;
 
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
@@ -59,7 +60,13 @@ class BrainMap
      */
     public function __construct()
     {
-        $domains = collect(File::directories(config('brain.root')))
+        $dir = config('brain.root');
+
+        if (! is_dir($dir)) {
+            throw new Exception('Brain directory not found');
+        }
+
+        $domains = collect(File::directories($dir))
             ->flatMap(fn ($value) => [basename((string) $value) => $value])
             ->map(fn ($domainPath, $domain) => [
                 'domain' => $domain,

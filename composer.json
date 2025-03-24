@@ -23,8 +23,9 @@
         "phpdocumentor/reflection": "^6.1"
     },
     "require-dev": {
-        "laradumps/laradumps": "4.x-dev",
+        "laradumps/laradumps": "4",
         "laravel/pint": "^1.21",
+        "mockery/mockery": "1.7.x-dev",
         "orchestra/testbench": "^9.11",
         "peckphp/peck": "^0.1.2",
         "pestphp/pest": "^3.7",
@@ -49,7 +50,7 @@
         "test:typos": "peck",
         "test:lint": "pint --test",
         "test:types": "phpstan analyse --ansi src/",
-        "test:unit": "pest --colors=always ",
+        "test:unit": "pest --colors=always --coverage --min=100 --compact",
         "test": [
             "@test:refactor",
             "@test:lint",
@@ -71,5 +72,5 @@
             ]
         }
     },
-    "minimum-stability": "dev"
+    "minimum-stability": "stable"
 }

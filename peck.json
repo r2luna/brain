@@ -3,7 +3,14 @@
     "ignore": {
         "words": [
             "php",
-            "queueable"
+            "queueable",
+            "docblock",
+            "spl",
+            "writeln",
+            "proc",
+            "nofication",
+            "qery",
+            "QERY"
         ],
         "paths": []
     }

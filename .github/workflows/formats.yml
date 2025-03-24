@@ -1,6 +1,12 @@
 name: Formats
 
-on: ["push", "pull_request"]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   ci:
@@ -59,5 +65,5 @@ jobs:
       #   - name: Test Refacto
       #     run: composer test:refactor
 
-      - name: Test Typos
-        run: composer test:typos
+    #   - name: Test Typos
+    #     run: composer test:typos

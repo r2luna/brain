@@ -1,7 +1,26 @@
--   [x] Service Provider
--   [x] Query Command
--   [x] Exception Command
--   [x] maybe change commands to brain:_ instead of make:_
--   [x] create a command to list all processes that exists with all the tasks and with all the required parameter on each task - Process1 1. Task 1 {name, email, jeremias} 2. Task 2 {name:string } // show type or not ? one line or multiple lines? 3. Task 3
-    -   [ ] need to be able to list standalone tasks, everything that is not being used by as process
-    -   [ ] or have 3 commands, one to show everything, one to show processes, one to show only tasks.. ??? maybe
+-   [ ] be able to setup a feature for each step in tasks or processes \*\* maybe
+-   [ ] be able to validate inside a task
+
+    ```php
+        /**
+         * Class ExampleTask
+         *
+         * @property-read string $name
+         * @property-read string $email
+         */
+        class ExampleTask extends Task
+        {
+            protected function rules(): array
+            {
+                return [
+                    'name' => ['required', 'string', 'max:255'],
+                    'email' => ['required', 'email', 'max:80']
+                ];
+            }
+
+            public function handle():void
+            {
+                // ...
+            }
+        }
+    ```

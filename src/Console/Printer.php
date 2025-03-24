@@ -6,12 +6,10 @@ namespace Brain\Console;
 
 use Brain\Facades\Terminal;
 use Exception;
-use Illuminate\Console\Concerns\InteractsWithIO;
+use Illuminate\Console\OutputStyle;
 
 class Printer
 {
-    use InteractsWithIO;
-
     /**
      * Colors that represent the different elements.
      */
@@ -38,11 +36,13 @@ class Printer
     private array $lines = [];
 
     public function __construct(
-        private readonly BrainMap $brain
+        private readonly BrainMap $brain,
+        private ?OutputStyle $output = null
     ) {
         $this->checkIfBrainMapIsEmpty();
         $this->getTerminalWidth();
         $this->getLengthOfTheLongestDomain();
+        $this->createLines();
     }
 
     /**
@@ -62,6 +62,15 @@ class Printer
         $this->output->writeln($flattenedLines);
     }
 
+    /**
+     * Checks if the brain map is empty.
+     *
+     * This method verifies whether the brain map is empty or not.
+     * If the brain map is empty, it throws an exception to indicate
+     * that the operation cannot proceed with an empty brain map.
+     *
+     * @throws Exception If the brain map is empty.
+     */
     private function checkIfBrainMapIsEmpty(): void
     {
         if (empty($this->brain->map) || $this->brain->map->isEmpty()) {
@@ -69,26 +78,35 @@ class Printer
         }
     }
 
+    /**
+     * Creates lines for the console output by iterating over the brain's map data.
+     *
+     * This method processes each domain data entry and generates formatted lines
+     * for processes, tasks, and queries. It also adds a new line after processing
+     * each domain data entry.
+     *
+     * Example Output:
+     * | 1    | 2   | 3                | 5                   | 6   |
+     * |------|-----|------------------|---------------------|-----|
+     * | USER | PROC| CreateUserProcess| ....................|     |
+     * |      | TASK| CreateUser       | ....................|     |
+     * |      | TASK| WelcomeNofication| ............. queued|     |
+     * |      | QERY| SomeQuery        | ....................|     |
+     *
+     * - `1`: Domain spaces (e.g., USER)
+     * - `2`: Type (e.g., PROC, TASK, QERY)
+     * - `3`: Class name or identifier
+     * - `5`: Mixed properties (e.g., chained, queued)
+     */
     private function createLines(): void
     {
         $this->brain->map->each(function ($domainData) {
-
-            /** Example
-             * 1. $domainSpaces
-             * 2. Type
-             * 3. ClassName
-             * 4. Dots
-             * 5. Mixed Properties like: chained, queued
-             | 1    |2   |  3                | 5                   | 6   |
-              USER   PROC   CreateUserProcess ............................
-                     TASK   CreateUser ...................................
-                     TASK   WelcomeNofication ..................... queued
-             */
             $domain = data_get($domainData, 'domain');
             $domainSpaces = $this->getDomainSpaces($domain);
 
             $this->addProcessesLine($domainData, $domain, $domainSpaces);
             $this->addTasksLine($domainData, $domain, $domainSpaces);
+            $this->addQueriesLines($domainData, $domain, $domainSpaces);
 
             $this->addNewLine();
         });
@@ -117,7 +135,7 @@ class Printer
 
             $this->lines[] = [
                 sprintf(
-                    '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  <fg=%s;options=bold>%s</><fg=#6C7280>%s%s</>',
+                    '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  <fg=%s>%s</><fg=#6C7280>%s%s</>',
                     $this->elemColors['DOMAIN'],
                     strtoupper($currentDomain),
                     $spaces,
@@ -132,6 +150,14 @@ class Printer
         }
     }
 
+    /**
+     * Adds a formatted line for each task in the given domain data to the output lines.
+     *
+     * @param  array  $domainData  The data for the current domain, containing tasks and their details.
+     * @param  string  $currentDomain  The name of the current domain being processed.
+     * @param  string  $spaces  The string of spaces used for indentation.
+     * @param  bool  $numberedIndex  Whether to prefix tasks with a numbered index (default: false).
+     */
     private function addTasksLine(array $domainData, string $currentDomain, string $spaces, bool $numberedIndex = false): void
     {
         foreach (data_get($domainData, 'tasks') as $taskIndex => $task) {
@@ -153,6 +179,38 @@ class Printer
                     $taskName,
                     $taskDots,
                     $taskQueued
+                ),
+            ];
+        }
+    }
+
+    /**
+     * Adds formatted query lines to the console output.
+     *
+     * This method processes the queries from the provided domain data and formats
+     * them for display in the console. Each query is displayed with a specific
+     * structure, including spaces, dots, and color formatting.
+     *
+     * @param  array  $domainData  The data containing domain-specific information,
+     *                             including a list of queries.
+     * @param  string  $currentDomain  The name of the current domain being processed.
+     * @param  string  $spaces  The base indentation spaces for formatting.
+     */
+    private function addQueriesLines(array $domainData, string $currentDomain, string $spaces): void
+    {
+        foreach (data_get($domainData, 'queries') as $query) {
+            $queryName = $query['name'];
+            $querySpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
+            $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces.$queryName.'QERY ') - 2);
+
+            $this->lines[] = [
+                sprintf(
+                    '%s<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280>%s</>',
+                    $querySpaces,
+                    $this->elemColors['QERY'],
+                    'QERY',
+                    $queryName,
+                    $queryDots
                 ),
             ];
         }

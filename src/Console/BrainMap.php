@@ -66,7 +66,9 @@ class BrainMap
             throw new Exception('Brain directory not found');
         }
 
-        $domains = collect(File::directories($dir))
+        $files = File::directories($dir);
+
+        $domains = collect($files)
             ->flatMap(fn ($value) => [basename((string) $value) => $value])
             ->map(fn ($domainPath, $domain) => [
                 'domain' => $domain,

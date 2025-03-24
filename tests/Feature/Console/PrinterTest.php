@@ -5,25 +5,25 @@ declare(strict_types=1);
 use Brain\Console\BrainMap;
 use Brain\Console\Printer;
 use Brain\Facades\Terminal;
+use Illuminate\Console\OutputStyle;
 use Tests\Feature\Fixtures\PrinterReflection;
 
 beforeEach(function () {
     config()->set('brain.root', __DIR__.'/../Fixtures/Brain');
+    Terminal::shouldReceive('cols')->andReturn(71);
     $this->map = new BrainMap;
     $this->printer = new Printer($this->map);
     $this->printerReflection = new PrinterReflection($this->printer);
 });
 
 it('should load the current terminal width', function () {
-    Terminal::shouldReceive('cols')->andReturn(200);
-
     $this->printerReflection->run('getTerminalWidth');
 
-    expect($this->printerReflection->get('terminalWidth'))->toBe(200);
+    expect($this->printerReflection->get('terminalWidth'))->toBe(71);
 });
 
 it('should print lines to the terminal', function () {
-    $mockOutput = Mockery::mock(Illuminate\Console\OutputStyle::class);
+    $mockOutput = Mockery::mock(OutputStyle::class);
 
     $this->printerReflection->set('output', $mockOutput);
 
@@ -64,23 +64,20 @@ it('should handle null domain values', function () {
     expect($this->printerReflection->get('lengthLongestDomain'))->toBe(11);
 });
 
-it('should check if if creating all the correct lines to be printed', function () {
-    Terminal::shouldReceive('cols')->andReturn(71);
+it('should check if creating all the correct lines to be printed', function () {
     $this->printerReflection->run('getTerminalWidth');
-    $this->printerReflection->run('createLines');
-
     $lines = $this->printerReflection->get('lines');
 
-    ds($lines);
-
     expect($lines)->toBe([
-        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white;options=bold>ExampleProcess</><fg=#6C7280> ....................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> ....................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ........................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> .......................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> .......................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ................................ queued</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
         [''],
-        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white;options=bold>ExampleProcess2</><fg=#6C7280> ........................... chained</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ........................... chained</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
         [''],
     ]);
 });

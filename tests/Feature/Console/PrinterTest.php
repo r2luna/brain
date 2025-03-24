@@ -115,3 +115,21 @@ it('should throw exception if brain is empty', function (): void {
     $map = new BrainMap;
     $printer = new Printer($map);
 })->throws(Exception::class, 'The brain map is empty.');
+
+it('should set output style correctly', function (): void {
+    $mockOutput = Mockery::mock(OutputStyle::class);
+
+    $this->printer->setOutput($mockOutput);
+
+    expect($this->printerReflection->get('output'))->toBe($mockOutput);
+});
+
+it('should allow overriding existing output style', function (): void {
+    $mockOutput1 = Mockery::mock(OutputStyle::class);
+    $mockOutput2 = Mockery::mock(OutputStyle::class);
+
+    $this->printer->setOutput($mockOutput1);
+    $this->printer->setOutput($mockOutput2);
+
+    expect($this->printerReflection->get('output'))->toBe($mockOutput2);
+});

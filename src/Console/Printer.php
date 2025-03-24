@@ -55,11 +55,21 @@ class Printer
     public function print(): void
     {
         $flattenedLines = [];
-        array_walk_recursive($this->lines, function ($line) use (&$flattenedLines) {
+        array_walk_recursive($this->lines, function ($line) use (&$flattenedLines): void {
             $flattenedLines[] = $line;
         });
 
         $this->output->writeln($flattenedLines);
+    }
+
+    /**
+     * Sets the output style for the printer.
+     *
+     * @param  OutputStyle  $output  The output style instance to be set.
+     */
+    public function setOutput(OutputStyle $output): void
+    {
+        $this->output = $output;
     }
 
     /**
@@ -73,7 +83,7 @@ class Printer
      */
     private function checkIfBrainMapIsEmpty(): void
     {
-        if (empty($this->brain->map) || $this->brain->map->isEmpty()) {
+        if (! $this->brain->map instanceof \Illuminate\Support\Collection || $this->brain->map->isEmpty()) {
             throw new Exception('The brain map is empty.');
         }
     }
@@ -100,7 +110,7 @@ class Printer
      */
     private function createLines(): void
     {
-        $this->brain->map->each(function ($domainData) {
+        $this->brain->map->each(function ($domainData): void {
             $domain = data_get($domainData, 'domain');
             $domainSpaces = $this->getDomainSpaces($domain);
 
@@ -228,7 +238,7 @@ class Printer
      */
     private function getDomainSpaces(string $domain): string
     {
-        return str_repeat(' ', max($this->lengthLongestDomain + 2 - mb_strlen((string) $domain), 0));
+        return str_repeat(' ', max($this->lengthLongestDomain + 2 - mb_strlen($domain), 0));
     }
 
     /**

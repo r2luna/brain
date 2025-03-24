@@ -23,33 +23,10 @@ class ShowBrainCommand extends Command
     protected $description = 'Show Brain Mapping';
 
     /**
-     * Colors that represent the different elements.
-     */
-    protected array $elemColors = [
-        'DOMAIN' => '#6C7280',
-        'PROC' => 'blue',
-        'TASK' => 'yellow',
-        'QERY' => 'green',
-    ];
-
-    /**
-     * The lines to display.
-     */
-    private array $lines = [];
-
-    /**
-     * The terminal width.
-     */
-    private ?int $terminalWidth = null;
-
-    /**
      * Execute the console command.
      */
     public function handle(): void
     {
-        (new Printer(
-            new BrainMap,
-            $this->output
-        ))->print();
+        (new Printer(new BrainMap, $this->output))->print();
     }
 }

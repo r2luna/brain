@@ -14,6 +14,7 @@ use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
 use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionType;
 use SplFileInfo;
 
 /**
@@ -70,7 +71,7 @@ class BrainMap
 
         $domains = collect($files)
             ->flatMap(fn ($value) => [basename((string) $value) => $value])
-            ->map(fn ($domainPath, $domain) => [
+            ->map(fn ($domainPath, $domain): array => [
                 'domain' => $domain,
                 'path' => $domainPath,
                 'processes' => $this->loadProcessesFor($domainPath),
@@ -261,7 +262,7 @@ class BrainMap
                     foreach ($parameters as $parameter) {
                         $properties[] = [
                             'name' => $parameter->getName(),
-                            'type' => $parameter->getType() ? $parameter->getType()->getName() : 'mixed',
+                            'type' => $parameter->getType() instanceof ReflectionType ? $parameter->getType()->getName() : 'mixed',
                         ];
                     }
                 }

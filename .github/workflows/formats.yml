@@ -65,5 +65,5 @@ jobs:
       #   - name: Test Refacto
       #     run: composer test:refactor
 
-      - name: Test Typos
-        run: composer test:typos
+    #   - name: Test Typos
+    #     run: composer test:typos

@@ -189,6 +189,7 @@ describe('loadTasksFor testsuite', function (): void {
                         ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
                         ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
                     ],
+                    'has_test' => false,
                 ],
                 [
                     'name' => 'ExampleTask2',
@@ -199,18 +200,21 @@ describe('loadTasksFor testsuite', function (): void {
                         ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
                         ['name' => 'id', 'type' => 'int', 'direction' => 'input'],
                     ],
+                    'has_test' => false,
                 ],
                 [
                     'name' => 'ExampleTask3',
                     'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask3::class,
                     'queue' => false,
                     'properties' => [],
+                    'has_test' => false,
                 ],
                 [
                     'name' => 'ExampleTask4',
                     'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class,
                     'queue' => true,
                     'properties' => [],
+                    'has_test' => false,
                 ],
             ]);
     });

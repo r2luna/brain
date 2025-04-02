@@ -352,7 +352,7 @@ class BrainMap
     private function checkIfTestExists(string $fileShortName): bool
     {
         $testFileName  = "{$fileShortName}Test.php";
-        $testDirectory = base_path("tests/Brain/");
+        $testDirectory = config('brain.test_directory', base_path('tests/Brain/'));
 
         if (! is_dir($testDirectory)) {
             $this->tested[$fileShortName] = false;

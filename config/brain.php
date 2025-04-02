@@ -24,7 +24,7 @@ return [
     | detect the tests and show them in the output.
     |
     */
-    'test_directory' => base_path('tests'),
+    'test_directory' => base_path('tests/Brain/'),
 
     /*
     |--------------------------------------------------------------------------

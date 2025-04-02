@@ -17,6 +17,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tests Directory
+    |--------------------------------------------------------------------------
+    |
+    | This value set's the tests directory where BrainShowCommand will look for
+    | detect the tests and show them in the output.
+    |
+    */
+    'test_directory' => base_path('tests'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Suffix for Task, Process, and Query
     |--------------------------------------------------------------------------
     |

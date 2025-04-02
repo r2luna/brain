@@ -144,14 +144,14 @@ class Printer
             $processName = data_get($process, 'name');
             $inChain = $process['chain'] ? ' chained' : '.';
             $processHasTest = $process['has_test']
-                ? ' <fg=' . $this->elemColors['TESTED'] . '>TESTED  </>'
-                : ' <fg=' . $this->elemColors['NOTEST'] . '>NOTEST  </>';
-            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain . $processName . $spaces . $inChain . 'PROC  ') - mb_strlen(strip_tags($processHasTest)) - 4, 0));
+                ? ' <fg=' . $this->elemColors['TESTED'] . '>TESTED</>  '
+                : ' <fg=' . $this->elemColors['NOTEST'] . '>NOTEST</>  ';
+            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain . $processName . $spaces . $inChain . 'PROC  ') - mb_strlen(strip_tags($processHasTest)) - 3, 0));
             $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
 
             $this->lines[] = [
                 sprintf(
-                    '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  %s<fg=%s>%s</><fg=#6C7280>%s%s</>',
+                    '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</> %s<fg=%s>%s</><fg=#6C7280>%s%s</>',
                     $this->elemColors['DOMAIN'],
                     strtoupper($currentDomain),
                     $spaces,
@@ -184,14 +184,14 @@ class Printer
             $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
             $taskQueued = $task['queue'] ? ' queued' : '.';
             $taskHasTest = $task['has_test']
-                ? ' <fg=' . $this->elemColors['TESTED'] . '>TESTED  </>'
-                : ' <fg=' . $this->elemColors['NOTEST'] . '>NOTEST  </>';
-            $taskDots = str_repeat('.', max($this->terminalWidth - mb_strlen($taskSpaces . $taskIndex . $taskName . 'TASK  ') - mb_strlen($taskQueued) - mb_strlen(strip_tags($taskHasTest)) - 1, 0));
+                ? ' <fg=' . $this->elemColors['TESTED'] . '>TESTED</>  '
+                : ' <fg=' . $this->elemColors['NOTEST'] . '>NOTEST</>  ';
+            $taskDots = str_repeat('.', max($this->terminalWidth - mb_strlen($taskSpaces . $taskIndex . $taskName . 'TASK  ') - mb_strlen($taskQueued) - mb_strlen(strip_tags($taskHasTest)), 0));
             $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
 
             $this->lines[] = [
                 sprintf(
-                    '%s<fg=%s;options=bold>%s</>  %s<fg=white>%s%s</><fg=#6C7280>%s%s</>',
+                    '%s<fg=%s;options=bold>%s</> %s<fg=white>%s%s</><fg=#6C7280>%s%s</>',
                     $taskSpaces,
                     $this->elemColors['TASK'],
                     'TASK',
@@ -222,14 +222,14 @@ class Printer
         foreach (data_get($domainData, 'queries') as $query) {
             $queryName = $query['name'];
             $queryHasTest = $query['has_test']
-                ? ' <fg=' . $this->elemColors['TESTED'] . '>TESTED  </>'
-                : ' <fg=' . $this->elemColors['NOTEST'] . '>NOTEST  </>';
+                ? ' <fg=' . $this->elemColors['TESTED'] . '>TESTED</>  '
+                : ' <fg=' . $this->elemColors['NOTEST'] . '>NOTEST</>  ';
             $querySpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
-            $queryDots = str_repeat('.', max($this->terminalWidth - mb_strlen($querySpaces . $queryName . 'QERY ') - mb_strlen(strip_tags($queryHasTest)) - 2, 0) - 1);
+            $queryDots = str_repeat('.', max($this->terminalWidth - mb_strlen($querySpaces . $queryName . 'QERY ') - mb_strlen(strip_tags($queryHasTest)) - 2, 0));
 
             $this->lines[] = [
                 sprintf(
-                    '%s<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280>%s %s</>',
+                    '%s<fg=%s;options=bold>%s</> %s<fg=white>%s</><fg=#6C7280> %s</>',
                     $querySpaces,
                     $this->elemColors['QERY'],
                     'QERY',

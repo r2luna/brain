@@ -9,7 +9,8 @@ use Illuminate\Console\OutputStyle;
 use Tests\Feature\Fixtures\PrinterReflection;
 
 beforeEach(function (): void {
-    config()->set('brain.root', __DIR__.'/../Fixtures/Brain');
+    config()->set('brain.root', __DIR__ . '/../Fixtures/Brain');
+    config()->set('brain.test_directory', __DIR__ . '/../Fixtures/Tests');
     Terminal::shouldReceive('cols')->andReturn(71);
     $this->map = new BrainMap;
     $this->printer = new Printer($this->map);
@@ -69,15 +70,15 @@ it('should check if creating all the correct lines to be printed', function (): 
     $lines = $this->printerReflection->get('lines');
 
     expect($lines)->toBe([
-        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> ....................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ........................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> .......................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> .......................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ................................ queued</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=green>TESTED</>  <fg=white>ExampleProcess</><fg=#6C7280> .............................</>'],
+        ['            <fg=yellow;options=bold>TASK</>  <fg=red>NOTEST</>  <fg=white>ExampleTask</><fg=#6C7280> ................................</>'],
+        ['            <fg=yellow;options=bold>TASK</>  <fg=green>TESTED</>  <fg=white>ExampleTask2</><fg=#6C7280> ...............................</>'],
+        ['            <fg=yellow;options=bold>TASK</>  <fg=red>NOTEST</>  <fg=white>ExampleTask3</><fg=#6C7280> ...............................</>'],
+        ['            <fg=yellow;options=bold>TASK</>  <fg=green>TESTED</>  <fg=white>ExampleTask4</><fg=#6C7280> ........................ queued</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=green>TESTED</>  <fg=white>ExampleQuery</><fg=#6C7280> ...............................</>'],
         [''],
-        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ........................... chained</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=red>NOTEST</>  <fg=white>ExampleProcess2</><fg=#6C7280> .................... chained</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=green>TESTED</>  <fg=white>ExampleQuery</><fg=#6C7280> ...............................</>'],
         [''],
     ]);
 });
@@ -110,7 +111,7 @@ it('should add new line when last line is not empty', function (): void {
 });
 
 it('should throw exception if brain is empty', function (): void {
-    config()->set('brain.root', __DIR__.'/../Fixtures/EmptyBrain');
+    config()->set('brain.root', __DIR__ . '/../Fixtures/EmptyBrain');
 
     $map = new BrainMap;
     $printer = new Printer($map);

@@ -98,16 +98,17 @@ class Printer
      * each domain data entry.
      *
      * Example Output:
-     * | 1    | 2   | 3                | 5                   | 6   |
-     * |------|-----|------------------|---------------------|-----|
-     * | USER | PROC| CreateUserProcess| ....................|     |
-     * |      | TASK| CreateUser       | ....................|     |
-     * |      | TASK| WelcomeNofication| ............. queued|     |
-     * |      | QERY| SomeQuery        | ....................|     |
+     * | 1    | 2    | 3      | 4                 | 5                   | 6   |
+     * |------|------|--------|-------------------|---------------------|-----|
+     * | USER | PROC | NOTEST | CreateUserProcess | ....................|     |
+     * |      | TASK | TESTED | CreateUser        | ....................|     |
+     * |      | TASK | TESTED | WelcomeNofication | ............. queued|     |
+     * |      | QERY | NOTEST | SomeQuery         | ....................|     |
      *
      * - `1`: Domain spaces (e.g., USER)
      * - `2`: Type (e.g., PROC, TASK, QERY)
-     * - `3`: Class name or identifier
+     * - `3`: Test (e.g., TESTED, NOTEST)
+     * - `4`: Class name or identifier
      * - `5`: Mixed properties (e.g., chained, queued)
      */
     private function createLines(): void
@@ -182,15 +183,19 @@ class Printer
             $taskName = $task['name'];
             $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
             $taskQueued = $task['queue'] ? ' queued' : '.';
-            $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces . $prefix . $taskName . 'TASK  ') - mb_strlen($taskQueued) - 2);
+            $taskHasTest = $task['has_test']
+                ? ' <fg=' . $this->elemColors['TESTED'] . '>TESTED  </>'
+                : ' <fg=' . $this->elemColors['NOTEST'] . '>NOTEST  </>';
+            $taskDots = str_repeat('.', max($this->terminalWidth - mb_strlen($taskSpaces . $taskIndex . $taskName . 'TASK  ') - mb_strlen($taskQueued) - mb_strlen(strip_tags($taskHasTest)) - 2, 0));
             $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
 
             $this->lines[] = [
                 sprintf(
-                    '%s<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
+                    '%s<fg=%s;options=bold>%s</>  %s<fg=white>%s%s</><fg=#6C7280>%s%s</>',
                     $taskSpaces,
                     $this->elemColors['TASK'],
                     'TASK',
+                    $taskHasTest,
                     $prefix,
                     $taskName,
                     $taskDots,

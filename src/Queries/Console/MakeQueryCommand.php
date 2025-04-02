@@ -51,7 +51,7 @@ class MakeQueryCommand extends BaseCommand
      */
     protected function getStub(): string
     {
-        return __DIR__ . '/stubs/query.stub';
+        return __DIR__.'/stubs/query.stub';
     }
 
     /**
@@ -59,12 +59,12 @@ class MakeQueryCommand extends BaseCommand
      *
      * @return string The name of the class
      */
-    #[\Override]
+    #[Override]
     protected function getNameInput(): string
     {
         $name = trim($this->argument('name'));
 
-        if (config('brain.use_suffix', false) == false) {
+        if (config('brain.use_suffix', false) === false) {
             return $name;
         }
 

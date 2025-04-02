@@ -12,6 +12,8 @@ use phpDocumentor\Reflection\DocBlock\Tag;
 use phpDocumentor\Reflection\DocBlock\Tags\Property;
 use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
 use phpDocumentor\Reflection\DocBlockFactory;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionType;
@@ -45,6 +47,7 @@ use SplFileInfo;
  * - `getPropertiesFor(ReflectionClass $reflection)`: Extracts properties metadata for a given class through docblock parsing.
  * - `getReflectionClass(SplFileInfo|string $value)`: Creates and returns a ReflectionClass instance for a given file or class.
  * - `getClassFullNameFromFile(string $filePath)`: Retrieves the fully qualified class name from a file.
+ * - `checkIfTestExists(string $fileShortName)`: Checks if a corresponding test file exists for a given source file.
  */
 class BrainMap
 {
@@ -52,6 +55,15 @@ class BrainMap
      * Where the final map will store
      */
     public ?Collection $map = null;
+
+    /**
+     * Variable to store the test status of each file.
+     * The key is the file short name, and the value is a boolean ndicating whether a corresponding test
+     *     file exists (true) or not (false).
+     *
+     * @var array<string, bool> $tested
+     */
+    public array $tested = [];
 
     /**
      * Constructs a new instance of the BrainMap class and initializes the loaded domains.
@@ -70,8 +82,8 @@ class BrainMap
         $files = File::directories($dir);
 
         $domains = collect($files)
-            ->flatMap(fn ($value) => [basename((string) $value) => $value])
-            ->map(fn ($domainPath, $domain): array => [
+            ->flatMap(fn($value) => [basename((string) $value) => $value])
+            ->map(fn($domainPath, $domain): array => [
                 'domain' => $domain,
                 'path' => $domainPath,
                 'processes' => $this->loadProcessesFor($domainPath),
@@ -97,7 +109,7 @@ class BrainMap
     private function getProcessesTasks(ReflectionClass $process): array
     {
         return collect($process->getProperty('tasks')->getValue(new $process->name([])))
-            ->map(fn (string $task): array => $this->getTask($task))
+            ->map(fn(string $task): array => $this->getTask($task))
             ->filter()
             ->values()
             ->toArray();
@@ -118,7 +130,7 @@ class BrainMap
      */
     private function loadProcessesFor(string $domainPath): array
     {
-        $path = $domainPath.DIRECTORY_SEPARATOR.'Processes';
+        $path = $domainPath . DIRECTORY_SEPARATOR . 'Processes';
 
         if (! is_dir($path)) {
             return [];
@@ -136,6 +148,7 @@ class BrainMap
                     'name' => basename($value, '.php'),
                     'chain' => $chainValue,
                     'tasks' => $this->getProcessesTasks($reflection),
+                    'has_test'   => $this->checkIfTestExists($reflection->getShortName()),
                 ];
             })
             ->toArray();
@@ -158,14 +171,14 @@ class BrainMap
      */
     private function loadTasksFor(string $domainPath): array
     {
-        $path = $domainPath.DIRECTORY_SEPARATOR.'Tasks';
+        $path = $domainPath . DIRECTORY_SEPARATOR . 'Tasks';
 
         if (! is_dir($path)) {
             return [];
         }
 
         return collect(File::files($path))
-            ->map(fn (SplFileInfo $task): array => $this->getTask($task))
+            ->map(fn(SplFileInfo $task): array => $this->getTask($task))
             ->toArray();
     }
 
@@ -188,6 +201,7 @@ class BrainMap
             'fullName' => $reflection->name,
             'queue' => $reflection->implementsInterface(ShouldQueue::class),
             'properties' => $this->getPropertiesFor($reflection),
+            'has_test'   => $this->checkIfTestExists($reflection->getShortName()),
         ];
     }
 
@@ -243,7 +257,7 @@ class BrainMap
      */
     private function loadQueriesFor(string $domainPath): array
     {
-        $path = $domainPath.DIRECTORY_SEPARATOR.'Queries';
+        $path = $domainPath . DIRECTORY_SEPARATOR . 'Queries';
 
         if (! is_dir($path)) {
             return [];
@@ -271,6 +285,7 @@ class BrainMap
                     'name' => $reflection->getShortName(),
                     'fullName' => $reflection->name,
                     'properties' => $properties,
+                    'has_test'   => $this->checkIfTestExists($reflection->getShortName()),
                 ];
             })
             ->toArray();
@@ -321,7 +336,40 @@ class BrainMap
             $class = $matches[1];
         }
 
-        return '\\'.($namespace !== '' && $namespace !== '0' ? $namespace.'\\'.$class : $class);
+        return '\\' . ($namespace !== '' && $namespace !== '0' ? $namespace . '\\' . $class : $class);
+    }
+
+    /**
+     * Checks if a corresponding test file exists for a given source file.
+     *
+     * This method checks whether a test file, with the name derived from the source file by appending "Test"
+     * to the file name, exists within the specified test directory. It recursively traverses the test directory
+     * and returns true if the test file is found, false otherwise.
+     *
+     * @param  string  $fileShortName  The name of the source file, without the extension.
+     * @return bool   Returns true if the corresponding test file exists, false otherwise.
+     */
+    private function checkIfTestExists(string $fileShortName): bool
+    {
+        $testFileName  = "{$fileShortName}Test.php";
+        $testDirectory = base_path("tests/Brain/");
+
+        if (! is_dir($testDirectory)) {
+            $this->tested[$fileShortName] = false;
+            return false;
+        }
+
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($testDirectory));
+
+        foreach ($iterator as $file) {
+            if ($file->isFile() && $file->getFilename() === $testFileName) {
+                $this->tested[$fileShortName] = true;
+                return true;
+            }
+        }
+
+        $this->tested[$fileShortName] = false;
+        return false;
     }
 
     // endregion

@@ -50,7 +50,7 @@ test('stub should be __DIR__./stubs/task/stub', function (): void {
     $method->setAccessible(true);
     $stubPath = $method->invoke($command);
 
-    $expectedPath = realpath(__DIR__ . '/../../../src/Tasks/Console/stubs/task.stub');
+    $expectedPath = realpath(__DIR__.'/../../../src/Tasks/Console/stubs/task.stub');
     $actualPath = realpath($stubPath);
 
     expect($actualPath)->toBe($expectedPath);

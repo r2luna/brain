@@ -18,6 +18,8 @@ class Printer
         'PROC' => 'blue',
         'TASK' => 'yellow',
         'QERY' => 'green',
+        'TESTED' => 'green',
+        'NOTEST' => 'red',
     ];
 
     /**
@@ -140,17 +142,21 @@ class Printer
         foreach (data_get($domainData, 'processes') as $process) {
             $processName = data_get($process, 'name');
             $inChain = $process['chain'] ? ' chained' : '.';
-            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - 5, 0));
+            $processHasTest = $process['has_test']
+                ? ' <fg=' . $this->elemColors['TESTED'] . '>TESTED  </>'
+                : ' <fg=' . $this->elemColors['NOTEST'] . '>NOTEST  </>';
+            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain . $processName . $spaces . $inChain . 'PROC  ') - mb_strlen(strip_tags($processHasTest)) - 4, 0));
             $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
 
             $this->lines[] = [
                 sprintf(
-                    '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  <fg=%s>%s</><fg=#6C7280>%s%s</>',
+                    '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  %s<fg=%s>%s</><fg=#6C7280>%s%s</>',
                     $this->elemColors['DOMAIN'],
                     strtoupper($currentDomain),
                     $spaces,
                     $this->elemColors['PROC'],
                     'PROC',
+                    $processHasTest,
                     'white',
                     $processName,
                     $dots,
@@ -176,7 +182,7 @@ class Printer
             $taskName = $task['name'];
             $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
             $taskQueued = $task['queue'] ? ' queued' : '.';
-            $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$prefix.$taskName.'TASK  ') - mb_strlen($taskQueued) - 2);
+            $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces . $prefix . $taskName . 'TASK  ') - mb_strlen($taskQueued) - 2);
             $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
 
             $this->lines[] = [
@@ -211,7 +217,7 @@ class Printer
         foreach (data_get($domainData, 'queries') as $query) {
             $queryName = $query['name'];
             $querySpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
-            $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces.$queryName.'QERY ') - 2);
+            $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces . $queryName . 'QERY ') - 2);
 
             $this->lines[] = [
                 sprintf(
@@ -265,7 +271,7 @@ class Printer
     {
         $this->lengthLongestDomain = mb_strlen(
             (string) data_get($this->brain->map
-                ->sortByDesc(fn ($value): int => mb_strlen((string) $value['domain']))
+                ->sortByDesc(fn($value): int => mb_strlen((string) $value['domain']))
                 ->first(), 'domain')
         );
     }

@@ -46,7 +46,7 @@ final class MakeProcessCommand extends BaseCommand
      */
     protected function getStub(): string
     {
-        return __DIR__ . '/stubs/process.stub';
+        return __DIR__.'/stubs/process.stub';
     }
 
     /**
@@ -54,12 +54,12 @@ final class MakeProcessCommand extends BaseCommand
      *
      * @return string The name of the class
      */
-    #[\Override]
+    #[Override]
     protected function getNameInput(): string
     {
         $name = trim($this->argument('name'));
 
-        if (config('brain.use_suffix', false) == false) {
+        if (config('brain.use_suffix', false) === false) {
             return $name;
         }
 

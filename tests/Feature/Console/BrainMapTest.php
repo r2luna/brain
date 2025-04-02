@@ -145,8 +145,9 @@ describe('loadProcessesFor testsuite', function (): void {
                     'name' => 'ExampleProcess',
                     'chain' => false,
                     'tasks' => [
-                        ['name' => 'ExampleTask4', 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class, 'queue' => true, 'properties' => []],
+                        ['name' => 'ExampleTask4', 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class, 'queue' => true, 'properties' => [], 'has_test' => false],
                     ],
+                    'has_test' => false,
                 ],
             ]);
     });

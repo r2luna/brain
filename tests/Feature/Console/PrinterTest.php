@@ -10,6 +10,7 @@ use Tests\Feature\Fixtures\PrinterReflection;
 
 beforeEach(function (): void {
     config()->set('brain.root', __DIR__.'/../Fixtures/Brain');
+    config()->set('brain.test_directory', __DIR__.'/../Fixtures/Tests');
     Terminal::shouldReceive('cols')->andReturn(71);
     $this->map = new BrainMap;
     $this->printer = new Printer($this->map);
@@ -22,7 +23,8 @@ it('should load the current terminal width', function (): void {
     expect($this->printerReflection->get('terminalWidth'))->toBe(71);
 });
 
-it('should print lines to the terminal', function (): void {
+it('should print 3 lines to the terminal when test_minimum_coverage is disabled', function (): void {
+    config()->set('brain.test_minimum_coverage', 0.0);
     $mockOutput = Mockery::mock(OutputStyle::class);
 
     $this->printerReflection->set('output', $mockOutput);
@@ -32,7 +34,23 @@ it('should print lines to the terminal', function (): void {
         ['Line 3'],
     ]);
 
-    $mockOutput->shouldReceive('writeln')->once();
+    $mockOutput->shouldReceive('writeln')->times(3);
+
+    $this->printer->print();
+});
+
+it('should print 4 lines to the terminal when test_minimum_coverage is enabled', function (): void {
+    config()->set('brain.test_minimum_coverage', 95.0);
+    $mockOutput = Mockery::mock(OutputStyle::class);
+
+    $this->printerReflection->set('output', $mockOutput);
+
+    $this->printerReflection->set('lines', [
+        ['Line 1', 'Line 2'],
+        ['Line 3'],
+    ]);
+
+    $mockOutput->shouldReceive('writeln')->times(4);
 
     $this->printer->print();
 });
@@ -69,15 +87,15 @@ it('should check if creating all the correct lines to be printed', function (): 
     $lines = $this->printerReflection->get('lines');
 
     expect($lines)->toBe([
-        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> ....................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ........................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> .......................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> .......................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ................................ queued</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=green>TESTED</>  <fg=white>ExampleProcess</><fg=#6C7280> .............................</>'],
+        ['            <fg=yellow;options=bold>TASK</>  <fg=red>NOTEST</>  <fg=white>ExampleTask</><fg=#6C7280> ................................</>'],
+        ['            <fg=yellow;options=bold>TASK</>  <fg=green>TESTED</>  <fg=white>ExampleTask2</><fg=#6C7280> ...............................</>'],
+        ['            <fg=yellow;options=bold>TASK</>  <fg=red>NOTEST</>  <fg=white>ExampleTask3</><fg=#6C7280> ...............................</>'],
+        ['            <fg=yellow;options=bold>TASK</>  <fg=green>TESTED</>  <fg=white>ExampleTask4</><fg=#6C7280> ........................ queued</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=green>TESTED</>  <fg=white>ExampleQuery</><fg=#6C7280> ...............................</>'],
         [''],
-        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ........................... chained</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=red>NOTEST</>  <fg=white>ExampleProcess2</><fg=#6C7280> .................... chained</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=green>TESTED</>  <fg=white>ExampleQuery</><fg=#6C7280> ...............................</>'],
         [''],
     ]);
 });

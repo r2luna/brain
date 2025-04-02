@@ -12,6 +12,8 @@ use phpDocumentor\Reflection\DocBlock\Tag;
 use phpDocumentor\Reflection\DocBlock\Tags\Property;
 use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
 use phpDocumentor\Reflection\DocBlockFactory;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionType;
@@ -45,6 +47,7 @@ use SplFileInfo;
  * - `getPropertiesFor(ReflectionClass $reflection)`: Extracts properties metadata for a given class through docblock parsing.
  * - `getReflectionClass(SplFileInfo|string $value)`: Creates and returns a ReflectionClass instance for a given file or class.
  * - `getClassFullNameFromFile(string $filePath)`: Retrieves the fully qualified class name from a file.
+ * - `checkIfTestExists(string $fileShortName)`: Checks if a corresponding test file exists for a given source file.
  */
 class BrainMap
 {
@@ -52,6 +55,15 @@ class BrainMap
      * Where the final map will store
      */
     public ?Collection $map = null;
+
+    /**
+     * Variable to store the test status of each file.
+     * The key is the file short name, and the value is a boolean ndicating whether a corresponding test
+     *     file exists (true) or not (false).
+     *
+     * @var array<string, bool>
+     */
+    public array $tested = [];
 
     /**
      * Constructs a new instance of the BrainMap class and initializes the loaded domains.
@@ -136,6 +148,7 @@ class BrainMap
                     'name' => basename($value, '.php'),
                     'chain' => $chainValue,
                     'tasks' => $this->getProcessesTasks($reflection),
+                    'has_test' => $this->checkIfTestExists($reflection->getShortName()),
                 ];
             })
             ->toArray();
@@ -188,6 +201,7 @@ class BrainMap
             'fullName' => $reflection->name,
             'queue' => $reflection->implementsInterface(ShouldQueue::class),
             'properties' => $this->getPropertiesFor($reflection),
+            'has_test' => $this->checkIfTestExists($reflection->getShortName()),
         ];
     }
 
@@ -271,6 +285,7 @@ class BrainMap
                     'name' => $reflection->getShortName(),
                     'fullName' => $reflection->name,
                     'properties' => $properties,
+                    'has_test' => $this->checkIfTestExists($reflection->getShortName()),
                 ];
             })
             ->toArray();
@@ -322,6 +337,42 @@ class BrainMap
         }
 
         return '\\'.($namespace !== '' && $namespace !== '0' ? $namespace.'\\'.$class : $class);
+    }
+
+    /**
+     * Checks if a corresponding test file exists for a given source file.
+     *
+     * This method checks whether a test file, with the name derived from the source file by appending "Test"
+     * to the file name, exists within the specified test directory. It recursively traverses the test directory
+     * and returns true if the test file is found, false otherwise.
+     *
+     * @param  string  $fileShortName  The name of the source file, without the extension.
+     * @return bool Returns true if the corresponding test file exists, false otherwise.
+     */
+    private function checkIfTestExists(string $fileShortName): bool
+    {
+        $testFileName = "{$fileShortName}Test.php";
+        $testDirectory = config('brain.test_directory', base_path('tests/Brain/'));
+
+        if (! is_dir($testDirectory)) {
+            $this->tested[$fileShortName] = false;
+
+            return false;
+        }
+
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($testDirectory));
+
+        foreach ($iterator as $file) {
+            if ($file->isFile() && $file->getFilename() === $testFileName) {
+                $this->tested[$fileShortName] = true;
+
+                return true;
+            }
+        }
+
+        $this->tested[$fileShortName] = false;
+
+        return false;
     }
 
     // endregion

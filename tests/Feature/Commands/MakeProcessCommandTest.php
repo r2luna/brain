@@ -87,3 +87,53 @@ test('get defaultNamespace with no domain', function (): void {
 
     expect($defaultNamespace)->toBe('App\Brain\TempDomain\Processes');
 });
+
+test('getNameInput should return the name as is when suffix is disabled', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => false]);
+    $input = new TestInput(['name' => 'CreateUser']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+
+    expect($nameInput)->toBe('CreateUser');
+});
+
+test('getNameInput should append Process when suffix is enabled', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => true]);
+    $input = new TestInput(['name' => 'CreateUser']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+
+    expect($nameInput)->toBe('CreateUserProcess');
+});
+
+test('getNameInput should not duplicate the Process suffix', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => true]);
+    $input = new TestInput(['name' => 'CreateUserProcess']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+    expect($nameInput)->toBe('CreateUserProcess');
+});

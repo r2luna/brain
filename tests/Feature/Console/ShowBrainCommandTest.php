@@ -20,9 +20,20 @@ it('has the correct description', function (): void {
     expect($this->command->getDescription())->toBe('Show Brain Mapping');
 });
 
-it('executes the command successfully', function (): void {
+it('executes the command successfully when test_minimum_coverage is disabled', function (): void {
+    config()->set('brain.test_minimum_coverage', 0.0);
     $mockOutput = Mockery::mock(OutputStyle::class);
-    $mockOutput->shouldReceive('writeln')->once();
+    $mockOutput->shouldReceive('writeln')->times(3);
+
+    $this->command->setOutput($mockOutput);
+
+    $this->command->handle();
+});
+
+it('executes the command successfully when test_minimum_coverage is enabled', function (): void {
+    config()->set('brain.test_minimum_coverage', 90.0);
+    $mockOutput = Mockery::mock(OutputStyle::class);
+    $mockOutput->shouldReceive('writeln')->times(4);
 
     $this->command->setOutput($mockOutput);
 

@@ -18,6 +18,8 @@ class Printer
         'PROC' => 'blue',
         'TASK' => 'yellow',
         'QERY' => 'green',
+        'TESTED' => 'green',
+        'NOTEST' => 'red',
     ];
 
     /**
@@ -60,6 +62,8 @@ class Printer
         });
 
         $this->output->writeln($flattenedLines);
+
+        $this->printTests();
     }
 
     /**
@@ -70,6 +74,51 @@ class Printer
     public function setOutput(OutputStyle $output): void
     {
         $this->output = $output;
+    }
+
+    /**
+     * Prints the test coverage information to the output.
+     *
+     * This method calculates the number of tests and the maximum
+     * test count, then formats and prints the coverage information
+     * to the output. It also checks if the coverage percentage is
+     * below a specified minimum threshold and prints a warning if so.
+     */
+    private function printTests(): void
+    {
+        $tests = collect($this->brain->tested)
+            ->filter(fn ($value): bool => $value)
+            ->count();
+        $maxTestCount = count($this->brain->tested);
+
+        $this->output->writeln('');
+        $this->output->writeln(sprintf(
+            '  <fg=white;options=bold>TESTS:  </><fg=green;options=bold>%d/%d</>',
+            $tests,
+            $maxTestCount
+        ));
+
+        $minimumCoverage = (float) config('brain.test_minimum_coverage', 0.0);
+        if ($minimumCoverage > 0) {
+            $coveragePercentage = ($tests / $maxTestCount) * 100.0;
+
+            if ($coveragePercentage < $minimumCoverage) {
+                $this->output->writeln(
+                    sprintf(
+                        '  <bg=red;options=bold> FAIL </>  Test coverage below expected: <fg=red;options=bold>%.1f%%</>. Minimum: <fg=white;options=bold>%.1f%%</>',
+                        $coveragePercentage,
+                        $minimumCoverage
+                    )
+                );
+            } else {
+                $this->output->writeln(sprintf(
+                    '  <bg=green;options=bold> PASS </>  <fg=white;options=bold>Coverage</> <fg=green;options=bold>%.1f%%</>. <fg=white;options=bold>Minimum</> <fg=white;options=bold>%.1f%%</>',
+                    $coveragePercentage,
+                    $minimumCoverage
+
+                ));
+            }
+        }
     }
 
     /**
@@ -96,16 +145,17 @@ class Printer
      * each domain data entry.
      *
      * Example Output:
-     * | 1    | 2   | 3                | 5                   | 6   |
-     * |------|-----|------------------|---------------------|-----|
-     * | USER | PROC| CreateUserProcess| ....................|     |
-     * |      | TASK| CreateUser       | ....................|     |
-     * |      | TASK| WelcomeNofication| ............. queued|     |
-     * |      | QERY| SomeQuery        | ....................|     |
+     * | 1    | 2    | 3      | 4                 | 5                   | 6   |
+     * |------|------|--------|-------------------|---------------------|-----|
+     * | USER | PROC | NOTEST | CreateUserProcess | ....................|     |
+     * |      | TASK | TESTED | CreateUser        | ....................|     |
+     * |      | TASK | TESTED | WelcomeNofication | ............. queued|     |
+     * |      | QERY | NOTEST | SomeQuery         | ....................|     |
      *
      * - `1`: Domain spaces (e.g., USER)
      * - `2`: Type (e.g., PROC, TASK, QERY)
-     * - `3`: Class name or identifier
+     * - `3`: Test (e.g., TESTED, NOTEST)
+     * - `4`: Class name or identifier
      * - `5`: Mixed properties (e.g., chained, queued)
      */
     private function createLines(): void
@@ -140,17 +190,21 @@ class Printer
         foreach (data_get($domainData, 'processes') as $process) {
             $processName = data_get($process, 'name');
             $inChain = $process['chain'] ? ' chained' : '.';
-            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - 5, 0));
+            $processHasTest = $process['has_test']
+                ? ' <fg='.$this->elemColors['TESTED'].'>TESTED</>  '
+                : ' <fg='.$this->elemColors['NOTEST'].'>NOTEST</>  ';
+            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - mb_strlen(strip_tags($processHasTest)) - 3, 0));
             $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
 
             $this->lines[] = [
                 sprintf(
-                    '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  <fg=%s>%s</><fg=#6C7280>%s%s</>',
+                    '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</> %s<fg=%s>%s</><fg=#6C7280>%s%s</>',
                     $this->elemColors['DOMAIN'],
                     strtoupper($currentDomain),
                     $spaces,
                     $this->elemColors['PROC'],
                     'PROC',
+                    $processHasTest,
                     'white',
                     $processName,
                     $dots,
@@ -176,15 +230,19 @@ class Printer
             $taskName = $task['name'];
             $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
             $taskQueued = $task['queue'] ? ' queued' : '.';
-            $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$prefix.$taskName.'TASK  ') - mb_strlen($taskQueued) - 2);
+            $taskHasTest = $task['has_test']
+                ? ' <fg='.$this->elemColors['TESTED'].'>TESTED</>  '
+                : ' <fg='.$this->elemColors['NOTEST'].'>NOTEST</>  ';
+            $taskDots = str_repeat('.', max($this->terminalWidth - mb_strlen($taskSpaces.$taskIndex.$taskName.'TASK  ') - mb_strlen($taskQueued) - mb_strlen(strip_tags($taskHasTest)), 0));
             $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
 
             $this->lines[] = [
                 sprintf(
-                    '%s<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
+                    '%s<fg=%s;options=bold>%s</> %s<fg=white>%s%s</><fg=#6C7280>%s%s</>',
                     $taskSpaces,
                     $this->elemColors['TASK'],
                     'TASK',
+                    $taskHasTest,
                     $prefix,
                     $taskName,
                     $taskDots,
@@ -210,15 +268,19 @@ class Printer
     {
         foreach (data_get($domainData, 'queries') as $query) {
             $queryName = $query['name'];
+            $queryHasTest = $query['has_test']
+                ? ' <fg='.$this->elemColors['TESTED'].'>TESTED</>  '
+                : ' <fg='.$this->elemColors['NOTEST'].'>NOTEST</>  ';
             $querySpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
-            $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces.$queryName.'QERY ') - 2);
+            $queryDots = str_repeat('.', max($this->terminalWidth - mb_strlen($querySpaces.$queryName.'QERY ') - mb_strlen(strip_tags($queryHasTest)) - 2, 0));
 
             $this->lines[] = [
                 sprintf(
-                    '%s<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280>%s</>',
+                    '%s<fg=%s;options=bold>%s</> %s<fg=white>%s</><fg=#6C7280> %s</>',
                     $querySpaces,
                     $this->elemColors['QERY'],
                     'QERY',
+                    $queryHasTest,
                     $queryName,
                     $queryDots
                 ),

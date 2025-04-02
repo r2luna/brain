@@ -9,8 +9,8 @@ use Illuminate\Console\OutputStyle;
 use Tests\Feature\Fixtures\PrinterReflection;
 
 beforeEach(function (): void {
-    config()->set('brain.root', __DIR__ . '/../Fixtures/Brain');
-    config()->set('brain.test_directory', __DIR__ . '/../Fixtures/Tests');
+    config()->set('brain.root', __DIR__.'/../Fixtures/Brain');
+    config()->set('brain.test_directory', __DIR__.'/../Fixtures/Tests');
     Terminal::shouldReceive('cols')->andReturn(71);
     $this->map = new BrainMap;
     $this->printer = new Printer($this->map);
@@ -128,7 +128,7 @@ it('should add new line when last line is not empty', function (): void {
 });
 
 it('should throw exception if brain is empty', function (): void {
-    config()->set('brain.root', __DIR__ . '/../Fixtures/EmptyBrain');
+    config()->set('brain.root', __DIR__.'/../Fixtures/EmptyBrain');
 
     $map = new BrainMap;
     $printer = new Printer($map);

@@ -10,14 +10,14 @@ beforeEach(function (): void {
 });
 
 it('should throw exception when dir do not exists', function (): void {
-    config()->set('brain.root', __DIR__ . '/../Fixtures/Brain2');
+    config()->set('brain.root', __DIR__.'/../Fixtures/Brain2');
     $brain = new BrainMap;
 })->throws(Exception::class, 'Brain directory not found');
 
 describe('load testsuite', function (): void {
     beforeEach(function (): void {
-        config()->set('brain.root', __DIR__ . '/../Fixtures/Brain');
-        config()->set('brain.test_directory', __DIR__ . '/../Fixtures/Tests');
+        config()->set('brain.root', __DIR__.'/../Fixtures/Brain');
+        config()->set('brain.test_directory', __DIR__.'/../Fixtures/Tests');
     });
 
     it('should return a list of the entire set of domains', function (): void {
@@ -26,7 +26,7 @@ describe('load testsuite', function (): void {
         $data = [
             'Example' => [
                 'domain' => 'Example',
-                'path' => $basePath . '/tests/Feature/Console/../Fixtures/Brain/Example',
+                'path' => $basePath.'/tests/Feature/Console/../Fixtures/Brain/Example',
                 'processes' => [
                     [
                         'name' => 'ExampleProcess',
@@ -93,7 +93,7 @@ describe('load testsuite', function (): void {
             ],
             'Example2' => [
                 'domain' => 'Example2',
-                'path' => $basePath . '/tests/Feature/Console/../Fixtures/Brain/Example2',
+                'path' => $basePath.'/tests/Feature/Console/../Fixtures/Brain/Example2',
                 'processes' => [
                     [
                         'name' => 'ExampleProcess2',
@@ -122,7 +122,7 @@ describe('load testsuite', function (): void {
             ],
             'Example3' => [
                 'domain' => 'Example3',
-                'path' => $basePath . '/tests/Feature/Console/../Fixtures/Brain/Example3',
+                'path' => $basePath.'/tests/Feature/Console/../Fixtures/Brain/Example3',
                 'processes' => [],
                 'tasks' => [],
                 'queries' => [],
@@ -137,7 +137,7 @@ describe('load testsuite', function (): void {
 describe('loadProcessesFor testsuite', function (): void {
     it('should list all processes in a dir', function (): void {
         $method = $this->reflection->getMethod('loadProcessesFor');
-        $path = __DIR__ . '/../Fixtures/Brain/Example';
+        $path = __DIR__.'/../Fixtures/Brain/Example';
         $output = $method->invokeArgs($this->object, [$path]);
 
         expect($output)->toHaveCount(1)
@@ -155,7 +155,7 @@ describe('loadProcessesFor testsuite', function (): void {
 
     it('should return an empty array if dir doesnt exists', function (): void {
         $method = $this->reflection->getMethod('loadProcessesFor');
-        $path = __DIR__ . '/../Fixtures/Brain/Example3';
+        $path = __DIR__.'/../Fixtures/Brain/Example3';
         $output = $method->invokeArgs($this->object, [$path]);
 
         expect($output)->toHaveCount(0);
@@ -163,7 +163,7 @@ describe('loadProcessesFor testsuite', function (): void {
 
     it('should check if the process is in chain', function (): void {
         $method = $this->reflection->getMethod('loadProcessesFor');
-        $path = __DIR__ . '/../Fixtures/Brain/Example2';
+        $path = __DIR__.'/../Fixtures/Brain/Example2';
         $output = $method->invokeArgs($this->object, [$path]);
 
         expect($output)->toHaveCount(1)
@@ -177,7 +177,7 @@ describe('loadProcessesFor testsuite', function (): void {
 describe('loadTasksFor testsuite', function (): void {
     it('should load tasks from a given path', function (): void {
         $method = $this->reflection->getMethod('loadTasksFor');
-        $path = __DIR__ . '/../Fixtures/Brain/Example';
+        $path = __DIR__.'/../Fixtures/Brain/Example';
         $output = $method->invokeArgs($this->object, [$path]);
 
         expect($output)->toHaveCount(4)
@@ -222,7 +222,7 @@ describe('loadTasksFor testsuite', function (): void {
 
     it('should return an empty array if the directory does not exists', function (): void {
         $method = $this->reflection->getMethod('loadTasksFor');
-        $path = __DIR__ . '/../Fixtures/Brain/Example3';
+        $path = __DIR__.'/../Fixtures/Brain/Example3';
         $output = $method->invokeArgs($this->object, [$path]);
 
         expect($output)->toHaveCount(0);
@@ -230,7 +230,7 @@ describe('loadTasksFor testsuite', function (): void {
 
     it('should check if the task needs to run in a queue', function (): void {
         $method = $this->reflection->getMethod('loadTasksFor');
-        $path = __DIR__ . '/../Fixtures/Brain/Example';
+        $path = __DIR__.'/../Fixtures/Brain/Example';
         $output = $method->invokeArgs($this->object, [$path]);
 
         expect($output)->toHaveCount(4)
@@ -321,7 +321,7 @@ describe('getPropertiesFor testsuite', function (): void {
 describe('loadQueriesFor testsuite', function (): void {
     it('should load queries from a given path', function (): void {
         $method = $this->reflection->getMethod('loadQueriesFor');
-        $path = __DIR__ . '/../Fixtures/Brain/Example';
+        $path = __DIR__.'/../Fixtures/Brain/Example';
         $output = $method->invokeArgs($this->object, [$path]);
 
         expect($output)->toHaveCount(1)
@@ -334,7 +334,7 @@ describe('loadQueriesFor testsuite', function (): void {
 
     it('should load all properties', function (): void {
         $method = $this->reflection->getMethod('loadQueriesFor');
-        $path = __DIR__ . '/../Fixtures/Brain/Example';
+        $path = __DIR__.'/../Fixtures/Brain/Example';
         $output = $method->invokeArgs($this->object, [$path]);
 
         expect($output)->toHaveCount(1)
@@ -352,7 +352,7 @@ describe('loadQueriesFor testsuite', function (): void {
 
     it('should return an empty array when there is no construct', function (): void {
         $method = $this->reflection->getMethod('loadQueriesFor');
-        $path = __DIR__ . '/../Fixtures/Brain/Example2';
+        $path = __DIR__.'/../Fixtures/Brain/Example2';
         $output = $method->invokeArgs($this->object, [$path]);
 
         expect($output)->toHaveCount(1)
@@ -365,7 +365,7 @@ describe('loadQueriesFor testsuite', function (): void {
 
     it('should return an empty array if the directory does not exists', function (): void {
         $method = $this->reflection->getMethod('loadQueriesFor');
-        $path = __DIR__ . '/../Fixtures/Brain/Example3';
+        $path = __DIR__.'/../Fixtures/Brain/Example3';
         $output = $method->invokeArgs($this->object, [$path]);
 
         expect($output)->toHaveCount(0);
@@ -383,7 +383,7 @@ describe('getReflectionClass testsuite', function (): void {
 
     it('should create a reflection class from a SplFileInfo', function (): void {
         $method = $this->reflection->getMethod('getReflectionClass');
-        $path = new SplFileInfo(__DIR__ . '/../Fixtures/QueuedTask.php');
+        $path = new SplFileInfo(__DIR__.'/../Fixtures/QueuedTask.php');
         $output = $method->invokeArgs($this->object, [$path]);
         expect($output)->toBeInstanceOf(ReflectionClass::class);
     });

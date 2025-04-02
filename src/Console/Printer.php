@@ -67,6 +67,16 @@ class Printer
     }
 
     /**
+     * Sets the output style for the printer.
+     *
+     * @param  OutputStyle  $output  The output style instance to be set.
+     */
+    public function setOutput(OutputStyle $output): void
+    {
+        $this->output = $output;
+    }
+
+    /**
      * Prints the test coverage information to the output.
      *
      * This method calculates the number of tests and the maximum
@@ -77,18 +87,18 @@ class Printer
     private function printTests(): void
     {
         $tests = collect($this->brain->tested)
-            ->filter(fn($value): bool => $value)
+            ->filter(fn ($value): bool => $value)
             ->count();
         $maxTestCount = count($this->brain->tested);
 
-        $this->output->writeln("");
+        $this->output->writeln('');
         $this->output->writeln(sprintf(
             '  <fg=white;options=bold>TESTS:  </><fg=green;options=bold>%d/%d</>',
             $tests,
             $maxTestCount
         ));
 
-        $minimumCoverage = (float)config('brain.test_minimum_coverage', 0.0);
+        $minimumCoverage = (float) config('brain.test_minimum_coverage', 0.0);
         if ($minimumCoverage > 0) {
             $coveragePercentage = ($tests / $maxTestCount) * 100.0;
 
@@ -109,16 +119,6 @@ class Printer
                 ));
             }
         }
-    }
-
-    /**
-     * Sets the output style for the printer.
-     *
-     * @param  OutputStyle  $output  The output style instance to be set.
-     */
-    public function setOutput(OutputStyle $output): void
-    {
-        $this->output = $output;
     }
 
     /**
@@ -191,9 +191,9 @@ class Printer
             $processName = data_get($process, 'name');
             $inChain = $process['chain'] ? ' chained' : '.';
             $processHasTest = $process['has_test']
-                ? ' <fg=' . $this->elemColors['TESTED'] . '>TESTED</>  '
-                : ' <fg=' . $this->elemColors['NOTEST'] . '>NOTEST</>  ';
-            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain . $processName . $spaces . $inChain . 'PROC  ') - mb_strlen(strip_tags($processHasTest)) - 3, 0));
+                ? ' <fg='.$this->elemColors['TESTED'].'>TESTED</>  '
+                : ' <fg='.$this->elemColors['NOTEST'].'>NOTEST</>  ';
+            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - mb_strlen(strip_tags($processHasTest)) - 3, 0));
             $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
 
             $this->lines[] = [
@@ -231,9 +231,9 @@ class Printer
             $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
             $taskQueued = $task['queue'] ? ' queued' : '.';
             $taskHasTest = $task['has_test']
-                ? ' <fg=' . $this->elemColors['TESTED'] . '>TESTED</>  '
-                : ' <fg=' . $this->elemColors['NOTEST'] . '>NOTEST</>  ';
-            $taskDots = str_repeat('.', max($this->terminalWidth - mb_strlen($taskSpaces . $taskIndex . $taskName . 'TASK  ') - mb_strlen($taskQueued) - mb_strlen(strip_tags($taskHasTest)), 0));
+                ? ' <fg='.$this->elemColors['TESTED'].'>TESTED</>  '
+                : ' <fg='.$this->elemColors['NOTEST'].'>NOTEST</>  ';
+            $taskDots = str_repeat('.', max($this->terminalWidth - mb_strlen($taskSpaces.$taskIndex.$taskName.'TASK  ') - mb_strlen($taskQueued) - mb_strlen(strip_tags($taskHasTest)), 0));
             $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
 
             $this->lines[] = [
@@ -269,10 +269,10 @@ class Printer
         foreach (data_get($domainData, 'queries') as $query) {
             $queryName = $query['name'];
             $queryHasTest = $query['has_test']
-                ? ' <fg=' . $this->elemColors['TESTED'] . '>TESTED</>  '
-                : ' <fg=' . $this->elemColors['NOTEST'] . '>NOTEST</>  ';
+                ? ' <fg='.$this->elemColors['TESTED'].'>TESTED</>  '
+                : ' <fg='.$this->elemColors['NOTEST'].'>NOTEST</>  ';
             $querySpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
-            $queryDots = str_repeat('.', max($this->terminalWidth - mb_strlen($querySpaces . $queryName . 'QERY ') - mb_strlen(strip_tags($queryHasTest)) - 2, 0));
+            $queryDots = str_repeat('.', max($this->terminalWidth - mb_strlen($querySpaces.$queryName.'QERY ') - mb_strlen(strip_tags($queryHasTest)) - 2, 0));
 
             $this->lines[] = [
                 sprintf(
@@ -327,7 +327,7 @@ class Printer
     {
         $this->lengthLongestDomain = mb_strlen(
             (string) data_get($this->brain->map
-                ->sortByDesc(fn($value): int => mb_strlen((string) $value['domain']))
+                ->sortByDesc(fn ($value): int => mb_strlen((string) $value['domain']))
                 ->first(), 'domain')
         );
     }

@@ -7,7 +7,7 @@ use Brain\Facades\Terminal;
 use Illuminate\Console\OutputStyle;
 
 beforeEach(function (): void {
-    config()->set('brain.root', __DIR__ . '/../Fixtures/Brain');
+    config()->set('brain.root', __DIR__.'/../Fixtures/Brain');
     Terminal::shouldReceive('cols')->andReturn(71);
     $this->command = new ShowBrainCommand;
 });
@@ -41,7 +41,7 @@ it('executes the command successfully when test_minimum_coverage is enabled', fu
 });
 
 it('throws exception when brain is empty', function (): void {
-    config()->set('brain.root', __DIR__ . '/../Fixtures/EmptyBrain');
+    config()->set('brain.root', __DIR__.'/../Fixtures/EmptyBrain');
 
     $this->command->handle();
 })->throws(Exception::class, 'The brain map is empty.');

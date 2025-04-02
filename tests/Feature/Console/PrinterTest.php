@@ -23,7 +23,8 @@ it('should load the current terminal width', function (): void {
     expect($this->printerReflection->get('terminalWidth'))->toBe(71);
 });
 
-it('should print lines to the terminal', function (): void {
+it('should print 3 lines to the terminal when test_minimum_coverage is disabled', function (): void {
+    config()->set('brain.test_minimum_coverage', 0.0);
     $mockOutput = Mockery::mock(OutputStyle::class);
 
     $this->printerReflection->set('output', $mockOutput);
@@ -33,7 +34,23 @@ it('should print lines to the terminal', function (): void {
         ['Line 3'],
     ]);
 
-    $mockOutput->shouldReceive('writeln')->once();
+    $mockOutput->shouldReceive('writeln')->times(3);
+
+    $this->printer->print();
+});
+
+it('should print 4 lines to the terminal when test_minimum_coverage is enabled', function (): void {
+    config()->set('brain.test_minimum_coverage', 95.0);
+    $mockOutput = Mockery::mock(OutputStyle::class);
+
+    $this->printerReflection->set('output', $mockOutput);
+
+    $this->printerReflection->set('lines', [
+        ['Line 1', 'Line 2'],
+        ['Line 3'],
+    ]);
+
+    $mockOutput->shouldReceive('writeln')->times(4);
 
     $this->printer->print();
 });

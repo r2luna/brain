@@ -39,4 +39,19 @@ return [
     |
     */
     'use_suffix' => true,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Minimum Test Coverage
+    |--------------------------------------------------------------------------
+    |
+    | This value sets the minimum percentage of test coverage required for
+    | displaying in the BrainShowCommand output. If the coverage is below
+    | this threshold, the output will show a failure message. Otherwise, it
+    | will display a success message ("PASS").
+    |
+    | Set to 0 to disable this check.
+    |
+    */
+    'test_minimum_coverage' => 95.0,
 ];

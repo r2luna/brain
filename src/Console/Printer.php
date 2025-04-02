@@ -62,6 +62,53 @@ class Printer
         });
 
         $this->output->writeln($flattenedLines);
+
+        $this->printTests();
+    }
+
+    /**
+     * Prints the test coverage information to the output.
+     *
+     * This method calculates the number of tests and the maximum
+     * test count, then formats and prints the coverage information
+     * to the output. It also checks if the coverage percentage is
+     * below a specified minimum threshold and prints a warning if so.
+     */
+    private function printTests(): void
+    {
+        $tests = collect($this->brain->tested)
+            ->filter(fn($value): bool => $value)
+            ->count();
+        $maxTestCount = count($this->brain->tested);
+
+        $this->output->writeln("");
+        $this->output->writeln(sprintf(
+            '  <fg=white;options=bold>TESTS:  </><fg=green;options=bold>%d/%d</>',
+            $tests,
+            $maxTestCount
+        ));
+
+        $minimumCoverage = (float)config('brain.test_minimum_coverage', 0.0);
+        if ($minimumCoverage > 0) {
+            $coveragePercentage = ($tests / $maxTestCount) * 100.0;
+
+            if ($coveragePercentage < $minimumCoverage) {
+                $this->output->writeln(
+                    sprintf(
+                        '  <bg=red;options=bold> FAIL </>  Test coverage below expected: <fg=red;options=bold>%.1f%%</>. Minimum: <fg=white;options=bold>%.1f%%</>',
+                        $coveragePercentage,
+                        $minimumCoverage
+                    )
+                );
+            } else {
+                $this->output->writeln(sprintf(
+                    '  <bg=green;options=bold> PASS </>  <fg=white;options=bold>Coverage</> <fg=green;options=bold>%.1f%%</>. <fg=white;options=bold>Minimum</> <fg=white;options=bold>%.1f%%</>',
+                    $coveragePercentage,
+                    $minimumCoverage
+
+                ));
+            }
+        }
     }
 
     /**

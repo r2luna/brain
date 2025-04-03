@@ -7,6 +7,7 @@ namespace Brain\Console;
 use Brain\Facades\Terminal;
 use Exception;
 use Illuminate\Console\OutputStyle;
+use Illuminate\Support\Collection;
 
 class Printer
 {
@@ -83,7 +84,7 @@ class Printer
      */
     private function checkIfBrainMapIsEmpty(): void
     {
-        if (! $this->brain->map instanceof \Illuminate\Support\Collection || $this->brain->map->isEmpty()) {
+        if (! $this->brain->map instanceof Collection || $this->brain->map->isEmpty()) {
             throw new Exception('The brain map is empty.');
         }
     }

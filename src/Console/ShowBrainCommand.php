@@ -27,6 +27,9 @@ class ShowBrainCommand extends Command
      */
     public function handle(): void
     {
-        (new Printer(new BrainMap, $this->output))->print();
+        (new Printer(
+            new BrainMap,
+            $this->output,
+        ))->print();
     }
 }

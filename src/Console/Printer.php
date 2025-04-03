@@ -141,21 +141,48 @@ class Printer
         foreach (data_get($domainData, 'processes') as $process) {
             $processName = data_get($process, 'name');
             $inChain = $process['chain'] ? ' chained' : '.';
-            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - 5, 0));
+            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - 4, 0));
             $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
 
             $this->lines[] = [
                 sprintf(
                     '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  <fg=%s>%s</><fg=#6C7280>%s%s</>',
-                    $this->elemColors['DOMAIN'],
-                    strtoupper($currentDomain),
-                    $spaces,
-                    $this->elemColors['PROC'],
-                    'PROC',
-                    'white',
-                    $processName,
-                    $dots,
-                    $inChain
+                    $this->elemColors['DOMAIN'], strtoupper($currentDomain),
+                    $spaces, $this->elemColors['PROC'], 'PROC', 'white',
+                    $processName, $dots, $inChain
+                ),
+            ];
+
+            if ($this->output->isVerbose()) {
+                $this->addProcessTasks($process, $currentDomain, $spaces);
+
+                //                $this->addNewLine();
+            }
+        }
+    }
+
+    private function addProcessTasks(array $process, string $currentDomain, string $spaces): void
+    {
+
+        foreach (data_get($process, 'tasks') as $taskIndex => $task) {
+            $taskIndex++;
+            $prefix = "{$taskIndex}. ";
+            $taskName = $task['name'];
+            $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
+            $taskQueued = $task['queue'] ? ' queued' : '.';
+            $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$prefix.$taskName.'TASK  ') - mb_strlen($taskQueued) - 12);
+            $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
+
+            $this->lines[] = [
+                sprintf(
+                    '%s      └── <fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
+                    $taskSpaces,
+                    $this->elemColors['TASK'],
+                    'TASK',
+                    $prefix,
+                    $taskName,
+                    $taskDots,
+                    $taskQueued
                 ),
             ];
         }

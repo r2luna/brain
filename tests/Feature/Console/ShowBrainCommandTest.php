@@ -23,6 +23,7 @@ it('has the correct description', function (): void {
 it('executes the command successfully', function (): void {
     $mockOutput = Mockery::mock(OutputStyle::class);
     $mockOutput->shouldReceive('writeln')->once();
+    $mockOutput->shouldReceive('isVerbose')->andReturn(false);
 
     $this->command->setOutput($mockOutput);
 

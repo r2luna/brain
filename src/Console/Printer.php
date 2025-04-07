@@ -186,11 +186,11 @@ class Printer
 
             $this->lines[] = [
                 sprintf(
-                    '%s      └── <fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
+                    '%s      └── <fg=white>%s</><fg=%s;options=bold>%s</> <fg=white>%s</><fg=#6C7280>%s%s</>',
                     $taskSpaces,
-                    $this->elemColors['TASK'],
-                    'TASK',
                     $prefix,
+                    $this->elemColors['TASK'],
+                    'T',
                     $taskName,
                     $taskDots,
                     $taskQueued

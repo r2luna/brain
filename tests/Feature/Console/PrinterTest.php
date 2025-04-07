@@ -141,7 +141,7 @@ it('should allow overriding existing output style', function (): void {
 // --------------------
 // -v Verbose
 
-it('should print the tasks of a process when using -v', function () {
+it('should print the tasks of a process when using -v', function (): void {
     $this->mockOutput->shouldReceive('isVerbose')->andReturn(true);
     $this->printerReflection->run('getTerminalWidth');
     $this->printerReflection->run('run');

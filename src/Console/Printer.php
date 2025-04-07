@@ -39,12 +39,7 @@ class Printer
     public function __construct(
         private readonly BrainMap $brain,
         private ?OutputStyle $output = null
-    ) {
-        $this->checkIfBrainMapIsEmpty();
-        $this->getTerminalWidth();
-        $this->getLengthOfTheLongestDomain();
-        $this->createLines();
-    }
+    ) {}
 
     /**
      * Prints the collected lines to the output.
@@ -55,6 +50,8 @@ class Printer
      */
     public function print(): void
     {
+        $this->run();
+
         $flattenedLines = [];
         array_walk_recursive($this->lines, function ($line) use (&$flattenedLines): void {
             $flattenedLines[] = $line;
@@ -71,6 +68,23 @@ class Printer
     public function setOutput(OutputStyle $output): void
     {
         $this->output = $output;
+    }
+
+    /**
+     * Executes the main logic of the Printer class.
+     *
+     * This method performs the following steps:
+     * 1. Checks if the brain map is empty.
+     * 2. Retrieves the terminal width.
+     * 3. Determines the length of the longest domain.
+     * 4. Creates the necessary lines for output.
+     */
+    private function run(): void
+    {
+        $this->checkIfBrainMapIsEmpty();
+        $this->getTerminalWidth();
+        $this->getLengthOfTheLongestDomain();
+        $this->createLines();
     }
 
     /**
@@ -155,15 +169,12 @@ class Printer
 
             if ($this->output->isVerbose()) {
                 $this->addProcessTasks($process, $currentDomain, $spaces);
-
-                //                $this->addNewLine();
             }
         }
     }
 
     private function addProcessTasks(array $process, string $currentDomain, string $spaces): void
     {
-
         foreach (data_get($process, 'tasks') as $taskIndex => $task) {
             $taskIndex++;
             $prefix = "{$taskIndex}. ";

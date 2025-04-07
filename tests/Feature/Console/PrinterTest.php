@@ -11,9 +11,14 @@ use Tests\Feature\Fixtures\PrinterReflection;
 beforeEach(function (): void {
     config()->set('brain.root', __DIR__.'/../Fixtures/Brain');
     Terminal::shouldReceive('cols')->andReturn(71);
+
+    $this->mockOutput = Mockery::mock(OutputStyle::class);
+
     $this->map = new BrainMap;
     $this->printer = new Printer($this->map);
     $this->printerReflection = new PrinterReflection($this->printer);
+    $this->printerReflection->set('output', $this->mockOutput);
+
 });
 
 it('should load the current terminal width', function (): void {
@@ -23,16 +28,13 @@ it('should load the current terminal width', function (): void {
 });
 
 it('should print lines to the terminal', function (): void {
-    $mockOutput = Mockery::mock(OutputStyle::class);
-
-    $this->printerReflection->set('output', $mockOutput);
-
     $this->printerReflection->set('lines', [
         ['Line 1', 'Line 2'],
         ['Line 3'],
     ]);
 
-    $mockOutput->shouldReceive('writeln')->once();
+    $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
+    $this->mockOutput->shouldReceive('writeln')->once();
 
     $this->printer->print();
 });
@@ -65,18 +67,20 @@ it('should handle null domain values', function (): void {
 });
 
 it('should check if creating all the correct lines to be printed', function (): void {
+    $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
     $this->printerReflection->run('getTerminalWidth');
+    $this->printerReflection->run('run');
     $lines = $this->printerReflection->get('lines');
 
     expect($lines)->toBe([
-        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> ....................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .....................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ........................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> .......................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> .......................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ................................ queued</>'],
         ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
         [''],
-        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ........................... chained</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ............................ chained</>'],
         ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
         [''],
     ]);
@@ -114,6 +118,7 @@ it('should throw exception if brain is empty', function (): void {
 
     $map = new BrainMap;
     $printer = new Printer($map);
+    $printer->print();
 })->throws(Exception::class, 'The brain map is empty.');
 
 it('should set output style correctly', function (): void {

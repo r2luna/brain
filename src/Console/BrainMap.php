@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Brain\Console;
 
+use Brain\Process;
+use Brain\Task;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Collection;
@@ -187,6 +189,8 @@ class BrainMap
             'name' => $reflection->getShortName(),
             'fullName' => $reflection->name,
             'queue' => $reflection->implementsInterface(ShouldQueue::class),
+            'type' => $reflection->isSubclassOf(Process::class)
+                    ? 'process' : ($reflection->isSubclassOf(Task::class) ? 'task' : ''),
             'properties' => $this->getPropertiesFor($reflection),
         ];
     }

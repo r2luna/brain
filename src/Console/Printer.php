@@ -181,19 +181,19 @@ class Printer
             $taskName = $task['name'];
             $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
             $taskQueued = $task['queue'] ? ' queued' : '.';
-            $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$prefix.$taskName.'TASK  ') - mb_strlen($taskQueued) - 12);
+            $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$prefix.$taskName.'T  ') - mb_strlen($taskQueued) - 11);
             $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
+
+            [$color, $type] = match ($task['type']) {
+                'process' => [$this->elemColors['PROC'], 'P'],
+                'task' => [$this->elemColors['TASK'], 'T'],
+                default => [$this->elemColors['TASK'], 'T'],
+            };
 
             $this->lines[] = [
                 sprintf(
                     '%s      └── <fg=white>%s</><fg=%s;options=bold>%s</> <fg=white>%s</><fg=#6C7280>%s%s</>',
-                    $taskSpaces,
-                    $prefix,
-                    $this->elemColors['TASK'],
-                    'T',
-                    $taskName,
-                    $taskDots,
-                    $taskQueued
+                    $taskSpaces, $prefix, $color, $type, $taskName, $taskDots, $taskQueued
                 ),
             ];
         }

@@ -141,16 +141,15 @@ it('should allow overriding existing output style', function (): void {
 // --------------------
 // -v Verbose
 
-it('should print the tasks of a process when using -v', function (): void {
+it('should print tasks and processes of a process when using -v', function (): void {
     $this->mockOutput->shouldReceive('isVerbose')->andReturn(true);
     $this->printerReflection->run('getTerminalWidth');
     $this->printerReflection->run('run');
     $lines = $this->printerReflection->get('lines');
 
     expect($lines)->toBe([
-
         ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .....................................</>'],
-        ['                  └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ................... queued</>'],
+        ['                  └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ....................... queued</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ........................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> .......................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> .......................................</>'],
@@ -158,7 +157,8 @@ it('should print the tasks of a process when using -v', function (): void {
         ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
         [''],
         ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ............................ chained</>'],
-        ['                  └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ................... queued</>'],
+        ['                  └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ....................... queued</>'],
+        ['                  └── <fg=white>2. </><fg=blue;options=bold>P</> <fg=white>ExampleProcess</><fg=#6C7280> ............................</>'],
         ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
         [''],
     ]);

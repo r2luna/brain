@@ -35,6 +35,7 @@ describe('load testsuite', function (): void {
                                 'name' => 'ExampleTask4',
                                 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class,
                                 'queue' => true,
+                                'type' => 'task',
                                 'properties' => [],
                             ],
                         ],
@@ -45,6 +46,7 @@ describe('load testsuite', function (): void {
                         'name' => 'ExampleTask',
                         'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask::class,
                         'queue' => false,
+                        'type' => 'task',
                         'properties' => [
                             ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
                             ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
@@ -54,6 +56,7 @@ describe('load testsuite', function (): void {
                         'name' => 'ExampleTask2',
                         'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask2::class,
                         'queue' => false,
+                        'type' => 'task',
                         'properties' => [
                             ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
                             ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
@@ -64,12 +67,14 @@ describe('load testsuite', function (): void {
                         'name' => 'ExampleTask3',
                         'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask3::class,
                         'queue' => false,
+                        'type' => 'task',
                         'properties' => [],
                     ],
                     [
                         'name' => 'ExampleTask4',
                         'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class,
                         'queue' => true,
+                        'type' => 'task',
                         'properties' => [],
                     ],
                 ],
@@ -95,6 +100,14 @@ describe('load testsuite', function (): void {
                                 'name' => 'ExampleTask4',
                                 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class,
                                 'queue' => true,
+                                'type' => 'task',
+                                'properties' => [],
+                            ],
+                            [
+                                'name' => 'ExampleProcess',
+                                'fullName' => Tests\Feature\Fixtures\Brain\Example\Processes\ExampleProcess::class,
+                                'queue' => false,
+                                'type' => 'process',
                                 'properties' => [],
                             ],
                         ],
@@ -118,10 +131,9 @@ describe('load testsuite', function (): void {
             ],
         ];
 
-        expect($brain->map)
-            ->toMatchArray($data);
+        expect($brain->map->toArray())
+            ->toBe($data);
     });
-
 });
 
 describe('loadProcessesFor testsuite', function (): void {
@@ -136,7 +148,7 @@ describe('loadProcessesFor testsuite', function (): void {
                     'name' => 'ExampleProcess',
                     'chain' => false,
                     'tasks' => [
-                        ['name' => 'ExampleTask4', 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class, 'queue' => true, 'properties' => []],
+                        ['name' => 'ExampleTask4', 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class, 'queue' => true, 'properties' => [], 'type' => 'task'],
                     ],
                 ],
             ]);
@@ -175,6 +187,7 @@ describe('loadTasksFor testsuite', function (): void {
                     'name' => 'ExampleTask',
                     'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask::class,
                     'queue' => false,
+                    'type' => 'task',
                     'properties' => [
                         ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
                         ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
@@ -184,6 +197,7 @@ describe('loadTasksFor testsuite', function (): void {
                     'name' => 'ExampleTask2',
                     'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask2::class,
                     'queue' => false,
+                    'type' => 'task',
                     'properties' => [
                         ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
                         ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
@@ -194,12 +208,14 @@ describe('loadTasksFor testsuite', function (): void {
                     'name' => 'ExampleTask3',
                     'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask3::class,
                     'queue' => false,
+                    'type' => 'task',
                     'properties' => [],
                 ],
                 [
                     'name' => 'ExampleTask4',
                     'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class,
                     'queue' => true,
+                    'type' => 'task',
                     'properties' => [],
                 ],
             ]);

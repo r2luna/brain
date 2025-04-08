@@ -221,16 +221,46 @@ class Printer
             $this->lines[] = [
                 sprintf(
                     '%s<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
-                    $taskSpaces,
-                    $this->elemColors['TASK'],
-                    'TASK',
-                    $prefix,
-                    $taskName,
-                    $taskDots,
-                    $taskQueued
+                    $taskSpaces, $this->elemColors['TASK'], 'TASK', $prefix, $taskName, $taskDots, $taskQueued
+                ),
+            ];
+
+            if ($this->output->isVeryVerbose()) {
+                $this->addProperties($task, $currentDomain, $taskSpaces);
+            }
+        }
+    }
+
+    private function addProperties(array $task, string $currentDomain, string $spaces): void
+    {
+        foreach ($task['properties'] as $property) {
+            $propertyIndex = $property['direction'] === 'output' ? '⇡ ' : '⇣ ';
+            $propertyName = $property['name'];
+            $propertyType = $property['type'];
+
+            $this->lines[] = [
+                sprintf(
+                    '   %s   <fg=white>%s%s</><fg=#6C7280>: %s</>',
+                    $spaces, $propertyIndex, $propertyName, $propertyType
                 ),
             ];
         }
+
+        /**
+   $propertyIndex = $property['output'] ? '⇡ ' : '⇂ ';
+                        $propertyName = $property['name'];
+                        $propertyType = $property['type'];
+
+                        $lines[] = [
+                            sprintf(
+                                '%s   <fg=white>%s%s</><fg=#6C7280>: %s</>',
+                                $taskSpaces,
+                                $propertyIndex,
+                                $propertyName,
+                                $propertyType
+                            ),
+                        ];
+         */
     }
 
     /**

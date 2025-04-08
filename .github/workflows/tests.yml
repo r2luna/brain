@@ -1,6 +1,8 @@
 name: Tests
 
 on:
+  workflow_dispatch:
+
   push:
     branches:
       - main
@@ -12,13 +14,19 @@ jobs:
   ci:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         php: ["8.3", "8.4"]
+        laravel: [ 12.*, 11.* ]
         dependency-version: [prefer-lowest, prefer-stable]
+        include:
+          - laravel: 12.*
+            testbench: 10.*
+          - laravel: 11.*
+            testbench: 9.*
 
-    name: Tests P${{ matrix.php }} - ${{ matrix.os }} - ${{ matrix.dependency-version }}
+    name: Tests P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.os }}
 
     steps:
       - name: Checkout
@@ -45,7 +53,8 @@ jobs:
 
       - name: Install Composer dependencies
         run: |
-          composer update --${{ matrix.dependency-version }} --no-interaction --prefer-dist
+          composer require --${{ matrix.dependency-version }} "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench-core:${{ matrix.testbench }}" --no-interaction
+          composer install
 
       - name: Integration Tests
         run: composer test:unit

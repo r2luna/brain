@@ -226,12 +226,12 @@ class Printer
             ];
 
             if ($this->output->isVeryVerbose()) {
-                $this->addProperties($task, $currentDomain, $taskSpaces);
+                $this->addProperties($task, $taskSpaces);
             }
         }
     }
 
-    private function addProperties(array $task, string $currentDomain, string $spaces): void
+    private function addProperties(array $task, string $spaces): void
     {
         foreach ($task['properties'] as $property) {
             $propertyIndex = $property['direction'] === 'output' ? '⇡ ' : '⇣ ';

@@ -1,6 +1,6 @@
 {
     "commit-msg": {
-        "enabled": false,
+        "enabled": true,
         "actions": [
             {
                 "action": "captainhook\\hook\\Composer\\Script",

@@ -1,14 +1,7 @@
 {
     "commit-msg": {
-        "enabled": true,
-        "actions": [
-            {
-                "action": "captainhook\\hook\\Composer\\Script",
-                "options": {
-                    "script": "check-conventional-commit"
-                }
-            }
-        ]
+        "enabled": false,
+        "actions": []
     },
     "pre-push": {
         "enabled": false,

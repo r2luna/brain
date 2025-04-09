@@ -214,7 +214,6 @@ class BrainMap
 
         return collect($classDocBlock->getTags())
             ->map(function (Tag $tag): ?array {
-                ds($tag);
                 if ($tag instanceof PropertyRead) {
                     return [
                         'name' => $tag->getVariableName(),

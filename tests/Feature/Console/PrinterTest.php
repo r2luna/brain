@@ -174,7 +174,6 @@ it('should print task properties of a process when using -vv', function (): void
     $this->printerReflection->run('run');
     $lines = $this->printerReflection->get('lines');
 
-    ds($lines);
     expect($lines)->toBe([
         ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .....................................</>'],
         ['                  └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ....................... queued</>'],

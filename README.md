@@ -37,7 +37,10 @@ composer require r2luna/brain
 ### Creating a Process
 
 ```bash
-php artisan make:process CreateUserProcess --domain=Users
+php artisan make:process
+... follow prompt
+name: CreateUserProcess
+domain: Users
 ```
 
 This will create a new process class in `app/Brain/Users/Processes/CreateUserProcess.php`
@@ -45,15 +48,81 @@ This will create a new process class in `app/Brain/Users/Processes/CreateUserPro
 ### Creating a Task
 
 ```bash
-php artisan make:task SendWelcomeEmailTask --domain=Users
+php artisan make:task
+... follow prompt
+name: SendWelcomeEmailTask
+domain: Users
 ```
 
 This will create a new task class in `app/Brain/Users/Tasks/SendWelcomeEmailTask.php`
 
+#### Queuable Tasks
+
+To send the task to the queue simply implements Laravel Contract `ShouldQueue` to the class
+
+```php
+<?php
+
+namespace App\Brain\User;
+
+use Brain\Task;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class SendWelcomeNotifications extends Task implements ShouldQueue
+{
+    public function handle(): self
+    {
+        //
+
+        return $this;
+    }
+}
+```
+
+#### Delay Queueable Tasks
+
+Brain Tasks has a protected function called `runIn()` that you can use to determine when do you want to run the job if you need to delay.
+
+```php
+class SendWelcomeNotifications extends Task implements ShouldQueue
+{
+    protected function runIn(): int|Carbon|null
+    {
+        return now()->addDays(2);
+    }
+    ...
+}
+```
+
+#### Cancel the Process
+
+If you need, by any reason, cancel the process from inside a task. You can call `cancelProcess()` method to do it.
+
+```php
+class AddRoles extends Task
+{
+    public function handle(): self
+    {
+        if($anyReason) {
+            $this->cancelProcess();
+        }
+
+        return $this;
+    }
+}
+```
+
+> [!CAUTION]
+> This will not work if the task is setup to run in a queue.
+
 ### Creating a Query
 
 ```bash
-php artisan make:query GetUserByEmailQuery --domain=Users
+php artisan make:query
+... follow prompt
+name: GetUserByEmailQuery
+domain: Users
+model: User
 ```
 
 This will create a new query class in `app/Brain/Users/Queries/GetUserByEmailQuery.php`

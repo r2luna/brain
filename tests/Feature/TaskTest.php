@@ -6,9 +6,19 @@ use Brain\Exceptions\InvalidPayload;
 use Brain\Task;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
+
+function getJobFromReflection(PendingDispatch $task): object
+{
+    $reflection = new ReflectionClass($task);
+    $property = $reflection->getProperty('job');
+    $property->setAccessible(true);
+
+    return $property->getValue($task);
+}
 
 test('make sure that it is using the correct traits', function (): void {
     $expectedTraits = [
@@ -40,16 +50,18 @@ it('should make sure that we standardize the payload in an object', function ():
     /** @property-read string $name */
     class ArrayTask extends Task {}
     $task = ArrayTask::dispatch(['name' => 'John Doe']);
-    expect($task->getJob()->payload)->toBeObject();
+    $job = getJobFromReflection($task);
+
+    expect($job->payload)->toBeObject();
 
     class NullTask extends Task {}
     $task = NullTask::dispatch();
-    expect($task->getJob()->payload)->toBeObject();
+    expect($job->payload)->toBeObject();
 
     /** @property-read string $name */
     class ObjectTask extends Task {}
     $task = ObjectTask::dispatch((object) ['name' => 'John Doe']);
-    expect($task->getJob()->payload)->toBeObject();
+    expect($job->payload)->toBeObject();
 });
 
 it('should delay the task if the runIn method is set', function (): void {
@@ -62,7 +74,8 @@ it('should delay the task if the runIn method is set', function (): void {
     }
 
     $task = DelayTask::dispatch();
-    expect($task->getJob()->delay)->toBe(10);
+    $job = getJobFromReflection($task);
+    expect($job->delay)->toBe(10);
 });
 
 it('s possible to return int or a Carbon instance', function (): void {
@@ -75,7 +88,10 @@ it('s possible to return int or a Carbon instance', function (): void {
     }
 
     $task = DelayIntTask::dispatch();
-    expect($task->getJob()->delay)->toBe(10);
+
+    $job = getJobFromReflection($task);
+
+    expect($job->delay)->toBe(10);
 
     Carbon::setTestNow('2021-01-01 01:00:00');
 
@@ -88,15 +104,17 @@ it('s possible to return int or a Carbon instance', function (): void {
     }
 
     $task = DelayCarbonTask::dispatch();
-    expect($task->getJob()->delay)->toBeInstanceOf(Carbon::class);
-    expect($task->getJob()->delay)->format('Y-m-d h:i:s')->toBe('2021-01-01 01:00:10');
+    $job = getJobFromReflection($task);
+    expect($job->delay)->toBeInstanceOf(Carbon::class);
+    expect($job->delay)->format('Y-m-d h:i:s')->toBe('2021-01-01 01:00:10');
 });
 
 test('if runIn is not set delay should be null', function (): void {
     class NoDelayTask extends Task {}
 
     $task = NoDelayTask::dispatch();
-    expect($task->getJob()->delay)->toBeNull();
+    $job = getJobFromReflection($task);
+    expect($job->delay)->toBeNull();
 });
 
 it('should add cancelProcess to the payload when cancelProcess method is called', function (): void {

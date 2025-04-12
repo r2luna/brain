@@ -51,7 +51,7 @@ test('stub should be __DIR__./stubs/query/stub', function (): void {
     $method->setAccessible(true);
     $stubPath = $method->invoke($command);
 
-    $expectedPath = realpath(__DIR__.'/../../../src/Queries/Console/stubs/query.stub');
+    $expectedPath = realpath(__DIR__ . '/../../../src/Queries/Console/stubs/query.stub');
     $actualPath = realpath($stubPath);
 
     expect($actualPath)->toBe($expectedPath);
@@ -102,6 +102,56 @@ it('should replace DumyModel in the stub with the given argument model', functio
 
     $output = $method->invoke($command, 'UserQuery');
     expect($output)->toBe(
-        file_get_contents(__DIR__.'/../Fixtures/user-query.stub')
+        file_get_contents(__DIR__ . '/../Fixtures/user-query.stub')
     );
+});
+
+test('getNameInput should return the name as is when suffix is disabled', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeQueryCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => false]);
+    $input = new TestInput(['name' => 'UserReport']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+
+    expect($nameInput)->toBe('UserReport');
+});
+
+test('getNameInput should append Query when suffix is enabled', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeQueryCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => true]);
+    $input = new TestInput(['name' => 'UserReport']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+
+    expect($nameInput)->toBe('UserReportQuery');
+});
+
+test('getNameInput should not duplicate the Query suffix', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeQueryCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => true]);
+    $input = new TestInput(['name' => 'UserReportQuery']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+    expect($nameInput)->toBe('UserReportQuery');
 });

@@ -46,7 +46,24 @@ final class MakeProcessCommand extends BaseCommand
      */
     protected function getStub(): string
     {
-        return __DIR__.'/stubs/process.stub';
+        return __DIR__ . '/stubs/process.stub';
+    }
+
+    /**
+     * Get the name input for the class.
+     *
+     * @return string The name of the class
+     */
+    #[\Override]
+    protected function getNameInput(): string
+    {
+        $name = trim($this->argument('name'));
+
+        if (config('brain.use_suffix', false) == false) {
+            return $name;
+        }
+
+        return str_ends_with($name, 'Process') ? $name : "{$name}Process";
     }
 
     /**

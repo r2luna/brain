@@ -50,7 +50,24 @@ final class MakeTaskCommand extends BaseCommand
      */
     protected function getStub(): string
     {
-        return __DIR__.'/stubs/task.stub';
+        return __DIR__ . '/stubs/task.stub';
+    }
+
+    /**
+     * Get the name input for the class.
+     *
+     * @return string The name of the class
+     */
+    #[\Override]
+    protected function getNameInput(): string
+    {
+        $name = trim($this->argument('name'));
+
+        if (config('brain.use_suffix', false) == false) {
+            return $name;
+        }
+
+        return str_ends_with($name, 'Task') ? $name : "{$name}Task";
     }
 
     /**

@@ -87,3 +87,53 @@ test('get defaultNamespace with no domain', function (): void {
 
     expect($defaultNamespace)->toBe('App\Brain\TempDomain\Tasks');
 });
+
+test('getNameInput should return the name as is when suffix is disabled', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeTaskCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => false]);
+    $input = new TestInput(['name' => 'CreateTenant']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+
+    expect($nameInput)->toBe('CreateTenant');
+});
+
+test('getNameInput should append Query when suffix is enabled', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeTaskCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => true]);
+    $input = new TestInput(['name' => 'CreateTenant']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+
+    expect($nameInput)->toBe('CreateTenantTask');
+});
+
+test('getNameInput should not duplicate the Query suffix', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeTaskCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => true]);
+    $input = new TestInput(['name' => 'CreateTenantTask']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+    expect($nameInput)->toBe('CreateTenantTask');
+});

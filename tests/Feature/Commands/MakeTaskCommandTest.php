@@ -50,7 +50,7 @@ test('stub should be __DIR__./stubs/task/stub', function (): void {
     $method->setAccessible(true);
     $stubPath = $method->invoke($command);
 
-    $expectedPath = realpath(__DIR__.'/../../../src/Tasks/Console/stubs/task.stub');
+    $expectedPath = realpath(__DIR__ . '/../../../src/Tasks/Console/stubs/task.stub');
     $actualPath = realpath($stubPath);
 
     expect($actualPath)->toBe($expectedPath);
@@ -86,4 +86,54 @@ test('get defaultNamespace with no domain', function (): void {
     $defaultNamespace = $method->invoke($command, 'App\\');
 
     expect($defaultNamespace)->toBe('App\Brain\TempDomain\Tasks');
+});
+
+test('getNameInput should return the name as is when suffix is disabled', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeTaskCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => false]);
+    $input = new TestInput(['name' => 'CreateTenant']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+
+    expect($nameInput)->toBe('CreateTenant');
+});
+
+test('getNameInput should append Query when suffix is enabled', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeTaskCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => true]);
+    $input = new TestInput(['name' => 'CreateTenant']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+
+    expect($nameInput)->toBe('CreateTenantTask');
+});
+
+test('getNameInput should not duplicate the Query suffix', function (): void {
+    $files = app(Filesystem::class);
+    $command = new MakeTaskCommand($files);
+    $reflection = new ReflectionClass($command);
+
+    config(['brain.use_suffix' => true]);
+    $input = new TestInput(['name' => 'CreateTenantTask']);
+    $command->setInput($input);
+
+    $method = $reflection->getMethod('getNameInput');
+    $method->setAccessible(true);
+
+    $nameInput = $method->invoke($command);
+    expect($nameInput)->toBe('CreateTenantTask');
 });

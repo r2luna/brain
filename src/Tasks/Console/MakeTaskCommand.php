@@ -54,6 +54,25 @@ final class MakeTaskCommand extends BaseCommand
     }
 
     /**
+     * Get the name input for the class.
+     *
+     * @return string The name of the class
+     */
+    #[Override]
+    protected function getNameInput(): string
+    {
+        $name = trim($this->argument('name'));
+
+        if (config('brain.use_suffix', false) === false) {
+            return $name;
+        }
+
+        $suffix = config('brain.suffixes.task');
+
+        return str_ends_with($name, (string) $suffix) ? $name : "{$name}{$suffix}";
+    }
+
+    /**
      * Get the default namespace for the class being generated.
      *
      * @param  string  $rootNamespace  The root namespace of the application

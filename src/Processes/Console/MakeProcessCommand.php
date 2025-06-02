@@ -63,7 +63,9 @@ final class MakeProcessCommand extends BaseCommand
             return $name;
         }
 
-        return str_ends_with($name, 'Process') ? $name : "{$name}Process";
+        $suffix = config('brain.suffixes.process');
+
+        return str_ends_with($name, (string) $suffix) ? $name : "{$name}{$suffix}";
     }
 
     /**

@@ -68,7 +68,9 @@ class MakeQueryCommand extends BaseCommand
             return $name;
         }
 
-        return str_ends_with($name, 'Query') ? $name : "{$name}Query";
+        $suffix = config('brain.suffixes.query');
+
+        return str_ends_with($name, (string) $suffix) ? $name : "{$name}{$suffix}";
     }
 
     /**

@@ -67,7 +67,9 @@ final class MakeTaskCommand extends BaseCommand
             return $name;
         }
 
-        return str_ends_with($name, 'Task') ? $name : "{$name}Task";
+        $suffix = config('brain.suffixes.task');
+
+        return str_ends_with($name, (string) $suffix) ? $name : "{$name}{$suffix}";
     }
 
     /**

@@ -27,5 +27,11 @@ return [
     | - "Query" for queries
     |
     */
-    'use_suffix' => true,
+    'use_suffix' => env('BRAIN_USE_SUFFIX', false),
+
+    'suffixes' => [
+        'task' => env('BRAIN_TASK_SUFFIX', 'Task'),
+        'process' => env('BRAIN_PROCESS_SUFFIX', 'Process'),
+        'query' => env('BRAIN_QUERY_SUFFIX', 'Query'),
+    ],
 ];

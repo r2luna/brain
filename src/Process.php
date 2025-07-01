@@ -52,7 +52,7 @@ class Process
      * Process constructor.
      */
     public function __construct(
-        private array|object|null $payload
+        private array|object|null $payload = null
     ) {
         $this->uuid = Str::uuid()->toString();
 

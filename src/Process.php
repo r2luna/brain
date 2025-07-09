@@ -148,6 +148,14 @@ class Process
                 $this->logStep($task, $payload);
                 $reflectionClass = new ReflectionClass($task);
 
+                $runIfMethod = $reflectionClass->hasMethod('runIf') ? $reflectionClass->getMethod('runIf') : null;
+
+                if ($runIfMethod && ! $runIfMethod->invoke(new $task($payload))) {
+                    $this->logStep($task, $payload, 'Task skipped by runIf condition');
+
+                    continue;
+                }
+
                 if (
                     isset($payload->cancelProcess)
                     && $payload->cancelProcess

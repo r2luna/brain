@@ -165,3 +165,75 @@ it('should be able to set any property in the payload magically using __set meth
 
     expect($task->name)->toBe('John Doe');
 });
+
+it('should be possible to have a conditional run inside a process', function (): void {
+    /**
+     * Class ConditionalTask
+     *
+     * @property-read int $id
+     */
+    class ConditionalTask extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+
+        protected function runIf(): bool
+        {
+            return $this->id > 2;
+        }
+    }
+
+    class ConditionalProcess extends Brain\Process
+    {
+        protected array $tasks = [
+            ConditionalTask::class,
+        ];
+    }
+
+    Bus::fake([
+        ConditionalTask::class,
+    ]);
+
+    ConditionalProcess::dispatch(['id' => 1]);
+
+    Bus::assertNotDispatched(ConditionalTask::class);
+});
+
+it('should be able to conditionally run outside a process', function (): void {
+    Bus::fake([Temp2Task::class]);
+
+    class Temp2Task extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    /**
+     * Class ConditionalOutTask
+     *
+     * @property-read int $id
+     */
+    class ConditionalOutTask extends Task
+    {
+        public function handle(): self
+        {
+            Temp2Task::dispatch();
+
+            return $this;
+        }
+
+        protected function runIf(): bool
+        {
+            return false;
+        }
+    }
+
+    ConditionalOutTask::dispatch(['id' => 1]);
+
+    Bus::assertNotDispatched(Temp2Task::class);
+
+});

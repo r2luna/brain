@@ -9,6 +9,7 @@ use Brain\Tasks\Events\Processing;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
@@ -17,6 +18,7 @@ use phpDocumentor\Reflection\DocBlock\Tag;
 use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
 use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
+use ReflectionException;
 
 /**
  * Class Task
@@ -91,6 +93,28 @@ abstract class Task
     }
 
     /**
+     * Dispatch the job with the given arguments.
+     *
+     * @param  mixed  ...$arguments
+     * @return PendingDispatch|null
+     *
+     * @throws ReflectionException
+     */
+    public static function dispatch(...$arguments)
+    {
+        $reflectionClass = new ReflectionClass(static::class);
+        $runIfMethod = $reflectionClass->hasMethod('runIf') ? $reflectionClass->getMethod('runIf') : null;
+
+        // @phpstan-ignore-next-line
+        if ($runIfMethod && ! $runIfMethod->invoke(new static(...$arguments))) {
+            return null;
+        }
+
+        // @phpstan-ignore-next-line
+        return static::newPendingDispatch(new static(...$arguments));
+    }
+
+    /**
      * This method will set when the task needs to
      * run for the first time in the future
      *
@@ -99,6 +123,16 @@ abstract class Task
     protected function runIn(): int|Carbon|null
     {
         return null;
+    }
+
+    /**
+     * This method will be called before the task is dispatched by the process.
+     * You can use any property of the payload to make a decision
+     * if the task should be run.
+     */
+    protected function runIf(): bool
+    {
+        return true;
     }
 
     /**

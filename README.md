@@ -94,9 +94,27 @@ class SendWelcomeNotifications extends Task implements ShouldQueue
 }
 ```
 
+#### Conditional Run Tasks in a Process
+
+You can use a protected function `runIf()` to conditionally run a task.
+
+```php
+/**
+ * @property-read int $amount
+ */
+class SendWelcomeNotifications extends Task
+{
+    protected function runIf(): bool
+    {
+        return $this->amount > 200;
+    }
+    ...
+}
+```
+
 #### Cancel the Process
 
-If you need, by any reason, cancel the process from inside a task. You can call `cancelProcess()` method to do it.
+If you need, for any reason, cancel the process from inside a task. You can call `cancelProcess()` method to do it.
 
 ```php
 class AddRoles extends Task

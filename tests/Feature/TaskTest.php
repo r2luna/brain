@@ -235,5 +235,4 @@ it('should be able to conditionally run outside a process', function (): void {
     ConditionalOutTask::dispatch(['id' => 1]);
 
     Bus::assertNotDispatched(Temp2Task::class);
-
 });

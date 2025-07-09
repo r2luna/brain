@@ -96,7 +96,6 @@ abstract class Task
      * Dispatch the job with the given arguments.
      *
      * @param  mixed  ...$arguments
-     * @return PendingDispatch|null
      *
      * @throws ReflectionException
      */
@@ -106,12 +105,17 @@ abstract class Task
         $runIfMethod = $reflectionClass->hasMethod('runIf') ? $reflectionClass->getMethod('runIf') : null;
 
         // @phpstan-ignore-next-line
-        if ($runIfMethod && ! $runIfMethod->invoke(new static(...$arguments))) {
+        $instance = new static(...$arguments);
+
+        if ($runIfMethod && ! $runIfMethod->invoke($instance)) {
             return null;
         }
 
-        // @phpstan-ignore-next-line
-        return static::newPendingDispatch(new static(...$arguments));
+        if ($reflectionClass->hasMethod('newPendingDispatch')) {
+            return static::newPendingDispatch($instance);
+        }
+
+        return new PendingDispatch($instance); // @codeCoverageIgnore
     }
 
     /**

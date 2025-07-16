@@ -19,7 +19,7 @@ test('BaseCommand has possibleDomains method', function (): void {
     expect($method)->not->toBeNull();
 });
 
-test('handleTestCreation should return false if no test options is informed', function () {
+test('handleTestCreation should return false if no test options is informed', function (): void {
     $files = app(Filesystem::class);
     $command = new class($files) extends BaseCommand
     {
@@ -59,7 +59,7 @@ test('handleTestCreation should return false if no test options is informed', fu
     expect($result)->toBeFalse();
 });
 
-test('handleTestCreation should return true when brain:make:test command succeeds', function () {
+test('handleTestCreation should return true when brain:make:test command succeeds', function (): void {
     $files = app(Filesystem::class);
     $command = new class($files) extends BaseCommand
     {

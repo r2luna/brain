@@ -25,7 +25,7 @@ use ReflectionException;
  *
  * Task class to be used as a base for all tasks.
  *
- * @property-read bool $cancelProcess
+ * @property bool $cancelProcess
  */
 abstract class Task
 {

@@ -154,9 +154,9 @@ test('when process is set as chain we need to dispatch a chained bus', function 
 
 });
 
-it('should unser cancelProcess from the payload if the next _task_ is a process', function (): void {
+it('should be possible to cancelProcess from the payload if the next _task_ is a process', function (): void {
     // ---
-    // Meaning that if we have a sub process that is cancelled
+    // Meaning that if we have a subprocess that is canceled
     // the main process should continue to run the next task
     // ---
 

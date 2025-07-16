@@ -177,10 +177,7 @@ abstract class Task
      */
     protected function cancelProcess(): void
     {
-        $this->payload = (object) array_merge(
-            (array) $this->payload,
-            ['cancelProcess' => true]
-        );
+        $this->cancelProcess = true;
     }
 
     /**

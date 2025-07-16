@@ -8,6 +8,7 @@ use Brain\Console\ShowBrainCommand;
 use Brain\Processes\Console\MakeProcessCommand;
 use Brain\Queries\Console\MakeQueryCommand;
 use Brain\Tasks\Console\MakeTaskCommand;
+use Brain\Tests\Console\MakeTestCommand;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -63,6 +64,7 @@ class BrainServiceProvider extends ServiceProvider
             MakeTaskCommand::class,
             MakeQueryCommand::class,
             ShowBrainCommand::class,
+            MakeTestCommand::class,
         ]);
     }
 

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Brain\Console;
 
+use Illuminate\Console\Concerns\CreatesMatchingTest;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Stringable;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -16,6 +18,8 @@ use function Laravel\Prompts\suggest;
  */
 abstract class BaseCommand extends GeneratorCommand
 {
+    use CreatesMatchingTest;
+
     /**
      * Get a list of possible domains
      */
@@ -66,5 +70,33 @@ abstract class BaseCommand extends GeneratorCommand
                 $input->setArgument('domain', $domain);
             }
         }
+
+        if (
+            $input->hasOption('pest')
+            && ! $input->getOption('pest')
+        ) {
+            $pest = suggest(
+                label: 'Do you want to generate a Pest test?',
+                options: ['Yes', 'No'],
+                required: true
+            );
+
+            if ($pest === 'Yes') {
+                $input->setOption('pest', true);
+            }
+        }
+    }
+
+    protected function handleTestCreation($path): bool
+    {
+        if (! $this->option('test') && ! $this->option('pest') && ! $this->option('phpunit')) {
+            return false;
+        }
+
+        return $this->call('brain:make:test', [
+            'name' => (new Stringable($path))->after($this->laravel['path'])->beforeLast('.php')->append('Test')->replace('\\', '/'),
+            '--pest' => $this->option('pest'),
+            '--phpunit' => $this->option('phpunit'),
+        ]) === 0;
     }
 }

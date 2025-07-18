@@ -1,0 +1,7 @@
+<?php
+
+test('check query', function (): void {
+   $output = App\Brain\Domain\Query\ExampleQuery::run();
+
+   expect($output)->toBeTrue();
+});

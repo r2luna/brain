@@ -34,17 +34,26 @@ test('getDefaultNamespace returns the root namespace', function (): void {
 });
 
 test('resolveStubPath resolves path relative to command directory', function (): void {
+
+    // Create a mock input object
+    $input = Mockery::mock(Symfony\Component\Console\Input\InputInterface::class);
+    $input->shouldReceive('getOption')->with('stub')->andReturn('task');
+
     $files = app(Filesystem::class);
     $command = new MakeTestCommand($files);
 
     $reflection = new ReflectionClass($command);
+    $inputProperty = $reflection->getProperty('input');
+    $inputProperty->setAccessible(true);
+    $inputProperty->setValue($command, $input);
+
     $method = $reflection->getMethod('resolveStubPath');
     $method->setAccessible(true);
 
-    $result = $method->invoke($command, '/stubs/test.stub');
+    $result = $method->invoke($command, '/stubs/task.stub');
 
     // The result should be the __DIR__ of the MakeTestCommand class plus the stub path
-    $expectedPath = dirname((new ReflectionClass(MakeTestCommand::class))->getFileName()).'/stubs/test.stub';
+    $expectedPath = dirname((new ReflectionClass(MakeTestCommand::class))->getFileName()).'/stubs/task.stub';
     expect($result)->toBe($expectedPath);
 });
 

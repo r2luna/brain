@@ -95,6 +95,8 @@ abstract class BaseCommand extends GeneratorCommand
 
         return $this->call('brain:make:test', [
             'name' => (new Stringable($path))->after($this->laravel['path'])->beforeLast('.php')->append('Test')->replace('\\', '/'),
+            '--stub' => (new Stringable((new Stringable($path))->explode(DIRECTORY_SEPARATOR)->pop(2)->last()))
+                ->lower()->singular()->toString(),
             '--pest' => $this->option('pest'),
             '--phpunit' => $this->option('phpunit'),
         ]) === 0;

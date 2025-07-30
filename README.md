@@ -45,7 +45,8 @@ domain: Users
 
 This will create a new process class in `app/Brain/Users/Processes/CreateUserProcess.php`
 
-> [!IMPORTANT] Note that every task running inside a process executes within a database transaction by default.
+> [!IMPORTANT] 
+> Note that every task running inside a process executes within a database transaction by default.
 
 ### Creating a Task
 

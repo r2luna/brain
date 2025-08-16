@@ -7,7 +7,7 @@
 /.php-cs-fixer.php
 /composer.lock
 /phpunit.xml
-/vendor/
+/vendor
 *.swp
 *.swo
 /.peck.cache

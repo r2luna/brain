@@ -19,7 +19,6 @@ class PrinterReflection
     public function run(string $method, array $arguments = []): mixed
     {
         $method = $this->reflection->getMethod($method);
-        $method->setAccessible(true);
 
         return $method->invokeArgs($this->printer, $arguments);
     }
@@ -27,7 +26,6 @@ class PrinterReflection
     public function get(string $property): mixed
     {
         $property = $this->reflection->getProperty($property);
-        $property->setAccessible(true);
 
         return $property->getValue($this->printer);
     }
@@ -35,7 +33,6 @@ class PrinterReflection
     public function set(string $property, mixed $value): void
     {
         $property = $this->reflection->getProperty($property);
-        $property->setAccessible(true);
 
         $property->setValue($this->printer, $value);
     }

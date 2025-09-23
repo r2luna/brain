@@ -26,7 +26,6 @@ test('getDefaultNamespace returns the root namespace', function (): void {
 
     $reflection = new ReflectionClass($command);
     $method = $reflection->getMethod('getDefaultNamespace');
-    $method->setAccessible(true);
 
     $result = $method->invoke($command, 'App');
 
@@ -44,11 +43,9 @@ test('resolveStubPath resolves path relative to command directory', function ():
 
     $reflection = new ReflectionClass($command);
     $inputProperty = $reflection->getProperty('input');
-    $inputProperty->setAccessible(true);
     $inputProperty->setValue($command, $input);
 
     $method = $reflection->getMethod('resolveStubPath');
-    $method->setAccessible(true);
 
     $result = $method->invoke($command, '/stubs/task.stub');
 

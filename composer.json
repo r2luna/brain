@@ -26,7 +26,7 @@
         "captainhook/hook-installer": "^1.0",
         "laradumps/laradumps": "^4.0",
         "laravel/pint": "^1.21",
-        "mockery/mockery": "1.7.x-dev",
+        "mockery/mockery": "^1.6.12",
         "orchestra/testbench": "^9.0|^10.0",
         "peckphp/peck": "^0.1.2",
         "pestphp/pest": "^3.7",

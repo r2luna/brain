@@ -15,6 +15,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Context;
 use phpDocumentor\Reflection\DocBlock\Tag;
+use phpDocumentor\Reflection\DocBlock\Tags\Property;
 use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
 use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
@@ -124,7 +125,7 @@ abstract class Task
      */
     public function toArray(): array
     {
-        $expectedKeys = $this->getExpectedPayloadKeys();
+        $expectedKeys = $this->getExpectedPayloadKeys(true);
         $payloadArray = (array) $this->payload;
 
         if ($expectedKeys === []) {
@@ -160,7 +161,7 @@ abstract class Task
      * the class doc-block tags:
      * - Ex.: @ property-read int $userId
      */
-    protected function getExpectedPayloadKeys(): array
+    protected function getExpectedPayloadKeys(bool $all = false): array
     {
         $reflectionClass = new ReflectionClass(static::class);
         $docBlockFactory = DocBlockFactory::createInstance();
@@ -173,7 +174,11 @@ abstract class Task
         $classDocBlock = $docBlockFactory->create($docBlock);
 
         $map = array_map(
-            function (Tag $tag): ?string {
+            function (Tag $tag) use ($all): ?string {
+                if ($all && ($tag instanceof PropertyRead || $tag instanceof Property)) {
+                    return $tag->getVariableName();
+                }
+
                 if ($tag instanceof PropertyRead) {
                     return $tag->getVariableName();
                 }

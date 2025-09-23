@@ -47,7 +47,6 @@ test('stub should be __DIR__./stubs/process/stub', function (): void {
 
     $reflection = new ReflectionClass($command);
     $method = $reflection->getMethod('getStub');
-    $method->setAccessible(true);
     $stubPath = $method->invoke($command);
 
     $expectedPath = realpath(__DIR__.'/../../../src/Processes/Console/stubs/process.stub');
@@ -62,7 +61,6 @@ test('get defaultNamespace', function (): void {
 
     $reflection = new ReflectionClass($command);
     $method = $reflection->getMethod('getDefaultNamespace');
-    $method->setAccessible(true);
 
     $input = new TestInput(['domain' => 'Domain']);
     $command->setInput($input);
@@ -78,7 +76,6 @@ test('get defaultNamespace with no domain', function (): void {
 
     $reflection = new ReflectionClass($command);
     $method = $reflection->getMethod('getDefaultNamespace');
-    $method->setAccessible(true);
 
     $input = new TestInput([]);
     $command->setInput($input);
@@ -98,7 +95,6 @@ test('getNameInput should return the name as is when suffix is disabled', functi
     $command->setInput($input);
 
     $method = $reflection->getMethod('getNameInput');
-    $method->setAccessible(true);
 
     $nameInput = $method->invoke($command);
 
@@ -115,7 +111,6 @@ test('getNameInput should append Process when suffix is enabled', function (): v
     $command->setInput($input);
 
     $method = $reflection->getMethod('getNameInput');
-    $method->setAccessible(true);
 
     $nameInput = $method->invoke($command);
 
@@ -132,7 +127,6 @@ test('getNameInput should not duplicate the Process suffix', function (): void {
     $command->setInput($input);
 
     $method = $reflection->getMethod('getNameInput');
-    $method->setAccessible(true);
 
     $nameInput = $method->invoke($command);
     expect($nameInput)->toBe('CreateUserProcess');

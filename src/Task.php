@@ -119,6 +119,22 @@ abstract class Task
     }
 
     /**
+     * Convert the task payload to an array filtered by the properties
+     * defined in the class docblock (@property-read tags)
+     */
+    public function toArray(): array
+    {
+        $expectedKeys = $this->getExpectedPayloadKeys();
+        $payloadArray = (array) $this->payload;
+
+        if ($expectedKeys === []) {
+            return $payloadArray;
+        }
+
+        return array_intersect_key($payloadArray, array_flip($expectedKeys));
+    }
+
+    /**
      * This method will set when the task needs to
      * run for the first time in the future
      *

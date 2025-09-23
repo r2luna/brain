@@ -48,7 +48,6 @@ test('handleTestCreation should return false if no test options is informed', fu
     // Set the input property on the command
     $reflection = new ReflectionClass($command);
     $inputProperty = $reflection->getProperty('input');
-    $inputProperty->setAccessible(true);
     $inputProperty->setValue($command, $input);
 
     // Now invoke the handleTestCreation method
@@ -97,12 +96,10 @@ test('handleTestCreation should return true when brain:make:test command succeed
     // Set the input property on the command
     $reflection = new ReflectionClass($command);
     $inputProperty = $reflection->getProperty('input');
-    $inputProperty->setAccessible(true);
     $inputProperty->setValue($command, $input);
 
     // Set up the laravel property for path resolution
     $laravelProperty = $reflection->getProperty('laravel');
-    $laravelProperty->setAccessible(true);
     $laravelProperty->setValue($command, ['path' => app_path()]);
 
     // Now invoke the handleTestCreation method

@@ -48,7 +48,6 @@ test('stub should be __DIR__./stubs/query/stub', function (): void {
 
     $reflection = new ReflectionClass($command);
     $method = $reflection->getMethod('getStub');
-    $method->setAccessible(true);
     $stubPath = $method->invoke($command);
 
     $expectedPath = realpath(__DIR__.'/../../../src/Queries/Console/stubs/query.stub');
@@ -63,7 +62,6 @@ test('get defaultNamespace', function (): void {
 
     $reflection = new ReflectionClass($command);
     $method = $reflection->getMethod('getDefaultNamespace');
-    $method->setAccessible(true);
 
     $input = new TestInput(['domain' => 'Domain']);
     $command->setInput($input);
@@ -79,7 +77,6 @@ test('get defaultNamespace with no domain', function (): void {
 
     $reflection = new ReflectionClass($command);
     $method = $reflection->getMethod('getDefaultNamespace');
-    $method->setAccessible(true);
 
     $input = new TestInput([]);
     $command->setInput($input);
@@ -98,7 +95,6 @@ it('should replace DumyModel in the stub with the given argument model', functio
 
     $reflection = new ReflectionClass($command);
     $method = $reflection->getMethod('buildClass');
-    $method->setAccessible(true);
 
     $output = $method->invoke($command, 'UserQuery');
     expect($output)->toBe(
@@ -116,7 +112,6 @@ test('getNameInput should return the name as is when suffix is disabled', functi
     $command->setInput($input);
 
     $method = $reflection->getMethod('getNameInput');
-    $method->setAccessible(true);
 
     $nameInput = $method->invoke($command);
 
@@ -133,7 +128,6 @@ test('getNameInput should append Query when suffix is enabled', function (): voi
     $command->setInput($input);
 
     $method = $reflection->getMethod('getNameInput');
-    $method->setAccessible(true);
 
     $nameInput = $method->invoke($command);
 
@@ -150,7 +144,6 @@ test('getNameInput should not duplicate the Query suffix', function (): void {
     $command->setInput($input);
 
     $method = $reflection->getMethod('getNameInput');
-    $method->setAccessible(true);
 
     $nameInput = $method->invoke($command);
     expect($nameInput)->toBe('UserReportQuery');

@@ -15,7 +15,6 @@ function getJobFromReflection(PendingDispatch $task): object
 {
     $reflection = new ReflectionClass($task);
     $property = $reflection->getProperty('job');
-    $property->setAccessible(true);
 
     return $property->getValue($task);
 }
@@ -235,4 +234,101 @@ it('should be able to conditionally run outside a process', function (): void {
     ConditionalOutTask::dispatch(['id' => 1]);
 
     Bus::assertNotDispatched(Temp2Task::class);
+});
+
+it('should return filtered array based on docblock properties using toArray method', function (): void {
+    /**
+     * @property-read string $name
+     * @property-read int $age
+     */
+    class FilteredTask extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    $task = FilteredTask::dispatchSync([
+        'name' => 'John Doe',
+        'age' => 30,
+        'email' => 'john@example.com', // This should be filtered out
+        'phone' => '123-456-7890', // This should be filtered out
+    ]);
+
+    $result = $task->toArray();
+
+    expect($result)->toHaveKeys(['name', 'age']);
+    expect($result)->not->toHaveKeys(['email', 'phone']);
+    expect($result['name'])->toBe('John Doe');
+    expect($result['age'])->toBe(30);
+});
+
+it('should return all payload when no docblock properties are defined using toArray method', function (): void {
+    class NoDocBlockTask extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    $task = NoDocBlockTask::dispatchSync([
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'phone' => '123-456-7890',
+    ]);
+
+    $result = $task->toArray();
+
+    expect($result)->toHaveKeys(['name', 'email', 'phone']);
+    expect($result['name'])->toBe('John Doe');
+    expect($result['email'])->toBe('john@example.com');
+    expect($result['phone'])->toBe('123-456-7890');
+});
+
+it('should return empty array when payload is empty using toArray method', function (): void {
+    class EmptyPayloadTask extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    $task = EmptyPayloadTask::dispatchSync([]);
+
+    $result = $task->toArray();
+
+    expect($result)->toBeEmpty();
+});
+
+it('should handle mixed payload types when using toArray method', function (): void {
+    /**
+     * @property-read string $name
+     * @property-read bool $active
+     * @property-read array $tags
+     */
+    class MixedTypeTask extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    $task = MixedTypeTask::dispatchSync([
+        'name' => 'John Doe',
+        'active' => true,
+        'tags' => ['php', 'laravel'],
+        'unwanted' => 'should be filtered',
+    ]);
+
+    $result = $task->toArray();
+
+    expect($result)->toHaveKeys(['name', 'active', 'tags']);
+    expect($result)->not->toHaveKey('unwanted');
+    expect($result['name'])->toBe('John Doe');
+    expect($result['active'])->toBeTrue();
+    expect($result['tags'])->toBe(['php', 'laravel']);
 });

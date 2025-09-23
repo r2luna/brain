@@ -10,7 +10,9 @@
             "proc",
             "nofication",
             "qery",
-            "QERY"
+            "qery",
+            "captainhook",
+            "phpstsan"
         ],
         "paths": []
     }

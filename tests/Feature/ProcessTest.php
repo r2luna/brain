@@ -52,7 +52,6 @@ test('process can chain tasks', function (): void {
 
     $reflection = new ReflectionClass($process);
     $chainProperty = $reflection->getProperty('chain');
-    $chainProperty->setAccessible(true);
     $chainProperty->setValue($process, true);
 
     $process->handle();

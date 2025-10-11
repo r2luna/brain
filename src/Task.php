@@ -195,7 +195,9 @@ abstract class Task
     }
 
     /**
-     * Tell's the process to cancel it
+     * Requests cancellation of the running process for this task.
+     *
+     * Sets an internal flag indicating the task should stop processing as soon as possible.
      */
     protected function cancelProcess(): void
     {
@@ -203,12 +205,11 @@ abstract class Task
     }
 
     /**
-     * Override this method to return validation rules for task payload properties.
-     * Rules are validated using Laravel's Validator before the handle() method executes.
-     * When rules are present, both Validator-based validation and docblock
-     * @property-read key-existence checks are performed.
+     * Provide validation rules applied to the task payload.
      *
-     * @return array<string, array<int, string>|string> The validation rules.
+     * These rules are used by the Validator to validate payload properties (typically those declared via `@property` / `@property-read`) before the task is executed.
+     *
+     * @return array<string, array<int, string>|string> Mapping of payload keys to validation rule(s).
      */
     protected function rules(): array
     {
@@ -216,10 +217,15 @@ abstract class Task
     }
 
     /**
-     * Checks if the payload has the expected
-     * payload keys.
+     * Validate the task payload against any validation rules and the expected docblock keys.
      *
-     * @throws Exception
+     * If the protected rules() method returns rules, the payload is validated against those rules.
+     * After rule validation (or if no rules are provided), the payload is checked for the presence
+     * of any expected keys declared via the class docblock (@property-read / @property). If none of
+     * the expected keys are present, validation fails.
+     *
+     * @throws \Illuminate\Validation\ValidationException If rule validation fails.
+     * @throws InvalidPayload If the payload does not contain any of the expected docblock keys.
      */
     private function validate(): void
     {

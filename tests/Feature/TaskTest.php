@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Bus;
 
 function getJobFromReflection(PendingDispatch $task): object
 {
@@ -42,7 +43,7 @@ it('should validate the payload of a Task based on the docblock of the class', f
 it('should return void if there is nothing to validate', function (): void {
     class ValidateVoidTask extends Task {}
 
-    $task = ValidateVoidTask::dispatch();
+    ValidateVoidTask::dispatch();
 })->throwsNoExceptions();
 
 it('should make sure that we standardize the payload in an object', function (): void {

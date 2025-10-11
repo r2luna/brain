@@ -5,7 +5,6 @@
     <a href="https://packagist.org/packages/r2luna/brain"><img alt="Total Downloads" src="https://img.shields.io/packagist/dt/r2luna/brain"></a>
     <a href="https://packagist.org/packages/r2luna/brain"><img alt="Latest Version" src="https://img.shields.io/packagist/v/r2luna/brain"></a>
     <a href="https://packagist.org/packages/r2luna/brain"><img alt="License" src="https://img.shields.io/packagist/l/r2luna/brain"></a>
-![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/r2luna/brain?utm_source=oss&utm_medium=github&utm_campaign=r2luna%2Fbrain&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 </p>
 
 ---

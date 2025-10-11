@@ -205,11 +205,10 @@ abstract class Task
     /**
      * Override this method to return validation rules for task payload properties.
      * Rules are validated using Laravel's Validator before the handle() method executes.
-     * When rules are present, both Validator-based validation and docblock
+     * When rules are present, both Validator-based validation and docblock @property-read
+     * key-existence checks are performed.
      *
-     * @property-read key-existence checks are performed.
-     *
-     * @return array<string, array<int, string>|string> The validation rules.
+     * @return array<string, array<int, mixed>|string> The validation rules.
      */
     protected function rules(): array
     {

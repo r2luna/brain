@@ -186,10 +186,6 @@ class Process
         } catch (Exception $e) {
             DB::rollBack();
 
-            Log::error('Error running process', [
-                'error' => $e->getMessage(),
-            ]);
-
             $this->fireEvent(Error::class, [
                 'error' => $e->getMessage(),
             ]);

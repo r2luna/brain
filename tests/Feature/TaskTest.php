@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Bus;
 
 function getJobFromReflection(PendingDispatch $task): object
 {
@@ -42,7 +43,7 @@ it('should validate the payload of a Task based on the docblock of the class', f
 it('should return void if there is nothing to validate', function (): void {
     class ValidateVoidTask extends Task {}
 
-    $task = ValidateVoidTask::dispatch();
+    ValidateVoidTask::dispatch();
 })->throwsNoExceptions();
 
 it('should make sure that we standardize the payload in an object', function (): void {
@@ -331,4 +332,49 @@ it('should handle mixed payload types when using toArray method', function (): v
     expect($result['name'])->toBe('John Doe');
     expect($result['active'])->toBeTrue();
     expect($result['tags'])->toBe(['php', 'laravel']);
+});
+
+it('should be able to pass rules to the task to be validated using Validator facade', function (): void {
+    /**
+     * @property-read string $name
+     * @property int $age
+     */
+    class RulesTask extends Task
+    {
+        public function rules(): array
+        {
+            return [
+                'name' => ['required'],
+                'age' => ['required', 'integer', 'min:18'],
+            ];
+        }
+
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    expect(
+        fn () => RulesTask::dispatchSync([
+            'name' => 'John Doe',
+            'age' => 30,
+        ])
+    )->not->toThrow(Illuminate\Validation\ValidationException::class);
+
+    expect(
+        fn () => RulesTask::dispatchSync([])
+    )->toThrow(
+        Illuminate\Validation\ValidationException::class,
+        __('validation.required', ['attribute' => 'name']),
+    );
+
+    expect(
+        fn () => RulesTask::dispatchSync([
+            'name' => 'John Doe',
+        ])
+    )->toThrow(
+        Illuminate\Validation\ValidationException::class,
+        __('validation.required', ['attribute' => 'age']),
+    );
 });

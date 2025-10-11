@@ -14,6 +14,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Context;
+use Illuminate\Support\Facades\Validator;
 use phpDocumentor\Reflection\DocBlock\Tag;
 use phpDocumentor\Reflection\DocBlock\Tags\Property;
 use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
@@ -202,6 +203,20 @@ abstract class Task
     }
 
     /**
+     * Override this method to return validation rules for task payload properties.
+     * Rules are validated using Laravel's Validator before the handle() method executes.
+     * When rules are present, both Validator-based validation and docblock
+     *
+     * @property-read key-existence checks are performed.
+     *
+     * @return array<string, array<int, string>|string> The validation rules.
+     */
+    protected function rules(): array
+    {
+        return [];
+    }
+
+    /**
      * Checks if the payload has the expected
      * payload keys.
      *
@@ -209,6 +224,23 @@ abstract class Task
      */
     private function validate(): void
     {
+        // ----------------------------------------------------------
+        // Validate the payload using the rules() method
+        // if the method returns any rules
+
+        $rules = $this->rules();
+        if (filled($rules)) {
+            Validator::make(
+                (array) $this->payload,
+                $rules
+            )->validate();
+        }
+
+        // ----------------------------------------------------------
+        // Keeps the old behavior of checking if the payload
+        // has the expected keys defined in the class doc-block
+        // using @property-read tags
+
         $expectedKeys = $this->getExpectedPayloadKeys();
 
         if ($expectedKeys === []) {
@@ -223,6 +255,7 @@ abstract class Task
         ) {
             throw new InvalidPayload('Task '.static::class.' :: Expected keys: '.implode(', ', $expectedKeys));
         }
+
     }
 
     /**

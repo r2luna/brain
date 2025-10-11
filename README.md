@@ -5,6 +5,7 @@
     <a href="https://packagist.org/packages/r2luna/brain"><img alt="Total Downloads" src="https://img.shields.io/packagist/dt/r2luna/brain"></a>
     <a href="https://packagist.org/packages/r2luna/brain"><img alt="Latest Version" src="https://img.shields.io/packagist/v/r2luna/brain"></a>
     <a href="https://packagist.org/packages/r2luna/brain"><img alt="License" src="https://img.shields.io/packagist/l/r2luna/brain"></a>
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/r2luna/brain?utm_source=oss&utm_medium=github&utm_campaign=r2luna%2Fbrain&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 </p>
 
 ---
@@ -114,6 +115,41 @@ class SendWelcomeNotifications extends Task
     ...
 }
 ```
+
+#### Validating Task Properties
+
+You can validate the properties passed to a task by defining a `rules()` method that returns an array of validation rules.
+
+```php
+/**
+ * @property-read User $user
+ * @property string $message
+ */
+class SendWelcomeNotifications extends Task
+{
+    public function rules(): array
+    {
+        return [
+            'user' => 'required',
+            'message' => 'required|string|max:255',
+        ];
+    }
+
+    public function handle(): self
+    {
+        // ...
+
+        return $this;
+    }
+    ...
+}
+```
+
+Rules will validate based on the payload that was passed to the task when it was dispatched, and will override the default validation based on the docblock @property-read annotations.
+
+#### Task helper methods 
+
+-   `toArray()`: Returns the task properties as an array. Ex. `['user' => $this->user]`
 
 #### Cancel the Process
 

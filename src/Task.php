@@ -203,10 +203,10 @@ abstract class Task
     }
 
     /**
-     * This method should return the validation rules that will be
-     * applied on any @property and @property-read in the class doc-block
-     * and before execute the handle() method we will validate the payload
-     * using \Illuminate\Support\Facades\Validator
+     * Override this method to return validation rules for task payload properties.
+     * Rules are validated using Laravel's Validator before the handle() method executes.
+     * When rules are present, both Validator-based validation and docblock
+     * @property-read key-existence checks are performed.
      *
      * @return array<string, array<int, string>|string> The validation rules.
      */

@@ -14,6 +14,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Context;
+use Illuminate\Support\Facades\Validator;
 use phpDocumentor\Reflection\DocBlock\Tag;
 use phpDocumentor\Reflection\DocBlock\Tags\Property;
 use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
@@ -202,6 +203,19 @@ abstract class Task
     }
 
     /**
+     * This method should return the validation rules that will be
+     * applied on any @property and @property-read in the class doc-block
+     * and before execute the handle() method we will validate the payload
+     * using \Illuminate\Support\Facades\Validator
+     *
+     * @return array<string, array<int, string>|string> The validation rules.
+     */
+    protected function rules(): array
+    {
+        return [];
+    }
+
+    /**
      * Checks if the payload has the expected
      * payload keys.
      *
@@ -209,6 +223,26 @@ abstract class Task
      */
     private function validate(): void
     {
+        // ----------------------------------------------------------
+        // Validate the payload using the rules() method
+        // if the method returns any rules
+
+        $rules = $this->rules();
+        if (filled($rules)) {
+            $payloadArray = (array) $this->payload;
+            $rulesKeys = array_keys($rules);
+
+            Validator::make(
+                $payloadArray,
+                array_intersect_key($rules, array_flip($rulesKeys))
+            )->validate();
+        }
+
+        // ----------------------------------------------------------
+        // Keeps the old behavior of checking if the payload
+        // has the expected keys defined in the class doc-block
+        // using @property-read tags
+
         $expectedKeys = $this->getExpectedPayloadKeys();
 
         if ($expectedKeys === []) {
@@ -223,6 +257,7 @@ abstract class Task
         ) {
             throw new InvalidPayload('Task '.static::class.' :: Expected keys: '.implode(', ', $expectedKeys));
         }
+
     }
 
     /**

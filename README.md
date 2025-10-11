@@ -115,6 +115,41 @@ class SendWelcomeNotifications extends Task
 }
 ```
 
+#### Validating Task Properties
+
+You can validate the properties passed to a task by defining a `rules()` method that returns an array of validation rules.
+
+```php
+/**
+ * @property-read User $user
+ * @property string $message
+ */
+class SendWelcomeNotifications extends Task
+{
+    public function rules(): array
+    {
+        return [
+            'user' => 'required',
+            'message' => 'required|string|max:255',
+        ];
+    }
+
+    public function handle(): self
+    {
+        // ...
+
+        return $this;
+    }
+    ...
+}
+```
+
+Rules will validate based on the payload that was passed to the task when it was dispatched, and will override the default validation based on the docblock @property-read annotations.
+
+#### Task helper methods 
+
+-   `toArray()`: Returns the task properties as an array. Ex. `['user' => $this->user]`
+
 #### Cancel the Process
 
 If you need, for any reason, cancel the process from inside a task. You can call `cancelProcess()` method to do it.

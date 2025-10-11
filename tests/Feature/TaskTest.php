@@ -333,3 +333,48 @@ it('should handle mixed payload types when using toArray method', function (): v
     expect($result['active'])->toBeTrue();
     expect($result['tags'])->toBe(['php', 'laravel']);
 });
+
+it('should be able to pass rules to the task to be validated using Validator facade', function (): void {
+    /**
+     * @property-read string $name
+     * @property int $age
+     */
+    class RulesTask extends Task
+    {
+        public function rules(): array
+        {
+            return [
+                'name' => ['required'],
+                'age' => ['required', 'integer', 'min:18'],
+            ];
+        }
+
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    expect(
+        fn () => RulesTask::dispatchSync([
+            'name' => 'John Doe',
+            'age' => 30,
+        ])
+    )->not->toThrow(Illuminate\Validation\ValidationException::class);
+
+    expect(
+        fn () => RulesTask::dispatchSync([])
+    )->toThrow(
+        Illuminate\Validation\ValidationException::class,
+        __('validation.required', ['attribute' => 'name']),
+    );
+
+    expect(
+        fn () => RulesTask::dispatchSync([
+            'name' => 'John Doe',
+        ])
+    )->toThrow(
+        Illuminate\Validation\ValidationException::class,
+        __('validation.required', ['attribute' => 'age']),
+    );
+});

@@ -232,10 +232,15 @@ abstract class Task
             $payloadArray = (array) $this->payload;
             $rulesKeys = array_keys($rules);
 
-            Validator::make(
-                $payloadArray,
-                array_intersect_key($rules, array_flip($rulesKeys))
-            )->validate();
+         $rules = $this->rules();
+         if (filled($rules)) {
+             $payloadArray = (array) $this->payload;
+
+             Validator::make(
+                 $payloadArray,
+                 $rules
+             )->validate();
+         }
         }
 
         // ----------------------------------------------------------

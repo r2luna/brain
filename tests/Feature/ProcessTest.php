@@ -7,6 +7,7 @@ use Brain\Processes\Events\Processed;
 use Brain\Processes\Events\Processing;
 use Brain\Task;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -151,6 +152,25 @@ test('when process is set as chain we need to dispatch a chained bus', function 
         Queueable2Task::class,
     ]);
 
+});
+
+test('making sure the task is dispatch to the queue when ShouldQueue is implemented', function (): void {
+    class ShouldQueueableTask extends Task implements ShouldQueue {}
+    class ShouldQueueableAftercommitTask extends Task implements ShouldQueueAfterCommit {}
+    class ShouldQueueableProcess extends Process
+    {
+        protected array $tasks = [
+            ShouldQueueableTask::class,
+            ShouldQueueableAftercommitTask::class,
+        ];
+    }
+
+    Bus::fake([ShouldQueueableTask::class, ShouldQueueableAftercommitTask::class]);
+
+    ShouldQueueableProcess::dispatchSync([]);
+
+    Bus::assertDispatched(ShouldQueueableTask::class);
+    Bus::assertDispatched(ShouldQueueableAftercommitTask::class);
 });
 
 it('should be possible to cancelProcess from the payload if the next _task_ is a process', function (): void {

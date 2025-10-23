@@ -105,11 +105,9 @@ abstract class Task
         // @phpstan-ignore-next-line
         $instance = new static(...$arguments);
 
-        if (
-            $runIfMethod
+        if ($runIfMethod
             && $runIfMethod->getDeclaringClass()->getName() === $reflectionClass->getName()
-            && ! $runIfMethod->invoke($instance)
-        ) {
+            && ! $instance->runIf()) {
             return null;
         }
 

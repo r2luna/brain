@@ -437,3 +437,27 @@ it('FinalizeTaskMiddleware triggers finalize and dispatches Processed event', fu
 
     Event::assertDispatched(Processed::class);
 });
+
+it('process calls finalize on task instances and fires Processed event', function (): void {
+    Event::fake();
+
+    class ProcessFinalizeTask extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    class ProcessWithFinalize extends Brain\Process
+    {
+        protected array $tasks = [
+            ProcessFinalizeTask::class,
+        ];
+    }
+
+    $process = new ProcessWithFinalize(null);
+    $process->handle();
+
+    Event::assertDispatched(Processed::class);
+});

@@ -183,6 +183,7 @@ class Process
 
                 $temp = $task::dispatchSync($payload);
                 if ($temp instanceof Task) {
+                    // finalize() will be no-op if middleware already finalized
                     $temp->finalize();
                     $payload = $temp->payload;
                 } else {

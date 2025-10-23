@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Brain\Exceptions\InvalidPayload;
 use Brain\Task;
+use Brain\Tasks\Events\Processed;
+use Brain\Tasks\Middleware\FinalizeTaskMiddleware;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Bus\PendingDispatch;
@@ -11,6 +13,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Event;
 
 function getJobFromReflection(PendingDispatch $task): object
 {
@@ -377,4 +380,60 @@ it('should be able to pass rules to the task to be validated using Validator fac
         Illuminate\Validation\ValidationException::class,
         __('validation.required', ['attribute' => 'age']),
     );
+});
+
+it('returns middleware array containing FinalizeTaskMiddleware', function (): void {
+    class MiddlewareTask extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    $task = MiddlewareTask::dispatchSync();
+    $middlewares = $task->middleware();
+
+    expect($middlewares)->toBeArray()
+        ->and($middlewares)->toHaveCount(1)
+        ->and($middlewares[0])->toBeInstanceOf(FinalizeTaskMiddleware::class);
+});
+
+it('fires Processed event when finalize is called', function (): void {
+    Event::fake();
+
+    class FinalizeDirectTask extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    $task = FinalizeDirectTask::dispatchSync();
+
+    $task->finalize();
+
+    Event::assertDispatched(Processed::class);
+});
+
+it('FinalizeTaskMiddleware triggers finalize and dispatches Processed event', function (): void {
+    Event::fake();
+
+    class FinalizeMiddlewareTask extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    $task = FinalizeMiddlewareTask::dispatchSync();
+
+    $middleware = new FinalizeTaskMiddleware;
+
+    // Call middleware with a next that simply returns the task
+    $middleware->handle($task, fn ($t) => $t);
+
+    Event::assertDispatched(Processed::class);
 });

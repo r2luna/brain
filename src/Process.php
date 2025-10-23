@@ -7,13 +7,14 @@ namespace Brain;
 use Brain\Processes\Events\Error;
 use Brain\Processes\Events\Processed;
 use Brain\Processes\Events\Processing;
+use Brain\Tasks\Events\Cancelled;
+use Brain\Tasks\Events\Skipped;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use ReflectionClass;
 use ReflectionException;
@@ -100,13 +101,17 @@ class Process
             $this->payload = (object) $this->payload;
         }
 
-        $this->fireEvent(Processing::class);
+        $this->fireEvent(Processing::class, [
+            'timestamp' => microtime(true),
+        ]);
 
         $output = $this->chain
             ? $this->runInChain($this->payload)
             : $this->run($this->payload);
 
-        $this->fireEvent(Processed::class);
+        $this->fireEvent(Processed::class, [
+            'timestamp' => microtime(true),
+        ]);
 
         return $output;
     }
@@ -145,22 +150,27 @@ class Process
 
         try {
             foreach ($this->tasks as $task) {
-                $this->logStep($task, $payload);
                 $reflectionClass = new ReflectionClass($task);
 
-                $runIfMethod = $reflectionClass->hasMethod('runIf') ? $reflectionClass->getMethod('runIf') : null;
+                if ($reflectionClass->hasMethod('runIf')) {
+                    $method = $reflectionClass->getMethod('runIf');
 
-                if ($runIfMethod && ! $runIfMethod->invoke(new $task($payload))) {
-                    $this->logStep($task, $payload, 'Task skipped by runIf condition');
+                    if ($method->getDeclaringClass()->getName() === $reflectionClass->getName()) {
+                        $instance = new $task($payload);
 
-                    continue;
+                        if (! $method->invoke($instance)) {
+                            event(new Cancelled(Skipped::class, payload: $payload, runProcessId: $this->uuid));
+
+                            continue;
+                        }
+                    }
                 }
 
                 if (
                     isset($payload->cancelProcess)
                     && $payload->cancelProcess
                 ) {
-                    $this->logStep($task, $payload, 'Process cancelled');
+                    event(new Cancelled($task, payload: $payload, runProcessId: $this->uuid));
 
                     break;
                 }
@@ -172,7 +182,12 @@ class Process
                 }
 
                 $temp = $task::dispatchSync($payload);
-                $payload = $temp instanceof Task ? $temp->payload : $temp;
+                if ($temp instanceof Task) {
+                    $temp->finalize();
+                    $payload = $temp->payload;
+                } else {
+                    $payload = $temp;
+                }
 
                 // If the task is a Process, we need to remove the cancelProcess key from the payload.
                 // Because the cancel process is only valid for the current process.
@@ -201,20 +216,6 @@ class Process
     }
 
     /**
-     * Log the step of the process.
-     */
-    private function logStep(
-        mixed $task,
-        object|array|null $payload,
-        string $message = 'Running task'
-    ): void {
-        Log::info($message, [
-            'task' => $task,
-            'payload' => $payload,
-        ]);
-    }
-
-    /**
      * Fire Event for the Listeners save all the info
      * in the database, and we track what is happening to
      * each process
@@ -224,6 +225,7 @@ class Process
         event(new $event(
             self::class,
             $this->uuid,
+            [],
             $meta
         ));
     }

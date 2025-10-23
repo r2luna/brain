@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Brain;
 
 use Brain\Exceptions\InvalidPayload;
+use Brain\Tasks\Events\Processed;
 use Brain\Tasks\Events\Processing;
+use Brain\Tasks\Middleware\FinalizeTaskMiddleware;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -42,25 +44,19 @@ abstract class Task
     public function __construct(
         public array|object|null $payload = null
     ) {
+        $startTime = microtime(true);
+
         $this->standardizePayload();
 
-        $this->fireEvent(Processing::class);
+        $this->fireEvent(Processing::class, [
+            'microtime' => $startTime,
+        ]);
 
         $this->validate();
 
         if ($runIn = $this->runIn()) {
             $this->delay($runIn);
         }
-    }
-
-    /**
-     * It will fire an event to tell anyone that
-     * the task has been finished to process
-     */
-    public function __destruct()
-    {
-        // TODO: needs to understand why the event() is not being fired here
-        //        $this->fireEvent(Processed::class);
     }
 
     /**
@@ -109,7 +105,11 @@ abstract class Task
         // @phpstan-ignore-next-line
         $instance = new static(...$arguments);
 
-        if ($runIfMethod && ! $runIfMethod->invoke($instance)) {
+        if (
+            $runIfMethod
+            && $runIfMethod->getDeclaringClass()->getName() === $reflectionClass->getName()
+            && ! $runIfMethod->invoke($instance)
+        ) {
             return null;
         }
 
@@ -118,6 +118,19 @@ abstract class Task
         }
 
         return new PendingDispatch($instance); // @codeCoverageIgnore
+    }
+
+    /**
+     * It will fire an event to tell anyone that
+     * the task has been finished to process
+     */
+    public function finalize(): void
+    {
+        $endTime = microtime(true);
+
+        $this->fireEvent(Processed::class, [
+            'microtime' => $endTime,
+        ]);
     }
 
     /**
@@ -134,6 +147,11 @@ abstract class Task
         }
 
         return array_intersect_key($payloadArray, array_flip($expectedKeys));
+    }
+
+    public function middleware(): array
+    {
+        return [new FinalizeTaskMiddleware];
     }
 
     /**

@@ -222,6 +222,82 @@ Brain helps you organize your code into three main concepts:
 
 Each concept is organized within its respective domain, promoting clean architecture and separation of concerns.
 
+## Logging
+
+Brain provides built-in logging functionality to track the execution and outcomes of processes and tasks. By default, logging is disabled but can be enabled through configuration.
+
+### Configuration
+
+To enable logging, set the `BRAIN_LOG_ENABLED` environment variable or update the config file:
+
+```bash
+# .env
+BRAIN_LOG_ENABLED=true
+```
+
+Or publish and modify the configuration file:
+
+```bash
+php artisan vendor:publish --provider="Brain\BrainServiceProvider"
+```
+
+Then update `config/brain.php`:
+
+```php
+'log' => env('BRAIN_LOG_ENABLED', true),
+```
+
+### Events
+
+Brain dispatches events throughout the lifecycle of processes and tasks. These events can be used for logging, monitoring, or triggering additional actions.
+
+#### Process Events
+
+-   **`Brain\Processes\Events\Processing`** - Dispatched when a process starts executing
+-   **`Brain\Processes\Events\Processed`** - Dispatched when a process completes successfully
+-   **`Brain\Processes\Events\Error`** - Dispatched when a process encounters an error
+
+Each event contains:
+-   `process` (string): The process class name
+-   `runProcessId` (string): A unique ID for this execution
+-   `payload` (array|object): The data passed to the process
+-   `meta` (array): Additional metadata
+
+#### Task Events
+
+-   **`Brain\Tasks\Events\Processing`** - Dispatched when a task starts executing
+-   **`Brain\Tasks\Events\Processed`** - Dispatched when a task completes successfully
+-   **`Brain\Tasks\Events\Cancelled`** - Dispatched when a task is cancelled via `cancelProcess()`
+-   **`Brain\Tasks\Events\Skipped`** - Dispatched when a task is skipped (when `runIf()` returns false)
+-   **`Brain\Tasks\Events\Error`** - Dispatched when a task encounters an error
+
+Each event contains:
+-   `task` (string): The task class name
+-   `payload` (array|object|null): The data passed to the task
+-   `process` (string|null): The process class name (if running within a process)
+-   `runProcessId` (string|null): The process execution ID (if running within a process)
+-   `meta` (array): Additional metadata
+
+### Custom Event Listeners
+
+You can create custom event listeners to handle these events:
+
+```php
+// app/Providers/EventServiceProvider.php
+
+use Brain\Processes\Events\Processed as ProcessProcessed;
+use Brain\Tasks\Events\Error as TaskError;
+
+protected $listen = [
+    ProcessProcessed::class => [
+        NotifyAdminOfProcessCompletion::class,
+    ],
+    TaskError::class => [
+        LogTaskErrorToExternalService::class,
+    ],
+];
+```
+
 ## Testing
 
 ```bash

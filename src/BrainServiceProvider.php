@@ -9,6 +9,7 @@ use Brain\Processes\Console\MakeProcessCommand;
 use Brain\Queries\Console\MakeQueryCommand;
 use Brain\Tasks\Console\MakeTaskCommand;
 use Brain\Tests\Console\MakeTestCommand;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -48,6 +49,7 @@ class BrainServiceProvider extends ServiceProvider
     {
         $this->registerCommands();
         $this->offerPublishing();
+        $this->registerListeners();
     }
 
     /**
@@ -81,6 +83,35 @@ class BrainServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/brain.php' => config_path('brain.php'),
             ]);
+        }
+    }
+
+    private function registerListeners(): void
+    {
+        if (! config('brain.log')) {
+            return;
+        }
+
+        $processEvents = [
+            Processes\Events\Processing::class,
+            Processes\Events\Processed::class,
+            Processes\Events\Error::class,
+        ];
+
+        foreach ($processEvents as $event) {
+            Event::listen($event, Processes\Listeners\LogEventListener::class);
+        }
+
+        $taskEvents = [
+            Tasks\Events\Processing::class,
+            Tasks\Events\Processed::class,
+            Tasks\Events\Cancelled::class,
+            Tasks\Events\Skipped::class,
+            Tasks\Events\Error::class,
+        ];
+
+        foreach ($taskEvents as $event) {
+            Event::listen($event, Tasks\Listeners\LogEventListener::class);
         }
     }
 }

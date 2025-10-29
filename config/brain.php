@@ -34,4 +34,15 @@ return [
         'process' => env('BRAIN_PROCESS_SUFFIX', 'Process'),
         'query' => env('BRAIN_QUERY_SUFFIX', 'Query'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Logging System
+    |--------------------------------------------------------------------------
+    |
+    | When enabled (true), this setting activates logging for all processes,
+    | tasks, and queries, allowing you to track their execution and outcomes.
+    |
+    */
+    'log' => env('BRAIN_LOG_ENABLED', false),
 ];

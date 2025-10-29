@@ -30,6 +30,13 @@ class Process
     use Dispatchable;
 
     /**
+     * When running the process we will assign am uuid
+     * to each instance, this will help track the
+     * related tasks and sub-processes
+     */
+    public ?string $uuid = null;
+
+    /**
      * When chain is set to true, the tasks will be dispatched as a chain.
      * And it will be always send a queue.
      */
@@ -41,13 +48,6 @@ class Process
      * @var array <int, string>
      */
     protected array $tasks = [];
-
-    /**
-     * When running the process we will assign am uuid
-     * to each instance, this will help track the
-     * related tasks and sub-processes
-     */
-    private ?string $uuid = null;
 
     /**
      * Process constructor.

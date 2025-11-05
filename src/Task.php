@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Brain;
 
 use Brain\Exceptions\InvalidPayload;
+use Brain\Tasks\Events\Error;
 use Brain\Tasks\Events\Processed;
 use Brain\Tasks\Events\Processing;
 use Brain\Tasks\Middleware\FinalizeTaskMiddleware;
@@ -150,6 +151,13 @@ abstract class Task
     public function middleware(): array
     {
         return [new FinalizeTaskMiddleware];
+    }
+
+    public function fail($exception = null): void
+    {
+        $this->fireEvent(Error::class, [
+            'error' => $exception,
+        ]);
     }
 
     /**

@@ -43,7 +43,9 @@ abstract class Task
      * @throws Exception
      */
     public function __construct(
-        public array|object|null $payload = null
+        public array|object|null $payload = null,
+        protected string $processId,
+        protected string $processName
     ) {
         $startTime = microtime(true);
 
@@ -286,15 +288,13 @@ abstract class Task
      * in the database, and we track what is happening to
      * each process
      */
-    private function fireEvent(string $event, array $meta = []): void
+    public function fireEvent(string $event, array $meta = []): void
     {
-        [$process, $runProcessId] = Context::get('process');
-
         event(new $event(
             static::class,
             $this->payload,
-            $process,
-            $runProcessId,
+            $this->processName,
+            $this->processId,
             $meta
         ));
     }

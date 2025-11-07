@@ -14,7 +14,6 @@ use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use ReflectionClass;
@@ -57,8 +56,6 @@ class Process
         private array|object|null $payload = null
     ) {
         $this->uuid = Str::uuid()->toString();
-
-        Context::push('process', $this->getName(), $this->uuid);
     }
 
     /**
@@ -133,6 +130,7 @@ class Process
      */
     private function runInChain(?object $payload = null): ?object
     {
+        ds($this->getChainedTasks());
         Bus::chain($this->getChainedTasks())
             ->dispatch();
 
@@ -144,7 +142,12 @@ class Process
      */
     private function getChainedTasks(): array
     {
-        return array_map(fn (string $task): object => new $task($this->payload), $this->tasks);
+        return array_map(function (string $task): object {
+            /** @var Task $instance */
+            $instance = new $task($this->payload, $this->uuid, $this->getName());
+
+            return $instance;
+        }, $this->tasks);
     }
 
     /**
@@ -167,7 +170,7 @@ class Process
                     $method = $reflectionClass->getMethod('runIf');
 
                     if ($method->getDeclaringClass()->getName() === $reflectionClass->getName()) {
-                        $instance = new $task($payload);
+                        $instance = new $task($payload, $this->uuid, $this->getName());
 
                         if (! $method->invoke($instance)) {
                             event(new Skipped($task, payload: $payload, runProcessId: $this->uuid));
@@ -187,13 +190,13 @@ class Process
                 }
 
                 if ($reflectionClass->implementsInterface(ShouldQueue::class)) {
-                    $task::dispatch($payload);
+                    $task::dispatch($payload, $this->uuid, $this->getName());
 
                     continue;
                 }
 
                 try {
-                    $temp = $task::dispatchSync($payload);
+                    $temp = $task::dispatchSync($payload, $this->uuid, $this->getName());
                     if ($temp instanceof Task) {
                         // finalize() will be no-op if middleware already finalized
                         $temp->finalize();

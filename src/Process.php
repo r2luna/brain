@@ -58,7 +58,7 @@ class Process
     ) {
         $this->uuid = Str::uuid()->toString();
 
-        Context::push('process', self::class, $this->uuid);
+        Context::push('process', $this->getName(), $this->uuid);
     }
 
     /**
@@ -114,8 +114,6 @@ class Process
             $this->fireEvent(Processed::class, [
                 'timestamp' => microtime(true),
             ]);
-
-            return $output;
         } catch (Exception $e) {
             $this->fireEvent(Error::class, [
                 'error' => $e->getMessage(),
@@ -126,7 +124,7 @@ class Process
             throw $e;
         }
 
-        return null;
+        return $output;
     }
 
     /**
@@ -245,10 +243,18 @@ class Process
     private function fireEvent(string $event, array $meta = []): void
     {
         event(new $event(
-            self::class,
+            $this->getName(),
             $this->uuid,
             [],
             $meta
         ));
+    }
+
+    /**
+     * Get the name of the class
+     */
+    private function getName(): string
+    {
+        return (new ReflectionClass($this))->getName();
     }
 }

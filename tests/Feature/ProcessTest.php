@@ -280,3 +280,28 @@ it('should return the final payload as an object no matter what', function (): v
     expect($arrayPayload)->toBeObject();
     expect($objectPayload)->toBeObject();
 });
+
+it('should return the original process class name', function (): void {
+    Event::fake();
+
+    class PayloadTask extends Task
+    {
+        public function handle(): array
+        {
+            return ['value' => 1];
+        }
+    }
+
+    class ProcessPayload extends Process
+    {
+        protected array $tasks = [
+            PayloadTask::class,
+        ];
+    }
+
+    ProcessPayload::dispatchSync([]);
+
+    Event::assertDispatched(Processing::class, function (Processing $event): bool {
+        return $event->process === ProcessPayload::class;
+    });
+});

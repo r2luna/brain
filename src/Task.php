@@ -43,9 +43,7 @@ abstract class Task
      * @throws Exception
      */
     public function __construct(
-        public array|object|null $payload = null,
-        protected string $processId,
-        protected string $processName
+        public array|object|null $payload = null
     ) {
         $startTime = microtime(true);
 
@@ -153,13 +151,6 @@ abstract class Task
     public function middleware(): array
     {
         return [new FinalizeTaskMiddleware];
-    }
-
-    public function fail($exception = null): void
-    {
-        $this->fireEvent(Error::class, [
-            'error' => $exception,
-        ]);
     }
 
     /**
@@ -288,13 +279,15 @@ abstract class Task
      * in the database, and we track what is happening to
      * each process
      */
-    public function fireEvent(string $event, array $meta = []): void
+    private function fireEvent(string $event, array $meta = []): void
     {
+        [$process, $runProcessId] = Context::get('process');
+
         event(new $event(
             static::class,
             $this->payload,
-            $this->processName,
-            $this->processId,
+            $process,
+            $runProcessId,
             $meta
         ));
     }
@@ -313,5 +306,12 @@ abstract class Task
         if (is_array($this->payload)) {
             $this->payload = (object) $this->payload;
         }
+    }
+
+    public function fail($exception = null): void
+    {
+        $this->fireEvent(Error::class, [
+            'error' => $exception,
+        ]);
     }
 }

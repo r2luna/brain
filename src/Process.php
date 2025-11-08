@@ -51,6 +51,11 @@ class Process
     protected array $tasks = [];
 
     /**
+     * The name of the Process
+     */
+    private string $name;
+
+    /**
      * Process constructor.
      */
     public function __construct(
@@ -58,7 +63,9 @@ class Process
     ) {
         $this->uuid = Str::uuid()->toString();
 
-        Context::push('process', self::class, $this->uuid);
+        $this->name = (new ReflectionClass($this))->getName();
+
+        Context::push('process', $this->name, $this->uuid);
     }
 
     /**
@@ -255,6 +262,6 @@ class Process
      */
     private function getName(): string
     {
-        return (new ReflectionClass($this))->getName();
+        return $this->name;
     }
 }

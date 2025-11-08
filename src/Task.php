@@ -24,6 +24,7 @@ use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
 use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 use ReflectionException;
+use Throwable;
 
 /**
  * Class Task
@@ -308,10 +309,17 @@ abstract class Task
         }
     }
 
+    /**
+     * @throws Throwable
+     */
     public function fail($exception = null): void
     {
         $this->fireEvent(Error::class, [
             'error' => $exception,
         ]);
+
+        if ($exception instanceof Throwable) {
+            throw $exception;
+        }
     }
 }

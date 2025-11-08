@@ -155,6 +155,20 @@ abstract class Task
     }
 
     /**
+     * @throws Throwable
+     */
+    public function fail($exception = null): void
+    {
+        $this->fireEvent(Error::class, [
+            'error' => $exception,
+        ]);
+
+        if ($exception instanceof Throwable) {
+            throw $exception;
+        }
+    }
+
+    /**
      * This method will set when the task needs to
      * run for the first time in the future
      *
@@ -306,20 +320,6 @@ abstract class Task
 
         if (is_array($this->payload)) {
             $this->payload = (object) $this->payload;
-        }
-    }
-
-    /**
-     * @throws Throwable
-     */
-    public function fail($exception = null): void
-    {
-        $this->fireEvent(Error::class, [
-            'error' => $exception,
-        ]);
-
-        if ($exception instanceof Throwable) {
-            throw $exception;
         }
     }
 }

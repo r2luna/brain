@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Brain;
 
 use Brain\Exceptions\InvalidPayload;
-use Brain\Tasks\Events\Error;
 use Brain\Tasks\Events\Processed;
 use Brain\Tasks\Events\Processing;
 use Brain\Tasks\Middleware\FinalizeTaskMiddleware;
@@ -24,7 +23,6 @@ use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
 use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 use ReflectionException;
-use Throwable;
 
 /**
  * Class Task
@@ -152,20 +150,6 @@ abstract class Task
     public function middleware(): array
     {
         return [new FinalizeTaskMiddleware];
-    }
-
-    /**
-     * @throws Throwable
-     */
-    public function fail($exception = null): void
-    {
-        try {
-            $this->fireEvent(Error::class, [
-                'error' => $exception,
-            ]);
-        } catch (Throwable $e) {
-            throw $e;
-        }
     }
 
     /**

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Brain\Exceptions\InvalidPayload;
 use Brain\Task;
-use Brain\Tasks\Events\Error as TaskError;
 use Brain\Tasks\Events\Processed;
 use Brain\Tasks\Middleware\FinalizeTaskMiddleware;
 use Illuminate\Bus\Queueable;
@@ -461,22 +460,4 @@ it('process calls finalize on task instances and fires Processed event', functio
     $process->handle();
 
     Event::assertDispatched(Processed::class);
-});
-
-it('fires Error event when fail is called', function (): void {
-    Event::fake();
-
-    class FailingTask extends Task
-    {
-        public function handle(): self
-        {
-            $this->fail(new Exception('boom'));
-
-            return $this;
-        }
-    }
-
-    FailingTask::dispatchSync();
-
-    Event::assertDispatched(TaskError::class);
 });

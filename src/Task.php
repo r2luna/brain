@@ -159,12 +159,12 @@ abstract class Task
      */
     public function fail($exception = null): void
     {
-        $this->fireEvent(Error::class, [
-            'error' => $exception,
-        ]);
-
-        if ($exception instanceof Throwable) {
-            throw $exception;
+        try {
+            $this->fireEvent(Error::class, [
+                'error' => $exception,
+            ]);
+        } catch (Throwable $e) {
+            throw $e;
         }
     }
 

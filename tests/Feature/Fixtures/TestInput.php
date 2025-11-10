@@ -9,7 +9,7 @@ use Symfony\Component\Console\Input\Input;
 class TestInput extends Input
 {
     public function __construct(
-        private array $parameters,
+        private ?array $parameters = [],
     ) {
         parent::__construct();
 

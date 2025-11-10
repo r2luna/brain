@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace ;
 
+use App\Models\Jeremias;
 use Brain\Query;
 use Illuminate\Support\Collection;
 use stdClass;

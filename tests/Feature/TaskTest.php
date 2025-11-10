@@ -240,6 +240,24 @@ it('should be able to conditionally run outside a process', function (): void {
     Bus::assertNotDispatched(Temp2Task::class);
 });
 
+it('should return true by default when runIf is called directly', function (): void {
+    class DefaultRunIfTask extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    $task = new DefaultRunIfTask;
+    $reflection = new ReflectionClass($task);
+    $method = $reflection->getMethod('runIf');
+
+    $result = $method->invoke($task);
+
+    expect($result)->toBeTrue();
+});
+
 it('should return filtered array based on docblock properties using toArray method', function (): void {
     /**
      * @property-read string $name

@@ -69,21 +69,6 @@ final class MakeProcessCommand extends BaseCommand
     }
 
     /**
-     * Get the default namespace for the class.
-     *
-     * @param  string  $rootNamespace
-     */
-    #[Override]
-    protected function getDefaultNamespace($rootNamespace): string // @pest-ignore-type
-    {
-        $domain = $this->hasArgument('domain') ? $this->argument('domain') : 'TempDomain';
-
-        $rootNamespace = str($rootNamespace)->replace('\\', '')->toString();
-
-        return "{$rootNamespace}\Brain\\$domain\Processes";
-    }
-
-    /**
      * Get the console command arguments required for this command.
      *
      * @return array<int, array<string, int, string>> An array of arguments with their details
@@ -91,9 +76,14 @@ final class MakeProcessCommand extends BaseCommand
     #[Override]
     protected function getArguments(): array
     {
-        return [
-            ['name', InputArgument::REQUIRED, 'The name of the query'],
-            ['domain', InputArgument::OPTIONAL, 'The name of the domain. Ex.: PTO'],
+        $arguments = [
+            ['name', InputArgument::REQUIRED, 'The name of the process'],
         ];
+
+        if (config('brain.use_domains', false) === true) {
+            $arguments[] = ['domain', InputArgument::OPTIONAL, 'The domain of the process'];
+        }
+
+        return $arguments;
     }
 }

@@ -9,6 +9,7 @@ use Illuminate\Console\OutputStyle;
 use Tests\Feature\Fixtures\PrinterReflection;
 
 beforeEach(function (): void {
+    config()->set('brain.use_domains', true);
     config()->set('brain.root', __DIR__.'/../Fixtures/Brain');
     Terminal::shouldReceive('cols')->andReturn(71);
 

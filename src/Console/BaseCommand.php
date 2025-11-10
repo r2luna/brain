@@ -8,6 +8,7 @@ use Illuminate\Console\Concerns\CreatesMatchingTest;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Stringable;
+use Override;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -32,10 +33,33 @@ abstract class BaseCommand extends GeneratorCommand
         }
 
         return collect(File::directories($modelPath))
-            ->map(fn (string $file): string => basename($file))
-            ->sort()
-            ->values()
-            ->all();
+            ->map(fn (string $file): string => basename($file))->sort()
+            ->values()->all();
+    }
+
+    /**
+     * Get the default namespace for the class being generated.
+     *
+     * @param  string  $rootNamespace  The root namespace of the application
+     * @return string The default namespace for the task class
+     */
+    #[Override]
+    protected function getDefaultNamespace($rootNamespace): string // @pest-ignore-type
+    {
+        $root = config('brain.root');
+        $type = str($this->type)->plural()->toString();
+
+        if ($root) {
+            $rootNamespace .= "\\{$root}";
+        }
+
+        if (config('brain.use_domains', false) === false) {
+            return "$rootNamespace\\$type";
+        }
+
+        $domain = $this->hasArgument('domain') ? $this->argument('domain') : 'TempDomain';
+
+        return "{$rootNamespace}\\$domain\\$type";
     }
 
     /**
@@ -93,10 +117,12 @@ abstract class BaseCommand extends GeneratorCommand
             return false;
         }
 
+        $name = (new Stringable($path))->after($this->laravel['path'])->beforeLast('.php')->append('Test')->replace('\\', '/');
+        $stub = (new Stringable((new Stringable($path))->explode(DIRECTORY_SEPARATOR)->pop(2)->last()))->lower()->singular()->toString();
+
         return $this->call('brain:make:test', [
-            'name' => (new Stringable($path))->after($this->laravel['path'])->beforeLast('.php')->append('Test')->replace('\\', '/'),
-            '--stub' => (new Stringable((new Stringable($path))->explode(DIRECTORY_SEPARATOR)->pop(2)->last()))
-                ->lower()->singular()->toString(),
+            'name' => $name,
+            '--stub' => $stub,
             '--pest' => $this->option('pest'),
             '--phpunit' => $this->option('phpunit'),
         ]) === 0;

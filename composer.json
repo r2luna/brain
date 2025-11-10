@@ -24,7 +24,7 @@
     "require-dev": {
         "captainhook/captainhook": "^5.25",
         "captainhook/hook-installer": "^1.0",
-        "laradumps/laradumps": "^4.0",
+        "laradumps/laradumps": "^4.5",
         "laravel/pint": "^1.21",
         "mockery/mockery": "^1.6.12",
         "orchestra/testbench": "^9.0|^10.0",

@@ -73,22 +73,6 @@ final class MakeTaskCommand extends BaseCommand
     }
 
     /**
-     * Get the default namespace for the class being generated.
-     *
-     * @param  string  $rootNamespace  The root namespace of the application
-     * @return string The default namespace for the task class
-     */
-    #[Override]
-    protected function getDefaultNamespace($rootNamespace): string // @pest-ignore-type
-    {
-        $domain = $this->hasArgument('domain') ? $this->argument('domain') : 'TempDomain';
-
-        $rootNamespace = str($rootNamespace)->replace('\\', '')->toString();
-
-        return "{$rootNamespace}\Brain\\$domain\Tasks";
-    }
-
-    /**
      * Get the console command arguments required for this command.
      *
      * @return array<int, array<string, int, string>> An array of arguments with their details
@@ -96,9 +80,14 @@ final class MakeTaskCommand extends BaseCommand
     #[Override]
     protected function getArguments(): array
     {
-        return [
+        $arguments = [
             ['name', InputArgument::REQUIRED, 'The name of the task. Ex.: RegisterNewPto.'],
-            ['domain', InputArgument::OPTIONAL, 'The name of the domain. Ex.: PTO'],
         ];
+
+        if (config('brain.use_domains', false) === true) {
+            $arguments[] = ['domain', InputArgument::OPTIONAL, 'The name of the domain. Ex.: PTO'];
+        }
+
+        return $arguments;
     }
 }

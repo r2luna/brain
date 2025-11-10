@@ -37,3 +37,19 @@ it('throws exception when brain is empty', function (): void {
 
     $this->command->handle();
 })->throws(Exception::class, 'The brain map is empty.');
+
+it('executes the command successfully without domains', function (): void {
+    config()->set('brain.use_domains', false);
+    config()->set('brain.root', __DIR__.'/../Fixtures/Brain/Example');
+    Terminal::shouldReceive('cols')->andReturn(71);
+    $command = new ShowBrainCommand;
+
+    $mockOutput = Mockery::mock(OutputStyle::class);
+    $mockOutput->shouldReceive('writeln')->once();
+    $mockOutput->shouldReceive('isVerbose')->andReturn(false);
+    $mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+
+    $command->setOutput($mockOutput);
+
+    $command->handle();
+});

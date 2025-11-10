@@ -196,3 +196,87 @@ it('should print task properties of a process when using -vv', function (): void
         [''],
     ]);
 });
+
+// --------------------
+// Without domains
+
+describe('without domains configuration', function (): void {
+    beforeEach(function (): void {
+        config()->set('brain.use_domains', false);
+        config()->set('brain.root', __DIR__.'/../Fixtures/Brain/Example');
+        Terminal::shouldReceive('cols')->andReturn(71);
+
+        $this->mockOutput = Mockery::mock(OutputStyle::class);
+
+        $this->map = new BrainMap;
+        $this->printer = new Printer($this->map);
+        $this->printerReflection = new PrinterReflection($this->printer);
+        $this->printerReflection->set('output', $this->mockOutput);
+    });
+
+    it('should set length to 0 when use_domains is false', function (): void {
+        $this->printerReflection->run('getLengthOfTheLongestDomain');
+        expect($this->printerReflection->get('lengthLongestDomain'))->toBe(0);
+    });
+
+    it('should check if creating all the correct lines without domains', function (): void {
+        $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
+        $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+        $this->printerReflection->run('getTerminalWidth');
+        $this->printerReflection->run('run');
+        $lines = $this->printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .............................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> .................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ......................................... queued</>'],
+            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>................................................</>'],
+            [''],
+        ]);
+    });
+
+    it('should print tasks and processes of a process when using -v without domains', function (): void {
+        $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+        $this->mockOutput->shouldReceive('isVerbose')->andReturn(true);
+        $this->printerReflection->run('getTerminalWidth');
+        $this->printerReflection->run('run');
+        $lines = $this->printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .............................................</>'],
+            ['      └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ............................... queued</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> .................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ......................................... queued</>'],
+            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>................................................</>'],
+            [''],
+        ]);
+    });
+
+    it('should print task properties of a process when using -vv without domains', function (): void {
+        $this->mockOutput->shouldReceive('isVerbose')->andReturn(true);
+        $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(true);
+        $this->printerReflection->run('getTerminalWidth');
+        $this->printerReflection->run('run');
+        $lines = $this->printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .............................................</>'],
+            ['      └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ............................... queued</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> .................................................</>'],
+            ['      <fg=white>⇡ email</><fg=#6C7280>: string</>'],
+            ['      <fg=white>⇡ paymentId</><fg=#6C7280>: int</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ................................................</>'],
+            ['      <fg=white>⇡ email</><fg=#6C7280>: string</>'],
+            ['      <fg=white>⇡ paymentId</><fg=#6C7280>: int</>'],
+            ['      <fg=white>⇣ id</><fg=#6C7280>: int</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ......................................... queued</>'],
+            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>................................................</>'],
+            [''],
+        ]);
+    });
+});

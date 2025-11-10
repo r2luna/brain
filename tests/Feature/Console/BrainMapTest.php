@@ -421,3 +421,30 @@ PHP;
         expect($output)->toBe('\MyApp\Services\TestClass');
     });
 });
+
+describe('without domains configuration', function (): void {
+    beforeEach(function (): void {
+        config()->set('brain.use_domains', false);
+        config()->set('brain.root', __DIR__.'/../Fixtures/Brain/Example');
+    });
+
+    it('should return a list without domain key when use_domains is false', function (): void {
+        $brain = new BrainMap;
+
+        expect($brain->map->toArray())
+            ->toHaveKey('Example')
+            ->and($brain->map->first())->not->toHaveKey('domain')
+            ->and($brain->map->first())->toHaveKey('path')
+            ->and($brain->map->first())->toHaveKey('processes')
+            ->and($brain->map->first())->toHaveKey('tasks')
+            ->and($brain->map->first())->toHaveKey('queries');
+    });
+
+    it('should return single directory when use_domains is false', function (): void {
+        $brain = new BrainMap;
+        $method = $brain->getRootDirectories();
+
+        expect($method)->toBeArray()
+            ->and($method)->toHaveCount(1);
+    });
+});

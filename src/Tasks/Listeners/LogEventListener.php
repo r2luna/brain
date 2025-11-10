@@ -24,6 +24,7 @@ class LogEventListener
                 'payload' => $event->payload,
                 'process' => $event->process,
                 'timestamp' => now()->toDateTimeString(),
+                'meta' => $event->meta,
             ]
         );
     }

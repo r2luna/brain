@@ -8,6 +8,7 @@ use Brain\Processes\Events\Error;
 use Brain\Processes\Events\Processed;
 use Brain\Processes\Events\Processing;
 use Brain\Tasks\Events\Cancelled;
+use Brain\Tasks\Events\Error as TasksError;
 use Brain\Tasks\Events\Skipped;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -50,6 +51,11 @@ class Process
     protected array $tasks = [];
 
     /**
+     * The name of the Process
+     */
+    private string $name;
+
+    /**
      * Process constructor.
      */
     public function __construct(
@@ -57,7 +63,9 @@ class Process
     ) {
         $this->uuid = Str::uuid()->toString();
 
-        Context::push('process', self::class, $this->uuid);
+        $this->name = (new ReflectionClass($this))->getName();
+
+        Context::push('process', $this->name, $this->uuid);
     }
 
     /**
@@ -105,13 +113,23 @@ class Process
             'timestamp' => microtime(true),
         ]);
 
-        $output = $this->chain
-            ? $this->runInChain($this->payload)
-            : $this->run($this->payload);
+        try {
+            $output = $this->chain
+                ? $this->runInChain($this->payload)
+                : $this->run($this->payload);
 
-        $this->fireEvent(Processed::class, [
-            'timestamp' => microtime(true),
-        ]);
+            $this->fireEvent(Processed::class, [
+                'timestamp' => microtime(true),
+            ]);
+        } catch (Exception $e) {
+            $this->fireEvent(Error::class, [
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+            ]);
+
+            throw $e;
+        }
 
         return $output;
     }
@@ -159,7 +177,7 @@ class Process
                         $instance = new $task($payload);
 
                         if (! $method->invoke($instance)) {
-                            event(new Cancelled(Skipped::class, payload: $payload, runProcessId: $this->uuid));
+                            event(new Skipped($task, payload: $payload, runProcessId: $this->uuid));
 
                             continue;
                         }
@@ -181,13 +199,25 @@ class Process
                     continue;
                 }
 
-                $temp = $task::dispatchSync($payload);
-                if ($temp instanceof Task) {
-                    // finalize() will be no-op if middleware already finalized
-                    $temp->finalize();
-                    $payload = $temp->payload;
-                } else {
-                    $payload = $temp;
+                try {
+                    $temp = $task::dispatchSync($payload);
+                    if ($temp instanceof Task) {
+                        // finalize() will be no-op if middleware already finalized
+                        $temp->finalize();
+                        $payload = $temp->payload;
+                    } else {
+                        $payload = $temp;
+                    }
+                } catch (Throwable $e) {
+                    $meta = [
+                        'error' => $e->getMessage(),
+                        'line' => $e->getLine(),
+                        'file' => $e->getFile(),
+                    ];
+
+                    event(new TasksError($task, payload: $payload, runProcessId: $this->uuid, meta: $meta));
+
+                    throw $e;
                 }
 
                 // If the task is a Process, we need to remove the cancelProcess key from the payload.
@@ -199,12 +229,8 @@ class Process
             }
 
             DB::commit();
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             DB::rollBack();
-
-            $this->fireEvent(Error::class, [
-                'error' => $e->getMessage(),
-            ]);
 
             throw $e;
         }
@@ -224,10 +250,18 @@ class Process
     private function fireEvent(string $event, array $meta = []): void
     {
         event(new $event(
-            self::class,
+            $this->getName(),
             $this->uuid,
             [],
             $meta
         ));
+    }
+
+    /**
+     * Get the name of the class
+     */
+    private function getName(): string
+    {
+        return $this->name;
     }
 }

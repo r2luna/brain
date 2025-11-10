@@ -63,16 +63,25 @@ class BrainMap
      */
     public function __construct()
     {
-        $root = config('brain.root');
-        $dir = str_starts_with((string) $root, '/') ? $root : app_path($root);
+        $directories = $this->getRootDirectories();
+        $this->map = $this->getMap($directories);
+    }
 
-        if (! is_dir($dir)) {
-            throw new Exception('Brain directory not found');
+    public function getMap(array $directories): Collection
+    {
+
+        if (config('brain.use_domains', false) === false) {
+            return collect($directories)
+                ->flatMap(fn ($value) => [basename((string) $value) => $value])
+                ->map(fn ($domainPath): array => [
+                    'path' => $domainPath,
+                    'processes' => $this->loadProcessesFor($domainPath),
+                    'tasks' => $this->loadTasksFor($domainPath),
+                    'queries' => $this->loadQueriesFor($domainPath),
+                ]);
         }
 
-        $files = File::directories($dir);
-
-        $domains = collect($files)
+        return collect($directories)
             ->flatMap(fn ($value) => [basename((string) $value) => $value])
             ->map(fn ($domainPath, $domain): array => [
                 'domain' => $domain,
@@ -80,10 +89,23 @@ class BrainMap
                 'processes' => $this->loadProcessesFor($domainPath),
                 'tasks' => $this->loadTasksFor($domainPath),
                 'queries' => $this->loadQueriesFor($domainPath),
-            ])
-            ->toArray();
+            ]);
+    }
 
-        $this->map = collect($domains);
+    public function getRootDirectories(): array
+    {
+        $root = config('brain.root');
+        $dir = str_starts_with((string) $root, '/') ? $root : app_path($root);
+
+        if (! is_dir($dir)) {
+            throw new Exception('Brain directory not found');
+        }
+
+        if (config('brain.use_domains', false) === false) {
+            return [$dir];
+        }
+
+        return File::directories($dir);
     }
 
     /**

@@ -7,6 +7,7 @@ use Brain\Facades\Terminal;
 use Illuminate\Console\OutputStyle;
 
 beforeEach(function (): void {
+    config()->set('brain.use_domains', true);
     config()->set('brain.root', __DIR__.'/../Fixtures/Brain');
     Terminal::shouldReceive('cols')->andReturn(71);
     $this->command = new ShowBrainCommand;

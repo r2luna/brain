@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Brain\Console\BrainMap;
 
 beforeEach(function (): void {
+    config()->set('brain.use_domains', true);
     $this->object = new BrainMap;
     $this->reflection = new ReflectionClass($this->object::class);
 });

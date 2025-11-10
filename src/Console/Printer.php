@@ -126,7 +126,7 @@ class Printer
     private function createLines(): void
     {
         $this->brain->map->each(function ($domainData): void {
-            $domain = data_get($domainData, 'domain');
+            $domain = data_get($domainData, 'domain', '');
             $domainSpaces = $this->getDomainSpaces($domain);
 
             $this->addProcessesLine($domainData, $domain, $domainSpaces);
@@ -158,14 +158,25 @@ class Printer
             $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - 4, 0));
             $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
 
-            $this->lines[] = [
-                sprintf(
-                    '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  <fg=%s>%s</><fg=#6C7280>%s%s</>',
-                    $this->elemColors['DOMAIN'], strtoupper($currentDomain),
-                    $spaces, $this->elemColors['PROC'], 'PROC', 'white',
-                    $processName, $dots, $inChain
-                ),
-            ];
+            if (config('brain.use_domains', false) === false) {
+                $this->lines[] = [
+                    sprintf(
+                        '<fg=%s;options=bold>%s</>  <fg=%s>%s</><fg=#6C7280>%s%s</>',
+                        $this->elemColors['PROC'], 'PROC', 'white',
+                        $processName, $dots, $inChain
+                    ),
+                ];
+            } else {
+
+                $this->lines[] = [
+                    sprintf(
+                        '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  <fg=%s>%s</><fg=#6C7280>%s%s</>',
+                        $this->elemColors['DOMAIN'], strtoupper($currentDomain),
+                        $spaces, $this->elemColors['PROC'], 'PROC', 'white',
+                        $processName, $dots, $inChain
+                    ),
+                ];
+            }
 
             if ($this->output->isVerbose()) {
                 $this->addProcessTasks($process, $currentDomain, $spaces);
@@ -189,12 +200,21 @@ class Printer
                 'task' => [$this->elemColors['TASK'], 'T'],
             };
 
-            $this->lines[] = [
-                sprintf(
-                    '%s      └── <fg=white>%s</><fg=%s;options=bold>%s</> <fg=white>%s</><fg=#6C7280>%s%s</>',
-                    $taskSpaces, $prefix, $color, $type, $taskName, $taskDots, $taskQueued
-                ),
-            ];
+            if (config('brain.use_domains', false) === false) {
+                $this->lines[] = [
+                    sprintf(
+                        '      └── <fg=white>%s</><fg=%s;options=bold>%s</> <fg=white>%s</><fg=#6C7280>%s%s</>',
+                        $prefix, $color, $type, $taskName, $taskDots, $taskQueued
+                    ),
+                ];
+            } else {
+                $this->lines[] = [
+                    sprintf(
+                        '%s      └── <fg=white>%s</><fg=%s;options=bold>%s</> <fg=white>%s</><fg=#6C7280>%s%s</>',
+                        $taskSpaces, $prefix, $color, $type, $taskName, $taskDots, $taskQueued
+                    ),
+                ];
+            }
         }
     }
 
@@ -217,12 +237,22 @@ class Printer
             $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$prefix.$taskName.'TASK  ') - mb_strlen($taskQueued) - 2);
             $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
 
-            $this->lines[] = [
-                sprintf(
-                    '%s<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
-                    $taskSpaces, $this->elemColors['TASK'], 'TASK', $prefix, $taskName, $taskDots, $taskQueued
-                ),
-            ];
+            if (config('brain.use_domains', false) === false) {
+                $taskDots .= '.';
+                $this->lines[] = [
+                    sprintf(
+                        '<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
+                        $this->elemColors['TASK'], 'TASK', $prefix, $taskName, $taskDots, $taskQueued
+                    ),
+                ];
+            } else {
+                $this->lines[] = [
+                    sprintf(
+                        '%s<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
+                        $taskSpaces, $this->elemColors['TASK'], 'TASK', $prefix, $taskName, $taskDots, $taskQueued
+                    ),
+                ];
+            }
 
             if ($this->output->isVeryVerbose()) {
                 $this->addProperties($task, $taskSpaces);
@@ -237,12 +267,21 @@ class Printer
             $propertyName = $property['name'];
             $propertyType = $property['type'];
 
-            $this->lines[] = [
-                sprintf(
-                    '   %s   <fg=white>%s%s</><fg=#6C7280>: %s</>',
-                    $spaces, $propertyIndex, $propertyName, $propertyType
-                ),
-            ];
+            if (config('brain.use_domains', false) === false) {
+                $this->lines[] = [
+                    sprintf(
+                        '%s  <fg=white>%s%s</><fg=#6C7280>: %s</>',
+                        $spaces, $propertyIndex, $propertyName, $propertyType
+                    ),
+                ];
+            } else {
+                $this->lines[] = [
+                    sprintf(
+                        '   %s   <fg=white>%s%s</><fg=#6C7280>: %s</>',
+                        $spaces, $propertyIndex, $propertyName, $propertyType
+                    ),
+                ];
+            }
         }
 
         /**
@@ -281,16 +320,28 @@ class Printer
             $querySpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
             $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces.$queryName.'QERY ') - 2);
 
-            $this->lines[] = [
-                sprintf(
-                    '%s<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280>%s</>',
-                    $querySpaces,
-                    $this->elemColors['QERY'],
-                    'QERY',
-                    $queryName,
-                    $queryDots
-                ),
-            ];
+            if (config('brain.use_domains', false) === false) {
+                $this->lines[] = [
+                    sprintf(
+                        '<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280>%s</>',
+                        $this->elemColors['QERY'],
+                        'QERY',
+                        $queryName,
+                        $queryDots
+                    ),
+                ];
+            } else {
+                $this->lines[] = [
+                    sprintf(
+                        '%s<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280>%s</>',
+                        $querySpaces,
+                        $this->elemColors['QERY'],
+                        'QERY',
+                        $queryName,
+                        $queryDots
+                    ),
+                ];
+            }
         }
     }
 
@@ -331,6 +382,11 @@ class Printer
      */
     private function getLengthOfTheLongestDomain(): void
     {
+        if (config('brain.use_domains', false) === false) {
+            $this->lengthLongestDomain = 0;
+
+            return;
+        }
         $this->lengthLongestDomain = mb_strlen(
             (string) data_get($this->brain->map
                 ->sortByDesc(fn ($value): int => mb_strlen((string) $value['domain']))

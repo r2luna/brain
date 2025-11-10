@@ -1,11 +1,10 @@
 <?php
 
 test('check list of tasks', function (): void {
-    $process = new App\Brain\Domain\ExampleProcess();
+    $process = new {{ namespace }}\{{ class }}();
 
     expect($process->getTasks())
         ->toBe([
             // List of the tasks
-            // App\Brain\Domain\ExampleTask::class,
         ]);
 });

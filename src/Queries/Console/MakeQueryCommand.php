@@ -74,22 +74,6 @@ class MakeQueryCommand extends BaseCommand
     }
 
     /**
-     * Get the default namespace for the class being generated.
-     *
-     * @param  string  $rootNamespace  The root namespace of the application
-     * @return string The default namespace for the query class
-     */
-    #[Override]
-    protected function getDefaultNamespace($rootNamespace): string // @pest-ignore-type
-    {
-        $domain = $this->hasArgument('domain') ? $this->argument('domain') : 'TempDomain';
-
-        $rootNamespace = str($rootNamespace)->replace('\\', '')->toString();
-
-        return "{$rootNamespace}\Brain\\$domain\Queries";
-    }
-
-    /**
      * Get the console command arguments required for this command.
      *
      * @return array<int, array<string, int, string>> An array of arguments with their details
@@ -97,11 +81,16 @@ class MakeQueryCommand extends BaseCommand
     #[Override]
     protected function getArguments(): array
     {
-        return [
+        $arguments = [
             ['name', InputArgument::REQUIRED, 'The name of the query'],
             ['model', InputArgument::OPTIONAL, 'The name of the model'],
-            ['domain', InputArgument::OPTIONAL, 'The name of the domain. Ex.: PTO'],
         ];
+
+        if (config('brain.use_domains', false) === true) {
+            $arguments[] = ['domain', InputArgument::OPTIONAL, 'The domain of the query'];
+        }
+
+        return $arguments;
     }
 
     /**
@@ -117,10 +106,6 @@ class MakeQueryCommand extends BaseCommand
     {
         $class = parent::buildClass($name);
 
-        return str_replace(
-            ['DummyModel', '{{ model }}', '{{model}}'],
-            $this->argument('model'),
-            $class,
-        );
+        return str_replace(['{{ model }}', '{{model}}'], $this->argument('model'), $class);
     }
 }

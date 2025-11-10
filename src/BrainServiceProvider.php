@@ -33,10 +33,9 @@ class BrainServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(
-            __DIR__.'/../config/brain.php',
-            'brain'
-        );
+        $this->registerCommands();
+        $this->registerListeners();
+        $this->offerPublishing();
     }
 
     /**
@@ -45,12 +44,7 @@ class BrainServiceProvider extends ServiceProvider
      * This method is called after all other service providers have been registered.
      * It is used to register any commands or perform any bootstrapping tasks.
      */
-    public function boot(): void
-    {
-        $this->registerCommands();
-        $this->offerPublishing();
-        $this->registerListeners();
-    }
+    public function boot(): void {}
 
     /**
      * Registers the console commands for the application.
@@ -80,9 +74,11 @@ class BrainServiceProvider extends ServiceProvider
     private function offerPublishing(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->publishes([
-                __DIR__.'/../config/brain.php' => config_path('brain.php'),
-            ]);
+            $config = __DIR__.'/../config/brain.php';
+
+            $this->publishes([$config => base_path('config/brain.php')], ['brain:config']);
+
+            $this->mergeConfigFrom($config, 'brain');
         }
     }
 

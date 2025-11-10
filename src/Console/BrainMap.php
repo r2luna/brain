@@ -63,7 +63,8 @@ class BrainMap
      */
     public function __construct()
     {
-        $dir = config('brain.root');
+        $root = config('brain.root');
+        $dir = str_starts_with((string) $root, '/') ? $root : app_path($root);
 
         if (! is_dir($dir)) {
             throw new Exception('Brain directory not found');

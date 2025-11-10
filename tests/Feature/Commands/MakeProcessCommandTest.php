@@ -6,6 +6,10 @@ use Brain\Processes\Console\MakeProcessCommand;
 use Illuminate\Filesystem\Filesystem;
 use Tests\Feature\Fixtures\TestInput;
 
+beforeEach(function (): void {
+    config()->set('brain.use_domains', true);
+});
+
 test('extends BaseCommand', function (): void {
     // ----------------------------------------------------------
     // by extending BaseCommand, MakeProcessCommand will have
@@ -67,6 +71,7 @@ test('get defaultNamespace', function (): void {
 
     $defaultNamespace = $method->invoke($command, 'App\\');
 
+    $defaultNamespace = str($method->invoke($command, 'App\\'))->replace('\\\\', '\\')->toString();
     expect($defaultNamespace)->toBe('App\Brain\Domain\Processes');
 });
 
@@ -80,7 +85,7 @@ test('get defaultNamespace with no domain', function (): void {
     $input = new TestInput([]);
     $command->setInput($input);
 
-    $defaultNamespace = $method->invoke($command, 'App\\');
+    $defaultNamespace = str($method->invoke($command, 'App\\'))->replace('\\\\', '\\')->toString();
 
     expect($defaultNamespace)->toBe('App\Brain\TempDomain\Processes');
 });
@@ -130,4 +135,45 @@ test('getNameInput should not duplicate the Process suffix', function (): void {
 
     $nameInput = $method->invoke($command);
     expect($nameInput)->toBe('CreateUserProcess');
+});
+
+// ------------------------------------------------------------------------------------------------------
+// Disabling Domains
+
+test('get defaultNamespace without domains', function (): void {
+    config(['brain.use_domains' => false]);
+
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+
+    $reflection = new ReflectionClass($command);
+    $method = $reflection->getMethod('getDefaultNamespace');
+
+    $input = new TestInput;
+    $command->setInput($input);
+
+    $defaultNamespace = str($method->invoke($command, 'App\\'))->replace('\\\\', '\\')->toString();
+
+    expect($defaultNamespace)->toBe('App\Brain\Processes');
+});
+
+// ------------------------------------------------------------------------------------------------------
+// Flat Structure
+
+test('get defaultNamespace with flat structure', function (): void {
+    config(['brain.root' => null]);
+    config(['brain.use_domains' => false]);
+
+    $files = app(Filesystem::class);
+    $command = new MakeProcessCommand($files);
+
+    $reflection = new ReflectionClass($command);
+    $method = $reflection->getMethod('getDefaultNamespace');
+
+    $input = new TestInput;
+    $command->setInput($input);
+
+    $defaultNamespace = str($method->invoke($command, 'App\\'))->replace('\\\\', '\\')->toString();
+
+    expect($defaultNamespace)->toBe('App\Processes');
 });

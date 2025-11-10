@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace {{ namespace }};
 
+use App\Models\{{ model }};
 use Brain\Query;
 use Illuminate\Support\Collection;
 use stdClass;
@@ -16,7 +17,7 @@ class {{ class }} extends Query
 
     public function handle(): Collection | stdClass
     {
-        return DummyModel::query()
+        return {{ model }}::query()
             ->select([
                 // Remember to add the fields you want to select
                 // to make the query more efficient

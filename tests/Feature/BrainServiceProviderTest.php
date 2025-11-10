@@ -38,7 +38,7 @@ test('registered commands are of correct instance type', function (): void {
 test('if config brain log is enabled needs to register listeners', function (): void {
     config()->set('brain.log', true);
 
-    $this->provider->boot();
+    $this->provider->register();
 
     $processEvents = [
         Brain\Processes\Events\Processing::class,

@@ -12,8 +12,25 @@ return [
     | This value set's the main directory where we will create all the processes
     | tasks, and queries.
     |
+    | If you set this to null, we will use a *flat* structure within the app directory.
+    | Meaning that everything will be created directly inside the app folder.
+    | Ex: App\Processes, App\Tasks, App\Queries
+    |
     */
-    'root' => app_path('Brain'),
+    'root' => env('BRAIN_ROOT', 'Brain'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Use Domains
+    |--------------------------------------------------------------------------
+    |
+    | When enabled (true), this setting organizes processes, tasks, and queries
+    | into domain-specific subdirectories within the main Brain directory.
+    | This helps in maintaining a clear structure, especially in larger
+    | applications with multiple domains.
+    |
+    */
+    'use_domains' => env('BRAIN_USE_DOMAINS', false),
 
     /*
     |--------------------------------------------------------------------------

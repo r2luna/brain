@@ -2,10 +2,13 @@
 <?php
 
 use Brain\Console\BaseCommand;
-use Brain\Processes\Console\MakeProcessCommand;
 use Brain\Queries\Console\MakeQueryCommand;
 use Illuminate\Filesystem\Filesystem;
 use Tests\Feature\Fixtures\TestInput;
+
+beforeEach(function (): void {
+    config()->set('brain.use_domains', true);
+});
 
 test('extends BaseCommand', function (): void {
     // ----------------------------------------------------------
@@ -66,7 +69,7 @@ test('get defaultNamespace', function (): void {
     $input = new TestInput(['domain' => 'Domain']);
     $command->setInput($input);
 
-    $defaultNamespace = $method->invoke($command, 'App\\');
+    $defaultNamespace = str($method->invoke($command, 'App\\'))->replace('\\\\', '\\')->toString();
 
     expect($defaultNamespace)->toBe('App\Brain\\Domain\\Queries');
 });
@@ -81,7 +84,7 @@ test('get defaultNamespace with no domain', function (): void {
     $input = new TestInput([]);
     $command->setInput($input);
 
-    $defaultNamespace = $method->invoke($command, 'App\\');
+    $defaultNamespace = str($method->invoke($command, 'App\\'))->replace('\\\\', '\\')->toString();
 
     expect($defaultNamespace)->toBe('App\Brain\TempDomain\Queries');
 });
@@ -97,6 +100,7 @@ it('should replace DumyModel in the stub with the given argument model', functio
     $method = $reflection->getMethod('buildClass');
 
     $output = $method->invoke($command, 'UserQuery');
+
     expect($output)->toBe(
         file_get_contents(__DIR__.'/../Fixtures/user-query.stub')
     );
@@ -147,4 +151,45 @@ test('getNameInput should not duplicate the Query suffix', function (): void {
 
     $nameInput = $method->invoke($command);
     expect($nameInput)->toBe('UserReportQuery');
+});
+
+// ------------------------------------------------------------------------------------------------------
+// Disabling Domains
+
+test('get defaultNamespace without domains', function (): void {
+    config(['brain.use_domains' => false]);
+
+    $files = app(Filesystem::class);
+    $command = new MakeQueryCommand($files);
+
+    $reflection = new ReflectionClass($command);
+    $method = $reflection->getMethod('getDefaultNamespace');
+
+    $input = new TestInput;
+    $command->setInput($input);
+
+    $defaultNamespace = str($method->invoke($command, 'App\\'))->replace('\\\\', '\\')->toString();
+
+    expect($defaultNamespace)->toBe('App\Brain\Queries');
+});
+
+// ------------------------------------------------------------------------------------------------------
+// Flat Structure
+
+test('get defaultNamespace with flat structure', function (): void {
+    config(['brain.root' => null]);
+    config(['brain.use_domains' => false]);
+
+    $files = app(Filesystem::class);
+    $command = new MakeQueryCommand($files);
+
+    $reflection = new ReflectionClass($command);
+    $method = $reflection->getMethod('getDefaultNamespace');
+
+    $input = new TestInput;
+    $command->setInput($input);
+
+    $defaultNamespace = str($method->invoke($command, 'App\\'))->replace('\\\\', '\\')->toString();
+
+    expect($defaultNamespace)->toBe('App\Queries');
 });

@@ -56,6 +56,8 @@ test('stub should be __DIR__./stubs/task/stub', function (): void {
 });
 
 test('get defaultNamespace', function (): void {
+    config(['brain.use_domains' => true]);
+
     $files = app(Filesystem::class);
     $command = new MakeTaskCommand($files);
 
@@ -65,12 +67,13 @@ test('get defaultNamespace', function (): void {
     $input = new TestInput(['domain' => 'Domain']);
     $command->setInput($input);
 
-    $defaultNamespace = $method->invoke($command, 'App\\');
+    $defaultNamespace = str($method->invoke($command, 'App\\'))->replace('\\\\', '\\')->toString();
 
-    expect($defaultNamespace)->toBe('App\Brain\\Domain\\Tasks');
+    expect($defaultNamespace)->toBe('App\Brain\Domain\Tasks');
 });
 
 test('get defaultNamespace with no domain', function (): void {
+    config(['brain.use_domains' => true]);
     $files = app(Filesystem::class);
     $command = new MakeTaskCommand($files);
 
@@ -80,7 +83,7 @@ test('get defaultNamespace with no domain', function (): void {
     $input = new TestInput([]);
     $command->setInput($input);
 
-    $defaultNamespace = $method->invoke($command, 'App\\');
+    $defaultNamespace = str($method->invoke($command, 'App\\'))->replace('\\\\', '\\')->toString();
 
     expect($defaultNamespace)->toBe('App\Brain\TempDomain\Tasks');
 });
@@ -130,4 +133,23 @@ test('getNameInput should not duplicate the Query suffix', function (): void {
 
     $nameInput = $method->invoke($command);
     expect($nameInput)->toBe('CreateTenantTask');
+});
+
+// ------------------------------------------------------------------------------------------------------
+// Disabling Domains
+test('get defaultNamespace with domains disabled', function (): void {
+    config(['brain.use_domains' => false]);
+
+    $files = app(Filesystem::class);
+    $command = new MakeTaskCommand($files);
+
+    $reflection = new ReflectionClass($command);
+    $method = $reflection->getMethod('getDefaultNamespace');
+
+    $input = new TestInput;
+    $command->setInput($input);
+
+    $defaultNamespace = str($method->invoke($command, 'App\\'))->replace('\\\\', '\\')->toString();
+
+    expect($defaultNamespace)->toBe('App\Brain\Tasks');
 });

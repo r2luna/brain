@@ -13,10 +13,12 @@
 
 ## Features
 
--   🎯 **Domain-Driven Structure**: Easily create new domains with proper architecture
+-   🎯 **Domain-Driven Structure**: Easily create new domains with proper architecture (optional)
 -   🔄 **Process Management**: Generate process classes for complex business operations
 -   🔍 **Query Objects**: Create dedicated query classes for database operations
 -   ⚡ **Task Management**: Generate task classes for background jobs and queue operations
+-   🔧 **Flexible Configuration**: Customize root directory, domain organization, and class naming conventions
+-   📊 **Built-in Logging**: Track process and task execution with comprehensive event system
 
 ## Gains
 
@@ -32,6 +34,53 @@ You can install the package via composer:
 composer require r2luna/brain
 ```
 
+## Configuration
+
+Brain can be customized through environment variables or by publishing the configuration file:
+
+```bash
+php artisan vendor:publish --provider="Brain\BrainServiceProvider"
+```
+
+### Available Configuration Options
+
+#### Root Directory
+```bash
+# .env
+BRAIN_ROOT=Brain
+```
+Defines the main directory where processes, tasks, and queries are created. Default: `Brain`
+
+#### Use Domains
+```bash
+# .env
+BRAIN_USE_DOMAINS=false
+```
+Organizes code into domain-specific subdirectories. When enabled, creates structure like `app/Brain/Users/Processes`. Default: `false`
+
+#### Use Suffix
+```bash
+# .env
+BRAIN_USE_SUFFIX=false
+```
+Automatically appends suffixes to class names (e.g., `CreateUser` becomes `CreateUserProcess`). Default: `false`
+
+#### Custom Suffixes
+```bash
+# .env
+BRAIN_TASK_SUFFIX=Task
+BRAIN_PROCESS_SUFFIX=Process
+BRAIN_QUERY_SUFFIX=Query
+```
+Customize the suffixes used when `BRAIN_USE_SUFFIX=true`. Defaults: `Task`, `Process`, `Query`
+
+#### Logging
+```bash
+# .env
+BRAIN_LOG_ENABLED=false
+```
+Enables logging for all processes and tasks. See [Logging](#logging) section for details. Default: `false`
+
 ## Usage
 
 ### Creating a Process
@@ -40,10 +89,12 @@ composer require r2luna/brain
 php artisan make:process
 ... follow prompt
 name: CreateUserProcess
-domain: Users
+domain: Users  # Only asked if BRAIN_USE_DOMAINS=true
 ```
 
-This will create a new process class in `app/Brain/Users/Processes/CreateUserProcess.php`
+This will create a new process class:
+- With domains: `app/Brain/Users/Processes/CreateUserProcess.php`
+- Without domains: `app/Brain/Processes/CreateUserProcess.php`
 
 > [!IMPORTANT] 
 > Note that every task running inside a process executes within a database transaction by default.
@@ -54,10 +105,12 @@ This will create a new process class in `app/Brain/Users/Processes/CreateUserPro
 php artisan make:task
 ... follow prompt
 name: SendWelcomeEmailTask
-domain: Users
+domain: Users  # Only asked if BRAIN_USE_DOMAINS=true
 ```
 
-This will create a new task class in `app/Brain/Users/Tasks/SendWelcomeEmailTask.php`
+This will create a new task class:
+- With domains: `app/Brain/Users/Tasks/SendWelcomeEmailTask.php`
+- Without domains: `app/Brain/Tasks/SendWelcomeEmailTask.php`
 
 #### Queuable Tasks
 
@@ -177,11 +230,13 @@ class AddRoles extends Task
 php artisan make:query
 ... follow prompt
 name: GetUserByEmailQuery
-domain: Users
+domain: Users  # Only asked if BRAIN_USE_DOMAINS=true
 model: User
 ```
 
-This will create a new query class in `app/Brain/Users/Queries/GetUserByEmailQuery.php`
+This will create a new query class:
+- With domains: `app/Brain/Users/Queries/GetUserByEmailQuery.php`
+- Without domains: `app/Brain/Queries/GetUserByEmailQuery.php`
 
 ## Example Usage
 
@@ -297,6 +352,75 @@ protected $listen = [
     ],
 ];
 ```
+
+## Upgrading to v2.0
+
+Version 2.0 introduces new configuration options and enhanced flexibility for organizing your Brain components.
+
+### Breaking Changes
+
+#### Configuration File Structure
+
+The configuration file has been completely restructured with new options. If you've published the config file in v1.x, you'll need to republish it:
+
+```bash
+php artisan vendor:publish --provider="Brain\BrainServiceProvider" --force
+```
+
+Or manually update your `config/brain.php` to match the new structure (see [Configuration](#configuration) section).
+
+#### Default Behavior Changes
+
+**Domain Organization**: In v1.x, Brain automatically organized components into domain subdirectories. In v2.0, this is now **opt-in** via the `use_domains` configuration:
+
+```php
+// v1.x behavior (automatic domains)
+app/Brain/Users/Processes/CreateUserProcess.php
+
+// v2.0 default behavior (flat structure)
+app/Brain/Processes/CreateUserProcess.php
+
+// v2.0 with BRAIN_USE_DOMAINS=true (same as v1.x)
+app/Brain/Users/Processes/CreateUserProcess.php
+```
+
+### Migration Guide
+
+To maintain v1.x behavior in v2.0, add this to your `.env`:
+
+```bash
+BRAIN_USE_DOMAINS=true
+```
+
+This will ensure your existing code structure remains unchanged.
+
+### New Features in v2.0
+
+#### Flexible Root Directory
+
+You can now customize where Brain components are created:
+
+```bash
+# .env
+BRAIN_ROOT=Domain  # Creates files in app/Domain instead of app/Brain
+```
+
+#### Optional Class Suffixes
+
+Enable automatic suffixing for cleaner class names:
+
+```bash
+# .env
+BRAIN_USE_SUFFIX=true
+
+# Now you can write:
+php artisan make:process CreateUser
+# Creates: CreateUserProcess.php
+```
+
+#### Enhanced Logging
+
+Built-in logging system for tracking process and task execution. See [Logging](#logging) section for details.
 
 ## Testing
 

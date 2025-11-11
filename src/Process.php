@@ -250,18 +250,10 @@ class Process
     private function fireEvent(string $event, array $meta = []): void
     {
         event(new $event(
-            $this->getName(),
+            $this->name,
             $this->uuid,
             [],
             $meta
         ));
-    }
-
-    /**
-     * Get the name of the class
-     */
-    private function getName(): string
-    {
-        return $this->name;
     }
 }

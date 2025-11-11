@@ -301,7 +301,5 @@ it('should return the original process class name', function (): void {
 
     ProcessPayload::dispatchSync([]);
 
-    Event::assertDispatched(Processing::class, function (Processing $event): bool {
-        return $event->process === ProcessPayload::class;
-    });
+    Event::assertDispatched(Processing::class, fn (Processing $event): bool => $event->process === ProcessPayload::class);
 });

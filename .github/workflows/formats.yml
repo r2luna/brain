@@ -54,7 +54,9 @@ jobs:
           restore-keys: dependencies-php-${{ matrix.php }}-os-${{ matrix.os }}-version-${{ matrix.dependency-version }}-composer-
 
       - name: Install Composer dependencies
-        run: composer install --${{ matrix.dependency-version }} --no-interaction --prefer-dist
+        run: |
+          composer require --${{ matrix.dependency-version }} --no-interaction
+          composer install
 
       - name: Prevent debug call
         run: composer test:debug

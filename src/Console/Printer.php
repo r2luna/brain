@@ -238,7 +238,6 @@ class Printer
             $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
 
             if (config('brain.use_domains', false) === false) {
-                $taskDots .= '.';
                 $this->lines[] = [
                     sprintf(
                         '<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
@@ -318,12 +317,12 @@ class Printer
         foreach (data_get($domainData, 'queries') as $query) {
             $queryName = $query['name'];
             $querySpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
-            $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces.$queryName.'QERY ') - 2);
+            $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces.$queryName.'QERY ') - 3);
 
             if (config('brain.use_domains', false) === false) {
                 $this->lines[] = [
                     sprintf(
-                        '<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280>%s</>',
+                        '<fg=%s;options=bold>%s</>  <fg=white>%s</> <fg=#6C7280>%s</>',
                         $this->elemColors['QERY'],
                         'QERY',
                         $queryName,
@@ -333,7 +332,7 @@ class Printer
             } else {
                 $this->lines[] = [
                     sprintf(
-                        '%s<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280>%s</>',
+                        '%s<fg=%s;options=bold>%s</>  <fg=white>%s</> <fg=#6C7280>%s</>',
                         $querySpaces,
                         $this->elemColors['QERY'],
                         'QERY',

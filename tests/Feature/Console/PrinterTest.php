@@ -80,10 +80,10 @@ it('should check if creating all the correct lines to be printed', function (): 
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> .......................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> .......................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ................................ queued</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
         [''],
         ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ............................ chained</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
         [''],
     ]);
 });
@@ -158,12 +158,12 @@ it('should print tasks and processes of a process when using -v', function (): v
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> .......................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> .......................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ................................ queued</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
         [''],
         ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ............................ chained</>'],
         ['                  └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ....................... queued</>'],
         ['                  └── <fg=white>2. </><fg=blue;options=bold>P</> <fg=white>ExampleProcess</><fg=#6C7280> ............................</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
         [''],
     ]);
 });
@@ -187,12 +187,12 @@ it('should print task properties of a process when using -vv', function (): void
         ['                  <fg=white>⇣ id</><fg=#6C7280>: int</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> .......................................</>'],
         ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ................................ queued</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
         [''],
         ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ............................ chained</>'],
         ['                  └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ....................... queued</>'],
         ['                  └── <fg=white>2. </><fg=blue;options=bold>P</> <fg=white>ExampleProcess</><fg=#6C7280> ............................</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>........................................</>'],
+        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
         [''],
     ]);
 });
@@ -228,11 +228,11 @@ describe('without domains configuration', function (): void {
 
         expect($lines)->toBe([
             ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .............................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> .................................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ................................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ................................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ......................................... queued</>'],
-            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ...............................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ...............................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ........................................ queued</>'],
+            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>...............................................</>'],
             [''],
         ]);
     });
@@ -247,11 +247,11 @@ describe('without domains configuration', function (): void {
         expect($lines)->toBe([
             ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .............................................</>'],
             ['      └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ............................... queued</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> .................................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ................................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ................................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ......................................... queued</>'],
-            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ...............................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ...............................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ........................................ queued</>'],
+            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>...............................................</>'],
             [''],
         ]);
     });
@@ -263,19 +263,19 @@ describe('without domains configuration', function (): void {
         $this->printerReflection->run('run');
         $lines = $this->printerReflection->get('lines');
 
-        expect($lines)->toBe([
+        expect($lines)->toEqual([
             ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .............................................</>'],
             ['      └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ............................... queued</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> .................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ................................................</>'],
             ['      <fg=white>⇡ email</><fg=#6C7280>: string</>'],
             ['      <fg=white>⇡ paymentId</><fg=#6C7280>: int</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ...............................................</>'],
             ['      <fg=white>⇡ email</><fg=#6C7280>: string</>'],
             ['      <fg=white>⇡ paymentId</><fg=#6C7280>: int</>'],
             ['      <fg=white>⇣ id</><fg=#6C7280>: int</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ................................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ......................................... queued</>'],
-            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</><fg=#6C7280>................................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ...............................................</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ........................................ queued</>'],
+            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>...............................................</>'],
             [''],
         ]);
     });

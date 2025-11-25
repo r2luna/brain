@@ -10,8 +10,8 @@ final class FinalizeTaskMiddleware
 {
     public function handle(Task $task, callable $next): void
     {
-        $next($task);
-
         $task->finalize();
+
+        $next($task);
     }
 }

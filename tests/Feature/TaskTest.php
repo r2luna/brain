@@ -14,6 +14,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
 function getJobFromReflection(PendingDispatch $task): object
 {
@@ -450,7 +451,6 @@ it('FinalizeTaskMiddleware triggers finalize and dispatches Processed event', fu
 
     $middleware = new FinalizeTaskMiddleware;
 
-    // Call middleware with a next that simply returns the task
     $middleware->handle($task, fn ($t) => $t);
 
     Event::assertDispatched(Processed::class);
@@ -476,6 +476,29 @@ it('process calls finalize on task instances and fires Processed event', functio
 
     $process = new ProcessWithFinalize(null);
     $process->handle();
+
+    Event::assertDispatched(Processed::class);
+});
+
+it('queued tasks are finalized before going through next middleware', function (): void {
+    Event::fake();
+
+    class QueuedTask extends Task implements ShouldQueue
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    class ProcessQueuedTask extends Brain\Process
+    {
+        protected array $tasks = [
+            QueuedTask::class,
+        ];
+    }
+
+    ProcessQueuedTask::dispatchSync();
 
     Event::assertDispatched(Processed::class);
 });

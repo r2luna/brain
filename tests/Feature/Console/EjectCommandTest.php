@@ -222,3 +222,134 @@ test('it can be cancelled by the user', function (): void {
 
     expect(File::isDirectory($this->targetBase))->toBeFalse();
 });
+
+test('it resolves target path from composer.json PSR-4 mapping', function (): void {
+    $composerPath = base_path('composer.json');
+    $originalComposer = File::exists($composerPath) ? File::get($composerPath) : null;
+
+    File::put($composerPath, json_encode([
+        'autoload' => [
+            'psr-4' => [
+                'Domain\\' => 'src/Domain/',
+            ],
+        ],
+    ]));
+
+    $customTarget = base_path('src/Domain/Brain');
+
+    $this->artisan('brain:eject', ['--namespace' => 'Domain\\Brain'])
+        ->expectsConfirmation('Do you want to proceed with the eject?', 'yes')
+        ->assertExitCode(0);
+
+    expect(File::isDirectory($customTarget))->toBeTrue();
+    expect(File::exists($customTarget.'/Process.php'))->toBeTrue();
+
+    $content = File::get($customTarget.'/Process.php');
+    expect($content)->toContain('namespace Domain\\Brain;');
+
+    // Cleanup
+    File::deleteDirectory(base_path('src/Domain'));
+
+    if ($originalComposer !== null) {
+        File::put($composerPath, $originalComposer);
+    } else {
+        File::delete($composerPath);
+    }
+});
+
+test('it uses longest matching PSR-4 prefix', function (): void {
+    $composerPath = base_path('composer.json');
+    $originalComposer = File::exists($composerPath) ? File::get($composerPath) : null;
+
+    File::put($composerPath, json_encode([
+        'autoload' => [
+            'psr-4' => [
+                'App\\' => 'app/',
+                'App\\Modules\\' => 'modules/',
+            ],
+        ],
+    ]));
+
+    $customTarget = base_path('modules/Brain');
+
+    $this->artisan('brain:eject', ['--namespace' => 'App\\Modules\\Brain'])
+        ->expectsConfirmation('Do you want to proceed with the eject?', 'yes')
+        ->assertExitCode(0);
+
+    expect(File::isDirectory($customTarget))->toBeTrue();
+    expect(File::exists($customTarget.'/Process.php'))->toBeTrue();
+
+    $content = File::get($customTarget.'/Process.php');
+    expect($content)->toContain('namespace App\\Modules\\Brain;');
+
+    // Cleanup
+    File::deleteDirectory(base_path('modules'));
+
+    if ($originalComposer !== null) {
+        File::put($composerPath, $originalComposer);
+    } else {
+        File::delete($composerPath);
+    }
+});
+
+test('it warns when no PSR-4 mapping matches the namespace', function (): void {
+    $composerPath = base_path('composer.json');
+    $originalComposer = File::exists($composerPath) ? File::get($composerPath) : null;
+
+    File::put($composerPath, json_encode([
+        'autoload' => [
+            'psr-4' => [
+                'App\\' => 'app/',
+            ],
+        ],
+    ]));
+
+    $this->artisan('brain:eject', ['--namespace' => 'Custom\\Brain'])
+        ->expectsOutputToContain('No PSR-4 mapping found for this namespace')
+        ->expectsConfirmation('Do you want to proceed with the eject?', 'yes')
+        ->assertExitCode(0);
+
+    // Fallback should use lcfirst: Custom\Brain -> custom/Brain
+    $fallbackTarget = base_path('custom/Brain');
+    expect(File::isDirectory($fallbackTarget))->toBeTrue();
+
+    // Cleanup
+    File::deleteDirectory(base_path('custom'));
+
+    if ($originalComposer !== null) {
+        File::put($composerPath, $originalComposer);
+    } else {
+        File::delete($composerPath);
+    }
+});
+
+test('it handles PSR-4 mapping with array paths', function (): void {
+    $composerPath = base_path('composer.json');
+    $originalComposer = File::exists($composerPath) ? File::get($composerPath) : null;
+
+    File::put($composerPath, json_encode([
+        'autoload' => [
+            'psr-4' => [
+                'Shared\\' => ['src/Shared/', 'lib/Shared/'],
+            ],
+        ],
+    ]));
+
+    $customTarget = base_path('src/Shared/Brain');
+
+    $this->artisan('brain:eject', ['--namespace' => 'Shared\\Brain'])
+        ->expectsConfirmation('Do you want to proceed with the eject?', 'yes')
+        ->assertExitCode(0);
+
+    expect(File::isDirectory($customTarget))->toBeTrue();
+    expect(File::exists($customTarget.'/Process.php'))->toBeTrue();
+
+    // Cleanup
+    File::deleteDirectory(base_path('src/Shared'));
+
+    if ($originalComposer !== null) {
+        File::put($composerPath, $originalComposer);
+    } else {
+        File::delete($composerPath);
+    }
+});

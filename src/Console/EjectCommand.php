@@ -16,6 +16,8 @@ class EjectCommand extends Command
 
     protected $description = 'Eject Brain package source files into your project';
 
+    private ?array $psr4Map = null;
+
     /**
      * Files to exclude from copy (replaced by generated provider or not needed after eject).
      */
@@ -35,6 +37,13 @@ class EjectCommand extends Command
         $this->output->writeln(' ───────────');
         $this->output->writeln(" Target namespace: <info>{$namespace}</info>");
         $this->output->writeln(" Target directory: <info>{$targetPath}</info>");
+
+        if (! $this->namespaceHasPsr4Mapping($namespace)) {
+            $this->output->writeln('');
+            $this->output->writeln(' <comment>Warning: No PSR-4 mapping found for this namespace.</comment>');
+            $this->output->writeln(' <comment>Path was resolved using fallback. Please update your composer.json autoloading.</comment>');
+        }
+
         $this->output->writeln('');
 
         if (! confirm('Do you want to proceed with the eject?', true)) {
@@ -216,7 +225,68 @@ class EjectCommand extends Command
 
     private function targetPath(string $namespace): string
     {
+        $psr4Map = $this->composerPsr4Map();
+        $namespaceForMatch = rtrim($namespace, '\\').'\\';
+
+        $bestPrefix = '';
+        $bestPath = '';
+
+        foreach ($psr4Map as $prefix => $paths) {
+            $path = is_array($paths) ? $paths[0] : $paths;
+
+            if (str_starts_with($namespaceForMatch, $prefix) && strlen($prefix) > strlen($bestPrefix)) {
+                $bestPrefix = $prefix;
+                $bestPath = $path;
+            }
+        }
+
+        if ($bestPrefix !== '') {
+            $remaining = substr($namespace, strlen($bestPrefix));
+            $remainingPath = str_replace('\\', '/', $remaining);
+            $basePath = rtrim((string) $bestPath, '/');
+
+            return $basePath.($remainingPath !== '' ? '/'.$remainingPath : '');
+        }
+
         return str_replace('\\', '/', lcfirst($namespace));
+    }
+
+    private function namespaceHasPsr4Mapping(string $namespace): bool
+    {
+        $psr4Map = $this->composerPsr4Map();
+        $namespaceForMatch = rtrim($namespace, '\\').'\\';
+
+        foreach (array_keys($psr4Map) as $prefix) {
+            if (str_starts_with($namespaceForMatch, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function composerPsr4Map(): array
+    {
+        if ($this->psr4Map !== null) {
+            return $this->psr4Map;
+        }
+
+        $composerPath = base_path('composer.json');
+
+        if (! File::exists($composerPath)) {
+            return $this->psr4Map = [];
+        }
+
+        $composer = json_decode(File::get($composerPath), true);
+
+        if (! is_array($composer)) {
+            return $this->psr4Map = [];
+        }
+
+        return $this->psr4Map = array_merge(
+            $composer['autoload-dev']['psr-4'] ?? [],
+            $composer['autoload']['psr-4'] ?? [],
+        );
     }
 
     private function swapBrainNamespace(string $content, string $namespace): string

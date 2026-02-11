@@ -247,14 +247,14 @@ class Printer
         ];
 
         if ($this->output->isVerbose() || ($this->onlyTypes !== [] && $this->filter !== null)) {
-            $this->addProcessTasks($process, $childPrefix, $prefixLen);
+            $this->addProcessTasks($process, $childPrefix, $prefixLen, $prefixLen);
         }
     }
 
     /**
      * Adds sub-tasks of a process with tree connectors.
      */
-    private function addProcessTasks(array $process, string $parentChildPrefix, int $parentPrefixLen): void
+    private function addProcessTasks(array $process, string $parentChildPrefix, int $parentPrefixLen, int $prefixVisualWidth): void
     {
         $tasks = data_get($process, 'tasks', []);
         $totalTasks = count($tasks);
@@ -279,8 +279,8 @@ class Printer
             $status = $task['queue'] ? ' queued' : '';
             $taskName = $task['name'];
 
-            // Visual: parentChildPrefix + indent + connector + "1. " + "T" + " " + name + " " + dots + status
-            $visualLen = $nameCol + 4 + mb_strlen("{$num}. ") + 1 + 1 + mb_strlen((string) $taskName) + 1 + mb_strlen($status);
+            // Full visual length including prefix width for proper right-alignment
+            $visualLen = $prefixVisualWidth + $nameCol + 4 + mb_strlen("{$num}. ") + 1 + 1 + mb_strlen((string) $taskName) + 1 + mb_strlen($status);
             $dotCount = max($this->terminalWidth - $visualLen, 0);
             $dots = str_repeat('·', $dotCount);
 
@@ -292,9 +292,13 @@ class Printer
                 ),
             ];
 
-            if ($this->output->isVeryVerbose()) {
-                $continuation = $isLastTask ? '    ' : '<fg=#6C7280>│</>   ';
-                $subtaskChildPrefix = $parentChildPrefix.$indentSpaces.$continuation;
+            $continuation = $isLastTask ? '    ' : '<fg=#6C7280>│</>   ';
+            $subtaskChildPrefix = $parentChildPrefix.$indentSpaces.$continuation;
+            $subtaskPrefixVisualWidth = $prefixVisualWidth + $nameCol + 4;
+
+            if ($task['type'] === 'process' && ! empty($task['tasks'])) {
+                $this->addProcessTasks($task, $subtaskChildPrefix, 0, $subtaskPrefixVisualWidth);
+            } elseif ($this->output->isVeryVerbose()) {
                 $this->addProperties($task, $subtaskChildPrefix, 3);
             }
         }

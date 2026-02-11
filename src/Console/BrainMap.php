@@ -207,15 +207,21 @@ class BrainMap
     private function getTask(SplFileInfo|string $task): array
     {
         $reflection = $this->getReflectionClass($task);
+        $isProcess = $reflection->isSubclassOf(Process::class);
 
-        return [
+        $data = [
             'name' => $reflection->getShortName(),
             'fullName' => $reflection->name,
             'queue' => $reflection->implementsInterface(ShouldQueue::class),
-            'type' => $reflection->isSubclassOf(Process::class)
-                    ? 'process' : ($reflection->isSubclassOf(Task::class) ? 'task' : ''),
+            'type' => $isProcess ? 'process' : ($reflection->isSubclassOf(Task::class) ? 'task' : ''),
             'properties' => $this->getPropertiesFor($reflection),
         ];
+
+        if ($isProcess) {
+            $data['tasks'] = $this->getProcessesTasks($reflection);
+        }
+
+        return $data;
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Brain;
 
+use Brain\Console\EjectCommand;
 use Brain\Console\ShowBrainCommand;
 use Brain\Processes\Console\MakeProcessCommand;
 use Brain\Queries\Console\MakeQueryCommand;
@@ -61,6 +62,7 @@ class BrainServiceProvider extends ServiceProvider
             MakeQueryCommand::class,
             ShowBrainCommand::class,
             MakeTestCommand::class,
+            EjectCommand::class,
         ]);
     }
 
@@ -82,6 +84,7 @@ class BrainServiceProvider extends ServiceProvider
         }
     }
 
+    /** Register process and task event listeners when logging is enabled. */
     private function registerListeners(): void
     {
         if (! config('brain.log')) {

@@ -6,6 +6,7 @@ namespace Brain\Console;
 
 use Illuminate\Console\Command;
 
+/** Console command to display the Brain mapping overview. */
 class ShowBrainCommand extends Command
 {
     /**

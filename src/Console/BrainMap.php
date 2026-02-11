@@ -67,6 +67,7 @@ class BrainMap
         $this->map = $this->getMap($directories);
     }
 
+    /** Build the full brain map collection from the given directories. */
     public function getMap(array $directories): Collection
     {
 
@@ -92,6 +93,7 @@ class BrainMap
             ]);
     }
 
+    /** Resolve the root directories to scan based on configuration. */
     public function getRootDirectories(): array
     {
         $root = config('brain.root');
@@ -207,15 +209,21 @@ class BrainMap
     private function getTask(SplFileInfo|string $task): array
     {
         $reflection = $this->getReflectionClass($task);
+        $isProcess = $reflection->isSubclassOf(Process::class);
 
-        return [
+        $data = [
             'name' => $reflection->getShortName(),
             'fullName' => $reflection->name,
             'queue' => $reflection->implementsInterface(ShouldQueue::class),
-            'type' => $reflection->isSubclassOf(Process::class)
-                    ? 'process' : ($reflection->isSubclassOf(Task::class) ? 'task' : ''),
+            'type' => $isProcess ? 'process' : ($reflection->isSubclassOf(Task::class) ? 'task' : ''),
             'properties' => $this->getPropertiesFor($reflection),
         ];
+
+        if ($isProcess) {
+            $data['tasks'] = $this->getProcessesTasks($reflection);
+        }
+
+        return $data;
     }
 
     /**

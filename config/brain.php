@@ -9,14 +9,13 @@ return [
     | Root Directory
     |--------------------------------------------------------------------------
     |
-    | This value set's the main directory where we will create all the processes
-    | tasks, and queries.
-    |
-    | If you set this to null, we will use a *flat* structure within the app directory.
-    | Meaning that everything will be created directly inside the app folder.
-    | Ex: App\Processes, App\Tasks, App\Queries
+    | This value sets the main directory where all processes, tasks, and
+    | queries will be created. If you set this to null, a flat structure
+    | will be used within the app directory, meaning everything will be
+    | created directly inside the app folder (App\Processes, App\Tasks).
     |
     */
+
     'root' => env('BRAIN_ROOT', 'Brain'),
 
     /*
@@ -24,27 +23,38 @@ return [
     | Use Domains
     |--------------------------------------------------------------------------
     |
-    | When enabled (true), this setting organizes processes, tasks, and queries
+    | When enabled, this setting organizes processes, tasks, and queries
     | into domain-specific subdirectories within the main Brain directory.
     | This helps in maintaining a clear structure, especially in larger
     | applications with multiple domains.
     |
     */
+
     'use_domains' => env('BRAIN_USE_DOMAINS', false),
 
     /*
     |--------------------------------------------------------------------------
-    | Suffix for Task, Process, and Query
+    | Class Name Suffix
     |--------------------------------------------------------------------------
     |
-    | When enabled (true), this setting appends a suffix to class names based
-    | on their type:
-    | - "Task" for tasks
-    | - "Process" for processes
-    | - "Query" for queries
+    | When enabled, this setting appends a suffix to class names based on
+    | their type: "Task" for tasks, "Process" for processes, and "Query"
+    | for queries. You may customize each suffix individually below.
     |
     */
+
     'use_suffix' => env('BRAIN_USE_SUFFIX', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Suffix Names
+    |--------------------------------------------------------------------------
+    |
+    | Here you may customize the suffix appended to each class type when
+    | the "use_suffix" option is enabled. These values are used by the
+    | make commands to generate class names with the correct suffix.
+    |
+    */
 
     'suffixes' => [
         'task' => env('BRAIN_TASK_SUFFIX', 'Task'),
@@ -54,12 +64,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Logging System
+    | Logging
     |--------------------------------------------------------------------------
     |
-    | When enabled (true), this setting activates logging for all processes,
-    | tasks, and queries, allowing you to track their execution and outcomes.
+    | When enabled, this setting activates logging for all processes,
+    | tasks, and queries, allowing you to track their execution and
+    | outcomes throughout your application.
     |
     */
+
     'log' => env('BRAIN_LOG_ENABLED', false),
+
 ];

@@ -9,6 +9,7 @@ use Exception;
 use Illuminate\Console\OutputStyle;
 use Illuminate\Support\Collection;
 
+/** Renders the brain map as a tree-style console output. */
 class Printer
 {
     /**
@@ -31,10 +32,13 @@ class Printer
      */
     private array $lines = [];
 
+    /** @var array Filter to show only specific element types. */
     private array $onlyTypes = [];
 
+    /** @var string|null Case-insensitive class name filter. */
     private ?string $filter = null;
 
+    /** Create a new Printer instance. */
     public function __construct(
         private readonly BrainMap $brain,
         private ?OutputStyle $output = null
@@ -63,6 +67,7 @@ class Printer
         $this->output = $output;
     }
 
+    /** Restrict output to processes only. */
     public function onlyProcesses(): self
     {
         $this->onlyTypes[] = 'process';
@@ -70,6 +75,7 @@ class Printer
         return $this;
     }
 
+    /** Restrict output to tasks only. */
     public function onlyTasks(): self
     {
         $this->onlyTypes[] = 'task';
@@ -77,6 +83,7 @@ class Printer
         return $this;
     }
 
+    /** Restrict output to queries only. */
     public function onlyQueries(): self
     {
         $this->onlyTypes[] = 'query';
@@ -84,6 +91,7 @@ class Printer
         return $this;
     }
 
+    /** Set a class name filter for the output. */
     public function filterBy(string $filter): self
     {
         $this->filter = $filter;
@@ -160,6 +168,7 @@ class Printer
         return $items;
     }
 
+    /** Determine if the given element type should be collected. */
     private function shouldCollect(string $type): bool
     {
         return $this->onlyTypes === [] || in_array($type, $this->onlyTypes);
@@ -386,6 +395,7 @@ class Printer
         $this->lines[] = [''];
     }
 
+    /** Check if the given name matches the current filter. */
     private function matchesFilter(string $name): bool
     {
         if ($this->filter === null) {

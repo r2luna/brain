@@ -10,12 +10,20 @@ use Illuminate\Support\Facades\File;
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\text;
 
+/** Console command to eject Brain package source files into the user's project. */
 class EjectCommand extends Command
 {
+    /** @var string The name and signature of the console command. */
     protected $signature = 'brain:eject {--namespace= : Target namespace (prompted if not provided)}';
 
+    /** @var string The console command description. */
     protected $description = 'Eject Brain package source files into your project';
 
+    /**
+     * Cached PSR-4 mapping from composer.json.
+     *
+     * @var array<string, string|list<string>>|null
+     */
     private ?array $psr4Map = null;
 
     /**
@@ -26,6 +34,7 @@ class EjectCommand extends Command
         'Console/EjectCommand.php',
     ];
 
+    /** Execute the eject command. */
     public function handle(): int
     {
         $namespace = $this->askNamespace();
@@ -82,6 +91,9 @@ class EjectCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Prompt the user for the target namespace or use the provided option.
+     */
     private function askNamespace(): string
     {
         $namespace = $this->option('namespace');
@@ -97,6 +109,9 @@ class EjectCommand extends Command
         );
     }
 
+    /**
+     * Copy all PHP source files to the target directory with namespace replacement.
+     */
     private function copySourceFiles(string $namespace): int
     {
         $sourcePath = dirname(__DIR__);
@@ -130,6 +145,7 @@ class EjectCommand extends Command
         return $count;
     }
 
+    /** Copy stub files to the target directory with namespace replacement. */
     private function copyStubs(string $namespace): int
     {
         $sourcePath = dirname(__DIR__);
@@ -164,6 +180,7 @@ class EjectCommand extends Command
         return $count;
     }
 
+    /** Generate the ejected BrainServiceProvider from a stub. */
     private function generateServiceProvider(string $namespace): void
     {
         $stubPath = __DIR__.'/stubs/eject/provider.stub';
@@ -178,6 +195,7 @@ class EjectCommand extends Command
         File::put($targetFile, $content);
     }
 
+    /** Update existing user Brain classes to use the new namespace. */
     private function updateUserCode(string $namespace): int
     {
         $root = config('brain.root', 'Brain');
@@ -209,6 +227,7 @@ class EjectCommand extends Command
         return $count;
     }
 
+    /** Publish the brain config file if it doesn't already exist. */
     private function ensureConfigPublished(): string
     {
         $configPath = config_path('brain.php');
@@ -223,6 +242,7 @@ class EjectCommand extends Command
         return 'done';
     }
 
+    /** Resolve the directory path for the given namespace using PSR-4 mappings. */
     private function targetPath(string $namespace): string
     {
         $psr4Map = $this->composerPsr4Map();
@@ -251,6 +271,7 @@ class EjectCommand extends Command
         return str_replace('\\', '/', lcfirst($namespace));
     }
 
+    /** Check if the given namespace has a matching PSR-4 mapping entry. */
     private function namespaceHasPsr4Mapping(string $namespace): bool
     {
         $psr4Map = $this->composerPsr4Map();
@@ -265,6 +286,7 @@ class EjectCommand extends Command
         return false;
     }
 
+    /** Load and cache the PSR-4 mapping from composer.json. */
     private function composerPsr4Map(): array
     {
         if ($this->psr4Map !== null) {
@@ -289,6 +311,7 @@ class EjectCommand extends Command
         );
     }
 
+    /** Replace Brain namespace references with the target namespace in PHP content. */
     private function swapBrainNamespace(string $content, string $namespace): string
     {
         return str_replace(
@@ -298,11 +321,13 @@ class EjectCommand extends Command
         );
     }
 
+    /** Replace Brain namespace references in stub use-statements. */
     private function swapStubNamespace(string $content, string $namespace): string
     {
         return str_replace('use Brain\\', "use {$namespace}\\", $content);
     }
 
+    /** Determine if the given relative path is in the exclusion list. */
     private function isExcluded(string $relativePath): bool
     {
         $normalized = str_replace(DIRECTORY_SEPARATOR, '/', $relativePath);

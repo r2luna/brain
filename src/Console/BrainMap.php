@@ -67,6 +67,7 @@ class BrainMap
         $this->map = $this->getMap($directories);
     }
 
+    /** Build the full brain map collection from the given directories. */
     public function getMap(array $directories): Collection
     {
 
@@ -92,6 +93,7 @@ class BrainMap
             ]);
     }
 
+    /** Resolve the root directories to scan based on configuration. */
     public function getRootDirectories(): array
     {
         $root = config('brain.root');

@@ -84,6 +84,7 @@ class BrainServiceProvider extends ServiceProvider
         }
     }
 
+    /** Register process and task event listeners when logging is enabled. */
     private function registerListeners(): void
     {
         if (! config('brain.log')) {

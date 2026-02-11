@@ -6,4 +6,5 @@ namespace Brain\Exceptions;
 
 use Exception;
 
+/** Exception thrown when a task receives an invalid payload. */
 final class InvalidPayload extends Exception {}

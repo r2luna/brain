@@ -322,10 +322,13 @@ php artisan brain:show -vv             # also show task properties (input/output
   │         ├── 1. T SavePaymentTask ················ queued
   │         └── 2. T InviteUserTask ·························
   ├── TASK  CreateCommentTask ·······························
-  │            → user_id: int
-  │            ← comment: \Comment|null
+  │            ← user_id: int
+  │            → comment: \Comment|null
   └── QERY  ExampleQuery ···································
 ```
+
+- `←` input property (`@property`)
+- `→` output property (`@property-read`)
 
 ## Architecture
 

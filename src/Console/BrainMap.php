@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Brain\Console;
 
+use Brain\Attributes\OnQueue;
 use Brain\Process;
 use Brain\Task;
 use Exception;
@@ -159,9 +160,13 @@ class BrainMap
                 $chainValue = $chainProperty->getValue(new $reflection->name([]));
                 $value = $value->getPathname();
 
+                $onQueueAttr = $reflection->getAttributes(OnQueue::class);
+                $queueName = $onQueueAttr !== [] ? $onQueueAttr[0]->newInstance()->queue : null;
+
                 return [
                     'name' => basename($value, '.php'),
                     'chain' => $chainValue,
+                    'onQueue' => $queueName,
                     'tasks' => $this->getProcessesTasks($reflection),
                 ];
             })
@@ -211,10 +216,14 @@ class BrainMap
         $reflection = $this->getReflectionClass($task);
         $isProcess = $reflection->isSubclassOf(Process::class);
 
+        $onQueueAttr = $reflection->getAttributes(OnQueue::class);
+        $queueName = $onQueueAttr !== [] ? $onQueueAttr[0]->newInstance()->queue : null;
+
         $data = [
             'name' => $reflection->getShortName(),
             'fullName' => $reflection->name,
             'queue' => $reflection->implementsInterface(ShouldQueue::class),
+            'onQueue' => $queueName,
             'type' => $isProcess ? 'process' : 'task',
             'properties' => $this->getPropertiesFor($reflection),
         ];

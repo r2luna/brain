@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Brain;
 
+use Brain\Attributes\OnQueue;
 use Brain\Exceptions\InvalidPayload;
 use Brain\Tasks\Events\Processed;
 use Brain\Tasks\Events\Processing;
@@ -56,6 +57,13 @@ abstract class Task
 
         if ($runIn = $this->runIn()) {
             $this->delay($runIn);
+        }
+
+        $onQueue = (new ReflectionClass(static::class))
+            ->getAttributes(OnQueue::class);
+
+        if ($onQueue !== []) {
+            $this->onQueue($onQueue[0]->newInstance()->queue);
         }
     }
 

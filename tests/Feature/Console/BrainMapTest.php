@@ -31,11 +31,13 @@ describe('load testsuite', function (): void {
                     [
                         'name' => 'ExampleProcess',
                         'chain' => false,
+                        'onQueue' => null,
                         'tasks' => [
                             [
                                 'name' => 'ExampleTask4',
                                 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class,
                                 'queue' => true,
+                                'onQueue' => null,
                                 'type' => 'task',
                                 'properties' => [],
                             ],
@@ -47,6 +49,7 @@ describe('load testsuite', function (): void {
                         'name' => 'ExampleTask',
                         'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask::class,
                         'queue' => false,
+                        'onQueue' => null,
                         'type' => 'task',
                         'properties' => [
                             ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
@@ -57,6 +60,7 @@ describe('load testsuite', function (): void {
                         'name' => 'ExampleTask2',
                         'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask2::class,
                         'queue' => false,
+                        'onQueue' => null,
                         'type' => 'task',
                         'properties' => [
                             ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
@@ -68,6 +72,7 @@ describe('load testsuite', function (): void {
                         'name' => 'ExampleTask3',
                         'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask3::class,
                         'queue' => false,
+                        'onQueue' => null,
                         'type' => 'task',
                         'properties' => [],
                     ],
@@ -75,6 +80,7 @@ describe('load testsuite', function (): void {
                         'name' => 'ExampleTask4',
                         'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class,
                         'queue' => true,
+                        'onQueue' => null,
                         'type' => 'task',
                         'properties' => [],
                     ],
@@ -96,11 +102,13 @@ describe('load testsuite', function (): void {
                     [
                         'name' => 'ExampleProcess2',
                         'chain' => true,
+                        'onQueue' => null,
                         'tasks' => [
                             [
                                 'name' => 'ExampleTask4',
                                 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class,
                                 'queue' => true,
+                                'onQueue' => null,
                                 'type' => 'task',
                                 'properties' => [],
                             ],
@@ -108,6 +116,7 @@ describe('load testsuite', function (): void {
                                 'name' => 'ExampleProcess',
                                 'fullName' => Tests\Feature\Fixtures\Brain\Example\Processes\ExampleProcess::class,
                                 'queue' => false,
+                                'onQueue' => null,
                                 'type' => 'process',
                                 'properties' => [],
                                 'tasks' => [
@@ -115,6 +124,7 @@ describe('load testsuite', function (): void {
                                         'name' => 'ExampleTask4',
                                         'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class,
                                         'queue' => true,
+                                        'onQueue' => null,
                                         'type' => 'task',
                                         'properties' => [],
                                     ],
@@ -157,8 +167,9 @@ describe('loadProcessesFor testsuite', function (): void {
                 [
                     'name' => 'ExampleProcess',
                     'chain' => false,
+                    'onQueue' => null,
                     'tasks' => [
-                        ['name' => 'ExampleTask4', 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class, 'queue' => true, 'properties' => [], 'type' => 'task'],
+                        ['name' => 'ExampleTask4', 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class, 'queue' => true, 'onQueue' => null, 'properties' => [], 'type' => 'task'],
                     ],
                 ],
             ]);
@@ -197,6 +208,7 @@ describe('loadTasksFor testsuite', function (): void {
                     'name' => 'ExampleTask',
                     'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask::class,
                     'queue' => false,
+                    'onQueue' => null,
                     'type' => 'task',
                     'properties' => [
                         ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
@@ -207,6 +219,7 @@ describe('loadTasksFor testsuite', function (): void {
                     'name' => 'ExampleTask2',
                     'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask2::class,
                     'queue' => false,
+                    'onQueue' => null,
                     'type' => 'task',
                     'properties' => [
                         ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
@@ -218,6 +231,7 @@ describe('loadTasksFor testsuite', function (): void {
                     'name' => 'ExampleTask3',
                     'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask3::class,
                     'queue' => false,
+                    'onQueue' => null,
                     'type' => 'task',
                     'properties' => [],
                 ],
@@ -225,6 +239,7 @@ describe('loadTasksFor testsuite', function (): void {
                     'name' => 'ExampleTask4',
                     'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class,
                     'queue' => true,
+                    'onQueue' => null,
                     'type' => 'task',
                     'properties' => [],
                 ],

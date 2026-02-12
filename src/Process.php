@@ -65,7 +65,7 @@ class Process
 
         $this->name = (new ReflectionClass($this))->getName();
 
-        Context::push('process', $this->name, $this->uuid);
+        Context::add('process', [$this->name, $this->uuid]);
     }
 
     /**

@@ -147,6 +147,7 @@ abstract class Task
         return array_intersect_key($payloadArray, array_flip($expectedKeys));
     }
 
+    /** Return the middleware that should be applied to the task. */
     public function middleware(): array
     {
         return [new FinalizeTaskMiddleware];

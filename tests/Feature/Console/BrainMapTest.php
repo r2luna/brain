@@ -110,6 +110,15 @@ describe('load testsuite', function (): void {
                                 'queue' => false,
                                 'type' => 'process',
                                 'properties' => [],
+                                'tasks' => [
+                                    [
+                                        'name' => 'ExampleTask4',
+                                        'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class,
+                                        'queue' => true,
+                                        'type' => 'task',
+                                        'properties' => [],
+                                    ],
+                                ],
                             ],
                         ],
                     ],

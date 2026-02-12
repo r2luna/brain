@@ -111,6 +111,7 @@ abstract class BaseCommand extends GeneratorCommand
         }
     }
 
+    /** Handle test file creation based on command options. */
     protected function handleTestCreation($path): bool
     {
         if (! $this->option('test') && ! $this->option('pest') && ! $this->option('phpunit')) {

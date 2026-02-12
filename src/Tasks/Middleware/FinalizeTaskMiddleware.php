@@ -9,9 +9,12 @@ use Brain\Tasks\Events\Error as TasksError;
 use Illuminate\Support\Facades\Context;
 use Throwable;
 
+/** Middleware that finalizes a task after the pipeline completes. */
 final class FinalizeTaskMiddleware
 {
     /**
+     * Run the next middleware and then finalize the task. 
+     *
      * @throws Throwable
      */
     public function handle(Task $task, callable $next): void

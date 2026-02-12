@@ -9,6 +9,7 @@ use Exception;
 use Illuminate\Console\OutputStyle;
 use Illuminate\Support\Collection;
 
+/** Renders the brain map as a tree-style console output. */
 class Printer
 {
     /**
@@ -27,15 +28,17 @@ class Printer
     private int $terminalWidth;
 
     /**
-     * @var int The length of the longest domain in the brain's map.
-     */
-    private int $lengthLongestDomain = 0;
-
-    /**
      * @var array The lines to be printed to the terminal.
      */
     private array $lines = [];
 
+    /** @var array Filter to show only specific element types. */
+    private array $onlyTypes = [];
+
+    /** @var string|null Case-insensitive class name filter. */
+    private ?string $filter = null;
+
+    /** Create a new Printer instance. */
     public function __construct(
         private readonly BrainMap $brain,
         private ?OutputStyle $output = null
@@ -43,10 +46,6 @@ class Printer
 
     /**
      * Prints the collected lines to the output.
-     *
-     * This method uses the `collect` helper to create a collection
-     * from the `$lines` property, flattens the collection, and writes
-     * the resulting output using the `$output`'s `writeln` method.
      */
     public function print(): void
     {
@@ -62,37 +61,56 @@ class Printer
 
     /**
      * Sets the output style for the printer.
-     *
-     * @param  OutputStyle  $output  The output style instance to be set.
      */
     public function setOutput(OutputStyle $output): void
     {
         $this->output = $output;
     }
 
+    /** Restrict output to processes only. */
+    public function onlyProcesses(): self
+    {
+        $this->onlyTypes[] = 'process';
+
+        return $this;
+    }
+
+    /** Restrict output to tasks only. */
+    public function onlyTasks(): self
+    {
+        $this->onlyTypes[] = 'task';
+
+        return $this;
+    }
+
+    /** Restrict output to queries only. */
+    public function onlyQueries(): self
+    {
+        $this->onlyTypes[] = 'query';
+
+        return $this;
+    }
+
+    /** Set a class name filter for the output. */
+    public function filterBy(string $filter): self
+    {
+        $this->filter = $filter;
+
+        return $this;
+    }
+
     /**
      * Executes the main logic of the Printer class.
-     *
-     * This method performs the following steps:
-     * 1. Checks if the brain map is empty.
-     * 2. Retrieves the terminal width.
-     * 3. Determines the length of the longest domain.
-     * 4. Creates the necessary lines for output.
      */
     private function run(): void
     {
         $this->checkIfBrainMapIsEmpty();
         $this->getTerminalWidth();
-        $this->getLengthOfTheLongestDomain();
         $this->createLines();
     }
 
     /**
      * Checks if the brain map is empty.
-     *
-     * This method verifies whether the brain map is empty or not.
-     * If the brain map is empty, it throws an exception to indicate
-     * that the operation cannot proceed with an empty brain map.
      *
      * @throws Exception If the brain map is empty.
      */
@@ -104,264 +122,269 @@ class Printer
     }
 
     /**
-     * Creates lines for the console output by iterating over the brain's map data.
-     *
-     * This method processes each domain data entry and generates formatted lines
-     * for processes, tasks, and queries. It also adds a new line after processing
-     * each domain data entry.
-     *
-     * Example Output:
-     * | 1    | 2   | 3                | 5                   | 6   |
-     * |------|-----|------------------|---------------------|-----|
-     * | USER | PROC| CreateUserProcess| ....................|     |
-     * |      | TASK| CreateUser       | ....................|     |
-     * |      | TASK| WelcomeNofication| ............. queued|     |
-     * |      | QERY| SomeQuery        | ....................|     |
-     *
-     * - `1`: Domain spaces (e.g., USER)
-     * - `2`: Type (e.g., PROC, TASK, QERY)
-     * - `3`: Class name or identifier
-     * - `5`: Mixed properties (e.g., chained, queued)
+     * Collects all items (processes, tasks, queries) from a domain into a flat ordered list.
+     */
+    private function collectDomainItems(array $domainData): array
+    {
+        $items = [];
+
+        if ($this->shouldCollect('process')) {
+            foreach (data_get($domainData, 'processes', []) as $process) {
+                if ($this->matchesFilter($process['name'])) {
+                    $items[] = ['type' => 'process', 'data' => $process];
+
+                    continue;
+                }
+
+                if ($this->filter !== null) {
+                    $matchingTasks = array_values(array_filter(
+                        data_get($process, 'tasks', []),
+                        fn (array $task): bool => $this->matchesFilter($task['name'])
+                    ));
+
+                    if ($matchingTasks !== []) {
+                        $items[] = ['type' => 'process', 'data' => [...$process, 'tasks' => $matchingTasks]];
+                    }
+                }
+            }
+        }
+
+        if ($this->shouldCollect('task')) {
+            foreach (data_get($domainData, 'tasks', []) as $task) {
+                if ($this->matchesFilter($task['name'])) {
+                    $items[] = ['type' => 'task', 'data' => $task];
+                }
+            }
+        }
+
+        if ($this->shouldCollect('query')) {
+            foreach (data_get($domainData, 'queries', []) as $query) {
+                if ($this->matchesFilter($query['name'])) {
+                    $items[] = ['type' => 'query', 'data' => $query];
+                }
+            }
+        }
+
+        return $items;
+    }
+
+    /** Determine if the given element type should be collected. */
+    private function shouldCollect(string $type): bool
+    {
+        return $this->onlyTypes === [] || in_array($type, $this->onlyTypes);
+    }
+
+    /**
+     * Creates lines for the console output.
      */
     private function createLines(): void
     {
-        $this->brain->map->each(function ($domainData): void {
-            $domain = data_get($domainData, 'domain', '');
-            $domainSpaces = $this->getDomainSpaces($domain);
+        $useDomains = config('brain.use_domains', false);
 
-            $this->addProcessesLine($domainData, $domain, $domainSpaces);
-            $this->addTasksLine($domainData, $domain, $domainSpaces);
-            $this->addQueriesLines($domainData, $domain, $domainSpaces);
+        $this->brain->map->each(function ($domainData) use ($useDomains): void {
+            $items = $this->collectDomainItems($domainData);
+
+            if ($items === []) {
+                return;
+            }
+
+            $totalItems = count($items);
+
+            if ($useDomains) {
+                $domain = data_get($domainData, 'domain', '');
+                $this->lines[] = [sprintf('  <fg=%s;options=bold>%s</>', $this->elemColors['DOMAIN'], strtoupper($domain))];
+
+                foreach ($items as $index => $item) {
+                    $isLast = ($index === $totalItems - 1);
+                    $this->addItemLine($item, $isLast, true);
+                }
+            } else {
+                foreach ($items as $index => $item) {
+                    $isLast = ($index === $totalItems - 1);
+                    $this->addItemLine($item, $isLast, false);
+                }
+            }
 
             $this->addNewLine();
         });
     }
 
     /**
-     * Adds a formatted line for each process in the given domain data to the output lines.
-     *
-     * This method iterates over the processes in the provided domain data and constructs
-     * a formatted string for each process. The string includes the domain name, process name,
-     * and additional metadata such as whether the process is part of a chain. The formatted
-     * string is styled with terminal colors and added to the `$lines` property.
-     *
-     * @param  array  $domainData  An associative array containing domain data, including a 'processes' key.
-     *                             Each process should have a 'name' key and a 'chain' key.
-     * @param  string  $currentDomain  The name of the current domain being processed.
-     * @param  string  $spaces  A string of spaces used for alignment in the output.
+     * Dispatches an item to the correct type-specific method.
      */
-    private function addProcessesLine(array $domainData, string $currentDomain, string $spaces): void
+    private function addItemLine(array $item, bool $isLast, bool $useDomains): void
     {
-        foreach (data_get($domainData, 'processes') as $process) {
-            $processName = data_get($process, 'name');
-            $inChain = $process['chain'] ? ' chained' : '.';
-            $dots = str_repeat('.', max($this->terminalWidth - mb_strlen($currentDomain.$processName.$spaces.$inChain.'PROC  ') - 4, 0));
-            $dots = $dots === '' || $dots === '0' ? $dots : " $dots";
+        if ($useDomains) {
+            $connector = $isLast ? '└── ' : '├── ';
+            $continuation = $isLast ? '    ' : '│   ';
+            $prefix = '  '.sprintf('<fg=#6C7280>%s</>', $connector);
+            $childPrefix = '  '.sprintf('<fg=#6C7280>%s</>', $continuation);
+            // Raw prefix length for dot calculations (2 + 4 = 6 before TYPE)
+            $prefixLen = 6;
+        } else {
+            $prefix = '';
+            $childPrefix = '';
+            $prefixLen = 0;
+        }
 
-            if (config('brain.use_domains', false) === false) {
-                $this->lines[] = [
-                    sprintf(
-                        '<fg=%s;options=bold>%s</>  <fg=%s>%s</><fg=#6C7280>%s%s</>',
-                        $this->elemColors['PROC'], 'PROC', 'white',
-                        $processName, $dots, $inChain
-                    ),
-                ];
-            } else {
+        match ($item['type']) {
+            'process' => $this->addProcessLine($item['data'], $prefix, $childPrefix, $prefixLen),
+            'task' => $this->addTaskLine($item['data'], $prefix, $childPrefix, $prefixLen),
+            'query' => $this->addQueryLine($item['data'], $prefix, $prefixLen),
+        };
+    }
 
-                $this->lines[] = [
-                    sprintf(
-                        '  <fg=%s;options=bold>%s</>%s<fg=%s;options=bold>%s</>  <fg=%s>%s</><fg=#6C7280>%s%s</>',
-                        $this->elemColors['DOMAIN'], strtoupper($currentDomain),
-                        $spaces, $this->elemColors['PROC'], 'PROC', 'white',
-                        $processName, $dots, $inChain
-                    ),
-                ];
-            }
+    /**
+     * Adds a single process line.
+     */
+    private function addProcessLine(array $process, string $prefix, string $childPrefix, int $prefixLen): void
+    {
+        $processName = data_get($process, 'name');
+        $status = $process['chain'] ? ' chained' : '';
 
-            if ($this->output->isVerbose()) {
-                $this->addProcessTasks($process, $currentDomain, $spaces);
-            }
+        // Visual length: prefix + "PROC" + "  " + name + " " + dots + status
+        $fixedLen = $prefixLen + 4 + 2 + mb_strlen((string) $processName) + 1 + mb_strlen($status);
+        $dotCount = max($this->terminalWidth - $fixedLen, 0);
+        $dots = str_repeat('·', $dotCount);
+
+        $this->lines[] = [
+            sprintf(
+                '%s<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280> %s%s</>',
+                $prefix, $this->elemColors['PROC'], 'PROC',
+                $processName, $dots, $status
+            ),
+        ];
+
+        if ($this->output->isVerbose() || ($this->onlyTypes !== [] && $this->filter !== null)) {
+            $this->addProcessTasks($process, $childPrefix, $prefixLen, $prefixLen);
         }
     }
 
-    private function addProcessTasks(array $process, string $currentDomain, string $spaces): void
+    /**
+     * Adds sub-tasks of a process with tree connectors.
+     */
+    private function addProcessTasks(array $process, string $parentChildPrefix, int $parentPrefixLen, int $prefixVisualWidth): void
     {
-        foreach (data_get($process, 'tasks') as $taskIndex => $task) {
-            $taskIndex++;
-            $prefix = "{$taskIndex}. ";
-            $taskName = $task['name'];
-            $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
-            $taskQueued = $task['queue'] ? ' queued' : '.';
-            $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$prefix.$taskName.'T  ') - mb_strlen($taskQueued) - 11);
-            $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
+        $tasks = data_get($process, 'tasks', []);
+        $totalTasks = count($tasks);
+
+        foreach ($tasks as $taskIndex => $task) {
+            $num = $taskIndex + 1;
+            $isLastTask = ($taskIndex === $totalTasks - 1);
+
+            $connector = $isLastTask ? '└── ' : '├── ';
+
+            // Sub-task tree connectors start at the name column of the parent
+            // Without domains: col 6 (after "PROC  ")
+            // With domains: col 12 (after "  ├── PROC  ")
+            $nameCol = $parentPrefixLen + 4 + 2; // prefix + TYPE(4) + spaces(2)
+            $indentSpaces = str_repeat(' ', $nameCol);
 
             [$color, $type] = match ($task['type']) {
                 'process' => [$this->elemColors['PROC'], 'P'],
-                'task' => [$this->elemColors['TASK'], 'T'],
+                default => [$this->elemColors['TASK'], 'T'],
             };
 
-            if (config('brain.use_domains', false) === false) {
-                $this->lines[] = [
-                    sprintf(
-                        '      └── <fg=white>%s</><fg=%s;options=bold>%s</> <fg=white>%s</><fg=#6C7280>%s%s</>',
-                        $prefix, $color, $type, $taskName, $taskDots, $taskQueued
-                    ),
-                ];
-            } else {
-                $this->lines[] = [
-                    sprintf(
-                        '%s      └── <fg=white>%s</><fg=%s;options=bold>%s</> <fg=white>%s</><fg=#6C7280>%s%s</>',
-                        $taskSpaces, $prefix, $color, $type, $taskName, $taskDots, $taskQueued
-                    ),
-                ];
+            $status = $task['queue'] ? ' queued' : '';
+            $taskName = $task['name'];
+
+            // Full visual length including prefix width for proper right-alignment
+            $visualLen = $prefixVisualWidth + $nameCol + 4 + mb_strlen("{$num}. ") + 1 + 1 + mb_strlen((string) $taskName) + 1 + mb_strlen($status);
+            $dotCount = max($this->terminalWidth - $visualLen, 0);
+            $dots = str_repeat('·', $dotCount);
+
+            $this->lines[] = [
+                sprintf(
+                    '%s%s<fg=#6C7280>%s</><fg=white>%s</><fg=%s;options=bold>%s</> <fg=white>%s</><fg=#6C7280> %s%s</>',
+                    $parentChildPrefix, $indentSpaces, $connector,
+                    "{$num}. ", $color, $type, $taskName, $dots, $status
+                ),
+            ];
+
+            $continuation = $isLastTask ? '    ' : '<fg=#6C7280>│</>   ';
+            $subtaskChildPrefix = $parentChildPrefix.$indentSpaces.$continuation;
+            $subtaskPrefixVisualWidth = $prefixVisualWidth + $nameCol + 4;
+
+            if ($task['type'] === 'process' && ! empty($task['tasks'])) {
+                $this->addProcessTasks($task, $subtaskChildPrefix, 0, $subtaskPrefixVisualWidth);
+            } elseif ($this->output->isVeryVerbose()) {
+                $this->addProperties($task, $subtaskChildPrefix, 3);
             }
         }
     }
 
     /**
-     * Adds a formatted line for each task in the given domain data to the output lines.
-     *
-     * @param  array  $domainData  The data for the current domain, containing tasks and their details.
-     * @param  string  $currentDomain  The name of the current domain being processed.
-     * @param  string  $spaces  The string of spaces used for indentation.
-     * @param  bool  $numberedIndex  Whether to prefix tasks with a numbered index (default: false).
+     * Adds a single task line.
      */
-    private function addTasksLine(array $domainData, string $currentDomain, string $spaces, bool $numberedIndex = false): void
+    private function addTaskLine(array $task, string $prefix, string $childPrefix, int $prefixLen): void
     {
-        foreach (data_get($domainData, 'tasks') as $taskIndex => $task) {
-            $taskIndex++;
-            $prefix = $numberedIndex ? "{$taskIndex}. " : '';
-            $taskName = $task['name'];
-            $taskSpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
-            $taskQueued = $task['queue'] ? ' queued' : '.';
-            $taskDots = str_repeat('.', $this->terminalWidth - mb_strlen($taskSpaces.$prefix.$taskName.'TASK  ') - mb_strlen($taskQueued) - 2);
-            $taskDots = $taskDots === '' || $taskDots === '0' ? $taskDots : " $taskDots";
+        $taskName = $task['name'];
+        $status = $task['queue'] ? ' queued' : '';
 
-            if (config('brain.use_domains', false) === false) {
-                $this->lines[] = [
-                    sprintf(
-                        '<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
-                        $this->elemColors['TASK'], 'TASK', $prefix, $taskName, $taskDots, $taskQueued
-                    ),
-                ];
-            } else {
-                $this->lines[] = [
-                    sprintf(
-                        '%s<fg=%s;options=bold>%s</>  <fg=white>%s%s</><fg=#6C7280>%s%s</>',
-                        $taskSpaces, $this->elemColors['TASK'], 'TASK', $prefix, $taskName, $taskDots, $taskQueued
-                    ),
-                ];
-            }
+        // Visual: prefix + "TASK" + "  " + name + " " + dots + status
+        $fixedLen = $prefixLen + 4 + 2 + mb_strlen((string) $taskName) + 1 + mb_strlen($status);
+        $dotCount = max($this->terminalWidth - $fixedLen, 0);
+        $dots = str_repeat('·', $dotCount);
 
-            if ($this->output->isVeryVerbose()) {
-                $this->addProperties($task, $taskSpaces);
-            }
+        $this->lines[] = [
+            sprintf(
+                '%s<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280> %s%s</>',
+                $prefix, $this->elemColors['TASK'], 'TASK',
+                $taskName, $dots, $status
+            ),
+        ];
+
+        if ($this->output->isVeryVerbose()) {
+            // Properties indented to name column + 3 spaces
+            $this->addProperties($task, $childPrefix, $prefixLen + 4 + 2 + 3);
         }
     }
 
-    private function addProperties(array $task, string $spaces): void
+    /**
+     * Adds property lines for a task.
+     */
+    private function addProperties(array $task, string $parentPrefix, int $indentSize): void
     {
+        $indent = str_repeat(' ', $indentSize);
+
         foreach ($task['properties'] as $property) {
-            $propertyIndex = $property['direction'] === 'output' ? '⇡ ' : '⇣ ';
+            $arrow = $property['direction'] === 'output' ? '→ ' : '← ';
+            $color = $property['direction'] === 'output' ? '#A3BE8C' : 'white';
             $propertyName = $property['name'];
             $propertyType = $property['type'];
 
-            if (config('brain.use_domains', false) === false) {
-                $this->lines[] = [
-                    sprintf(
-                        '%s  <fg=white>%s%s</><fg=#6C7280>: %s</>',
-                        $spaces, $propertyIndex, $propertyName, $propertyType
-                    ),
-                ];
-            } else {
-                $this->lines[] = [
-                    sprintf(
-                        '   %s   <fg=white>%s%s</><fg=#6C7280>: %s</>',
-                        $spaces, $propertyIndex, $propertyName, $propertyType
-                    ),
-                ];
-            }
-        }
-
-        /**
-   $propertyIndex = $property['output'] ? '⇡ ' : '⇂ ';
-                        $propertyName = $property['name'];
-                        $propertyType = $property['type'];
-
-                        $lines[] = [
-                            sprintf(
-                                '%s   <fg=white>%s%s</><fg=#6C7280>: %s</>',
-                                $taskSpaces,
-                                $propertyIndex,
-                                $propertyName,
-                                $propertyType
-                            ),
-                        ];
-         */
-    }
-
-    /**
-     * Adds formatted query lines to the console output.
-     *
-     * This method processes the queries from the provided domain data and formats
-     * them for display in the console. Each query is displayed with a specific
-     * structure, including spaces, dots, and color formatting.
-     *
-     * @param  array  $domainData  The data containing domain-specific information,
-     *                             including a list of queries.
-     * @param  string  $currentDomain  The name of the current domain being processed.
-     * @param  string  $spaces  The base indentation spaces for formatting.
-     */
-    private function addQueriesLines(array $domainData, string $currentDomain, string $spaces): void
-    {
-        foreach (data_get($domainData, 'queries') as $query) {
-            $queryName = $query['name'];
-            $querySpaces = str_repeat(' ', 2 + mb_strlen($currentDomain) + mb_strlen($spaces));
-            $queryDots = str_repeat('.', $this->terminalWidth - mb_strlen($querySpaces.$queryName.'QERY ') - 3);
-
-            if (config('brain.use_domains', false) === false) {
-                $this->lines[] = [
-                    sprintf(
-                        '<fg=%s;options=bold>%s</>  <fg=white>%s</> <fg=#6C7280>%s</>',
-                        $this->elemColors['QERY'],
-                        'QERY',
-                        $queryName,
-                        $queryDots
-                    ),
-                ];
-            } else {
-                $this->lines[] = [
-                    sprintf(
-                        '%s<fg=%s;options=bold>%s</>  <fg=white>%s</> <fg=#6C7280>%s</>',
-                        $querySpaces,
-                        $this->elemColors['QERY'],
-                        'QERY',
-                        $queryName,
-                        $queryDots
-                    ),
-                ];
-            }
+            $this->lines[] = [
+                sprintf(
+                    '%s%s<fg=%s>%s%s</><fg=#6C7280>: %s</>',
+                    $parentPrefix, $indent, $color, $arrow, $propertyName, $propertyType
+                ),
+            ];
         }
     }
 
     /**
-     * Generates a string of spaces to align domain names for console output.
-     *
-     * This method calculates the number of spaces needed to align a given domain
-     * name based on the length of the longest domain name and returns a string
-     * containing that many spaces.
-     *
-     * @param  string  $domain  The domain name for which to calculate the spacing.
-     * @return string A string of spaces for alignment.
+     * Adds a single query line.
      */
-    private function getDomainSpaces(string $domain): string
+    private function addQueryLine(array $query, string $prefix, int $prefixLen): void
     {
-        return str_repeat(' ', max($this->lengthLongestDomain + 2 - mb_strlen($domain), 0));
+        $queryName = $query['name'];
+
+        // Visual: prefix + "QERY" + "  " + name + " " + dots
+        $fixedLen = $prefixLen + 4 + 2 + mb_strlen((string) $queryName) + 1;
+        $dotCount = max($this->terminalWidth - $fixedLen, 0);
+        $dots = str_repeat('·', $dotCount);
+
+        $this->lines[] = [
+            sprintf(
+                '%s<fg=%s;options=bold>%s</>  <fg=white>%s</> <fg=#6C7280>%s</>',
+                $prefix, $this->elemColors['QERY'], 'QERY',
+                $queryName, $dots
+            ),
+        ];
     }
 
     /**
      * Adds a new empty line to the lines array if the last line is not already empty.
-     * This ensures that there is a separation or spacing between lines when needed.
      */
     private function addNewLine(): void
     {
@@ -372,32 +395,18 @@ class Printer
         $this->lines[] = [''];
     }
 
-    /**
-     * Calculates the length of the longest domain in the brain's map.
-     *
-     * This method iterates through the brain's map, sorts the entries
-     * in descending order based on the length of the 'domain' value,
-     * and retrieves the length of the longest domain.
-     */
-    private function getLengthOfTheLongestDomain(): void
+    /** Check if the given name matches the current filter. */
+    private function matchesFilter(string $name): bool
     {
-        if (config('brain.use_domains', false) === false) {
-            $this->lengthLongestDomain = 0;
-
-            return;
+        if ($this->filter === null) {
+            return true;
         }
-        $this->lengthLongestDomain = mb_strlen(
-            (string) data_get($this->brain->map
-                ->sortByDesc(fn ($value): int => mb_strlen((string) $value['domain']))
-                ->first(), 'domain')
-        );
+
+        return str_contains(mb_strtolower($name), mb_strtolower($this->filter));
     }
 
     /**
-     * Retrieves and sets the terminal's current width by using the Terminal utility.
-     *
-     * This method assigns the number of columns (width) of the terminal
-     * to the `$terminalWidth` property.
+     * Retrieves and sets the terminal's current width.
      */
     private function getTerminalWidth(): void
     {

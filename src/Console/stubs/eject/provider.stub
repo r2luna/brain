@@ -1,0 +1,72 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use {{ namespace }}\Console\ShowBrainCommand;
+use {{ namespace }}\Processes\Console\MakeProcessCommand;
+use {{ namespace }}\Queries\Console\MakeQueryCommand;
+use {{ namespace }}\Tasks\Console\MakeTaskCommand;
+use {{ namespace }}\Tests\Console\MakeTestCommand;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\ServiceProvider;
+
+class BrainServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->registerCommands();
+        $this->registerListeners();
+        $this->offerPublishing();
+    }
+
+    public function boot(): void {}
+
+    private function registerCommands(): void
+    {
+        $this->commands([
+            MakeProcessCommand::class,
+            MakeTaskCommand::class,
+            MakeQueryCommand::class,
+            ShowBrainCommand::class,
+            MakeTestCommand::class,
+        ]);
+    }
+
+    private function offerPublishing(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->mergeConfigFrom(config_path('brain.php'), 'brain');
+        }
+    }
+
+    private function registerListeners(): void
+    {
+        if (! config('brain.log')) {
+            return;
+        }
+
+        $processEvents = [
+            Processes\Events\Processing::class,
+            Processes\Events\Processed::class,
+            Processes\Events\Error::class,
+        ];
+
+        foreach ($processEvents as $event) {
+            Event::listen($event, Processes\Listeners\LogEventListener::class);
+        }
+
+        $taskEvents = [
+            Tasks\Events\Processing::class,
+            Tasks\Events\Processed::class,
+            Tasks\Events\Cancelled::class,
+            Tasks\Events\Skipped::class,
+            Tasks\Events\Error::class,
+        ];
+
+        foreach ($taskEvents as $event) {
+            Event::listen($event, Tasks\Listeners\LogEventListener::class);
+        }
+    }
+}

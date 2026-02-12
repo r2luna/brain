@@ -6,6 +6,7 @@ namespace Brain\Console;
 
 use Illuminate\Console\Command;
 
+/** Console command to display the Brain mapping overview. */
 class ShowBrainCommand extends Command
 {
     /**
@@ -13,7 +14,11 @@ class ShowBrainCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'brain:show';
+    protected $signature = 'brain:show
+        {--p|processes : Show only processes and their sub-tasks}
+        {--t|tasks : Show only tasks}
+        {--Q|queries : Show only queries}
+        {--filter= : Filter by class name}';
 
     /**
      * The console command description.
@@ -27,9 +32,27 @@ class ShowBrainCommand extends Command
      */
     public function handle(): void
     {
-        (new Printer(
+        $printer = new Printer(
             new BrainMap,
             $this->output,
-        ))->print();
+        );
+
+        if ($this->input?->getOption('processes')) {
+            $printer->onlyProcesses();
+        }
+
+        if ($this->input?->getOption('tasks')) {
+            $printer->onlyTasks();
+        }
+
+        if ($this->input?->getOption('queries')) {
+            $printer->onlyQueries();
+        }
+
+        if ($filter = $this->input?->getOption('filter')) {
+            $printer->filterBy($filter);
+        }
+
+        $printer->print();
     }
 }

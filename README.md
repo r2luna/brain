@@ -267,6 +267,69 @@ SendWelcomeEmailTask::dispatch([
 ]);
 ```
 
+## Visualizing Your Brain
+
+Use the `brain:show` command to visualize your entire Brain structure in the terminal:
+
+```bash
+php artisan brain:show
+```
+
+```
+  USERS
+  ├── PROC  CreateUserProcess ·······························
+  ├── TASK  SendWelcomeEmailTask ····························
+  ├── TASK  NotifyStaffTask ································· queued
+  └── QERY  GetUserByEmailQuery ·····························
+
+  PAYMENTS
+  ├── PROC  PaymentSucceededProcess ················· chained
+  └── QERY  GetPaymentQuery ································
+```
+
+### Filtering by type
+
+Use flags to show only specific types. Flags can be combined:
+
+```bash
+php artisan brain:show -p              # only processes
+php artisan brain:show -t              # only tasks
+php artisan brain:show -Q              # only queries
+php artisan brain:show -p -t           # processes and tasks
+```
+
+### Filtering by name
+
+Use `--filter` to search by class name (case-insensitive):
+
+```bash
+php artisan brain:show --filter=User   # anything with "User" in the name
+php artisan brain:show -p --filter=Payment  # processes matching "Payment"
+```
+
+When combining `-p` with `--filter`, if the filter matches a sub-task name, the parent process is shown with only the matching sub-tasks. If it matches a process name, all its sub-tasks are shown automatically.
+
+### Verbosity levels
+
+```bash
+php artisan brain:show -v              # show sub-tasks inside processes
+php artisan brain:show -vv             # also show task properties (input/output)
+```
+
+```
+  USERS
+  ├── PROC  PaymentSucceededProcess ················· chained
+  │         ├── 1. T SavePaymentTask ················ queued
+  │         └── 2. T InviteUserTask ·························
+  ├── TASK  CreateCommentTask ·······························
+  │            ← user_id: int
+  │            → comment: \Comment|null
+  └── QERY  ExampleQuery ···································
+```
+
+- `←` input property (`@property`)
+- `→` output property (`@property-read`)
+
 ## Architecture
 
 Brain helps you organize your code into three main concepts:

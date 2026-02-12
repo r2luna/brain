@@ -40,33 +40,6 @@ it('should print lines to the terminal', function (): void {
     $this->printer->print();
 });
 
-it('should set length to 0 when brain map is empty', function (): void {
-    $this->map->map = collect([]);
-    $this->printerReflection->run('getLengthOfTheLongestDomain');
-    expect($this->printerReflection->get('lengthLongestDomain'))->toBe(0);
-});
-
-it('should set correct length of longest domain', function (): void {
-    $this->map->map = collect([
-        ['domain' => 'short.com'],
-        ['domain' => 'verylongdomain.com'],
-        ['domain' => 'medium.com'],
-    ]);
-
-    $this->printerReflection->run('getLengthOfTheLongestDomain');
-    expect($this->printerReflection->get('lengthLongestDomain'))->toBe(18);
-});
-
-it('should handle null domain values', function (): void {
-    $this->map->map = collect([
-        ['domain' => null],
-        ['domain' => 'example.com'],
-    ]);
-
-    $this->printerReflection->run('getLengthOfTheLongestDomain');
-    expect($this->printerReflection->get('lengthLongestDomain'))->toBe(11);
-});
-
 it('should check if creating all the correct lines to be printed', function (): void {
     $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
     $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
@@ -75,15 +48,17 @@ it('should check if creating all the correct lines to be printed', function (): 
     $lines = $this->printerReflection->get('lines');
 
     expect($lines)->toBe([
-        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .....................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ........................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> .......................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> .......................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ................................ queued</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE</>'],
+        ['  <fg=#6C7280>├── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 44).'</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> '.str_repeat('·', 47).'</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> '.str_repeat('·', 46).'</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> '.str_repeat('·', 46).'</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 39).' queued</>'],
+        ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
         [''],
-        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ............................ chained</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE2</>'],
+        ['  <fg=#6C7280>├── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> '.str_repeat('·', 35).' chained</>'],
+        ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
         [''],
     ]);
 });
@@ -152,18 +127,21 @@ it('should print tasks and processes of a process when using -v', function (): v
     $lines = $this->printerReflection->get('lines');
 
     expect($lines)->toBe([
-        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .....................................</>'],
-        ['                  └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ....................... queued</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ........................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> .......................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> .......................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ................................ queued</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE</>'],
+        ['  <fg=#6C7280>├── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 44).'</>'],
+        ['  <fg=#6C7280>│   </>            <fg=#6C7280>└── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 24).' queued</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> '.str_repeat('·', 47).'</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> '.str_repeat('·', 46).'</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> '.str_repeat('·', 46).'</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 39).' queued</>'],
+        ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
         [''],
-        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ............................ chained</>'],
-        ['                  └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ....................... queued</>'],
-        ['                  └── <fg=white>2. </><fg=blue;options=bold>P</> <fg=white>ExampleProcess</><fg=#6C7280> ............................</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE2</>'],
+        ['  <fg=#6C7280>├── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> '.str_repeat('·', 35).' chained</>'],
+        ['  <fg=#6C7280>│   </>            <fg=#6C7280>├── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 24).' queued</>'],
+        ['  <fg=#6C7280>│   </>            <fg=#6C7280>└── </><fg=white>2. </><fg=blue;options=bold>P</> <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 29).'</>'],
+        ['  <fg=#6C7280>│   </>                      <fg=#6C7280>└── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 14).' queued</>'],
+        ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
         [''],
     ]);
 });
@@ -176,25 +154,129 @@ it('should print task properties of a process when using -vv', function (): void
     $lines = $this->printerReflection->get('lines');
 
     expect($lines)->toBe([
-        ['  <fg=#6C7280;options=bold>EXAMPLE</>   <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .....................................</>'],
-        ['                  └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ....................... queued</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ........................................</>'],
-        ['                  <fg=white>⇡ email</><fg=#6C7280>: string</>'],
-        ['                  <fg=white>⇡ paymentId</><fg=#6C7280>: int</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> .......................................</>'],
-        ['                  <fg=white>⇡ email</><fg=#6C7280>: string</>'],
-        ['                  <fg=white>⇡ paymentId</><fg=#6C7280>: int</>'],
-        ['                  <fg=white>⇣ id</><fg=#6C7280>: int</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> .......................................</>'],
-        ['            <fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ................................ queued</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE</>'],
+        ['  <fg=#6C7280>├── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 44).'</>'],
+        ['  <fg=#6C7280>│   </>            <fg=#6C7280>└── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 24).' queued</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> '.str_repeat('·', 47).'</>'],
+        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>→ email</><fg=#6C7280>: string</>'],
+        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>→ paymentId</><fg=#6C7280>: int</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> '.str_repeat('·', 46).'</>'],
+        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>→ email</><fg=#6C7280>: string</>'],
+        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>→ paymentId</><fg=#6C7280>: int</>'],
+        ['  <fg=#6C7280>│   </>               <fg=white>← id</><fg=#6C7280>: int</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> '.str_repeat('·', 46).'</>'],
+        ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 39).' queued</>'],
+        ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
         [''],
-        ['  <fg=#6C7280;options=bold>EXAMPLE2</>  <fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> ............................ chained</>'],
-        ['                  └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ....................... queued</>'],
-        ['                  └── <fg=white>2. </><fg=blue;options=bold>P</> <fg=white>ExampleProcess</><fg=#6C7280> ............................</>'],
-        ['            <fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>.......................................</>'],
+        ['  <fg=#6C7280;options=bold>EXAMPLE2</>'],
+        ['  <fg=#6C7280>├── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> '.str_repeat('·', 35).' chained</>'],
+        ['  <fg=#6C7280>│   </>            <fg=#6C7280>├── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 24).' queued</>'],
+        ['  <fg=#6C7280>│   </>            <fg=#6C7280>└── </><fg=white>2. </><fg=blue;options=bold>P</> <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 29).'</>'],
+        ['  <fg=#6C7280>│   </>                      <fg=#6C7280>└── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 14).' queued</>'],
+        ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
         [''],
     ]);
+});
+
+// --------------------
+// Without domains
+
+// --------------------
+// Filtering
+
+describe('filtering', function (): void {
+    it('should only show processes when onlyProcesses is set', function (): void {
+        $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
+        $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+        $this->printer->onlyProcesses();
+        $this->printerReflection->run('getTerminalWidth');
+        $this->printerReflection->run('run');
+        $lines = $this->printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['  <fg=#6C7280;options=bold>EXAMPLE</>'],
+            ['  <fg=#6C7280>└── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 44).'</>'],
+            [''],
+            ['  <fg=#6C7280;options=bold>EXAMPLE2</>'],
+            ['  <fg=#6C7280>└── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> '.str_repeat('·', 35).' chained</>'],
+            [''],
+        ]);
+    });
+
+    it('should only show tasks when onlyTasks is set', function (): void {
+        $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
+        $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+        $this->printer->onlyTasks();
+        $this->printerReflection->run('getTerminalWidth');
+        $this->printerReflection->run('run');
+        $lines = $this->printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['  <fg=#6C7280;options=bold>EXAMPLE</>'],
+            ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> '.str_repeat('·', 47).'</>'],
+            ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> '.str_repeat('·', 46).'</>'],
+            ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> '.str_repeat('·', 46).'</>'],
+            ['  <fg=#6C7280>└── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 39).' queued</>'],
+            [''],
+        ]);
+    });
+
+    it('should only show queries when onlyQueries is set', function (): void {
+        $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
+        $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+        $this->printer->onlyQueries();
+        $this->printerReflection->run('getTerminalWidth');
+        $this->printerReflection->run('run');
+        $lines = $this->printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['  <fg=#6C7280;options=bold>EXAMPLE</>'],
+            ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
+            [''],
+            ['  <fg=#6C7280;options=bold>EXAMPLE2</>'],
+            ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
+            [''],
+        ]);
+    });
+
+    it('should filter items by name', function (): void {
+        $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
+        $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+        $this->printer->filterBy('ExampleQuery');
+        $this->printerReflection->run('getTerminalWidth');
+        $this->printerReflection->run('run');
+        $lines = $this->printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['  <fg=#6C7280;options=bold>EXAMPLE</>'],
+            ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
+            [''],
+            ['  <fg=#6C7280;options=bold>EXAMPLE2</>'],
+            ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
+            [''],
+        ]);
+    });
+
+    it('should show process with matching sub-tasks when filter matches sub-task name', function (): void {
+        $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
+        $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+        $this->printer->onlyProcesses();
+        $this->printer->filterBy('ExampleTask4');
+        $this->printerReflection->run('getTerminalWidth');
+        $this->printerReflection->run('run');
+        $lines = $this->printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['  <fg=#6C7280;options=bold>EXAMPLE</>'],
+            ['  <fg=#6C7280>└── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 44).'</>'],
+            ['  <fg=#6C7280>    </>            <fg=#6C7280>└── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 24).' queued</>'],
+            [''],
+            ['  <fg=#6C7280;options=bold>EXAMPLE2</>'],
+            ['  <fg=#6C7280>└── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> '.str_repeat('·', 35).' chained</>'],
+            ['  <fg=#6C7280>    </>            <fg=#6C7280>└── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 24).' queued</>'],
+            [''],
+        ]);
+    });
 });
 
 // --------------------
@@ -214,11 +296,6 @@ describe('without domains configuration', function (): void {
         $this->printerReflection->set('output', $this->mockOutput);
     });
 
-    it('should set length to 0 when use_domains is false', function (): void {
-        $this->printerReflection->run('getLengthOfTheLongestDomain');
-        expect($this->printerReflection->get('lengthLongestDomain'))->toBe(0);
-    });
-
     it('should check if creating all the correct lines without domains', function (): void {
         $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
         $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
@@ -227,12 +304,12 @@ describe('without domains configuration', function (): void {
         $lines = $this->printerReflection->get('lines');
 
         expect($lines)->toBe([
-            ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .............................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ................................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ...............................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ...............................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ........................................ queued</>'],
-            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>...............................................</>'],
+            ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 50).'</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> '.str_repeat('·', 53).'</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> '.str_repeat('·', 52).'</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> '.str_repeat('·', 52).'</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 45).' queued</>'],
+            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 52).'</>'],
             [''],
         ]);
     });
@@ -245,13 +322,13 @@ describe('without domains configuration', function (): void {
         $lines = $this->printerReflection->get('lines');
 
         expect($lines)->toBe([
-            ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .............................................</>'],
-            ['      └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ............................... queued</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ................................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ...............................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ...............................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ........................................ queued</>'],
-            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>...............................................</>'],
+            ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 50).'</>'],
+            ['      <fg=#6C7280>└── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 36).' queued</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> '.str_repeat('·', 53).'</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> '.str_repeat('·', 52).'</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> '.str_repeat('·', 52).'</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 45).' queued</>'],
+            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 52).'</>'],
             [''],
         ]);
     });
@@ -264,18 +341,18 @@ describe('without domains configuration', function (): void {
         $lines = $this->printerReflection->get('lines');
 
         expect($lines)->toEqual([
-            ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> .............................................</>'],
-            ['      └── <fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> ............................... queued</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> ................................................</>'],
-            ['      <fg=white>⇡ email</><fg=#6C7280>: string</>'],
-            ['      <fg=white>⇡ paymentId</><fg=#6C7280>: int</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> ...............................................</>'],
-            ['      <fg=white>⇡ email</><fg=#6C7280>: string</>'],
-            ['      <fg=white>⇡ paymentId</><fg=#6C7280>: int</>'],
-            ['      <fg=white>⇣ id</><fg=#6C7280>: int</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> ...............................................</>'],
-            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> ........................................ queued</>'],
-            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>...............................................</>'],
+            ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 50).'</>'],
+            ['      <fg=#6C7280>└── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 36).' queued</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> '.str_repeat('·', 53).'</>'],
+            ['         <fg=#A3BE8C>→ email</><fg=#6C7280>: string</>'],
+            ['         <fg=#A3BE8C>→ paymentId</><fg=#6C7280>: int</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> '.str_repeat('·', 52).'</>'],
+            ['         <fg=#A3BE8C>→ email</><fg=#6C7280>: string</>'],
+            ['         <fg=#A3BE8C>→ paymentId</><fg=#6C7280>: int</>'],
+            ['         <fg=white>← id</><fg=#6C7280>: int</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> '.str_repeat('·', 52).'</>'],
+            ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 45).' queued</>'],
+            ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 52).'</>'],
             [''],
         ]);
     });

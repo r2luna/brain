@@ -53,3 +53,23 @@ it('executes the command successfully without domains', function (): void {
 
     $command->handle();
 });
+
+it('executes the command with --processes option', function (): void {
+    $this->artisan('brain:show', ['--processes' => true])
+        ->assertExitCode(0);
+});
+
+it('executes the command with --tasks option', function (): void {
+    $this->artisan('brain:show', ['--tasks' => true])
+        ->assertExitCode(0);
+});
+
+it('executes the command with --queries option', function (): void {
+    $this->artisan('brain:show', ['--queries' => true])
+        ->assertExitCode(0);
+});
+
+it('executes the command with --filter option', function (): void {
+    $this->artisan('brain:show', ['--filter' => 'Example'])
+        ->assertExitCode(0);
+});

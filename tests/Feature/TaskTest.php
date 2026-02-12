@@ -7,6 +7,7 @@ use Brain\Task;
 use Brain\Tasks\Events\Processed;
 use Brain\Tasks\Middleware\FinalizeTaskMiddleware;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Bus\PendingDispatch;
 use Illuminate\Queue\InteractsWithQueue;
@@ -450,7 +451,6 @@ it('FinalizeTaskMiddleware triggers finalize and dispatches Processed event', fu
 
     $middleware = new FinalizeTaskMiddleware;
 
-    // Call middleware with a next that simply returns the task
     $middleware->handle($task, fn ($t) => $t);
 
     Event::assertDispatched(Processed::class);
@@ -476,6 +476,29 @@ it('process calls finalize on task instances and fires Processed event', functio
 
     $process = new ProcessWithFinalize(null);
     $process->handle();
+
+    Event::assertDispatched(Processed::class);
+});
+
+it('queued tasks are finalized before going through next middleware', function (): void {
+    Event::fake();
+
+    class QueuedTask extends Task implements ShouldQueue
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    class ProcessQueuedTask extends Brain\Process
+    {
+        protected array $tasks = [
+            QueuedTask::class,
+        ];
+    }
+
+    ProcessQueuedTask::dispatchSync();
 
     Event::assertDispatched(Processed::class);
 });

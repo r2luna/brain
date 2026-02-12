@@ -282,7 +282,7 @@ class Printer
 
             [$color, $type] = match ($task['type']) {
                 'process' => [$this->elemColors['PROC'], 'P'],
-                'task' => [$this->elemColors['TASK'], 'T'],
+                default => [$this->elemColors['TASK'], 'T'],
             };
 
             $status = $task['queue'] ? ' queued' : '';

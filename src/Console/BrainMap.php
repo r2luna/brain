@@ -215,7 +215,7 @@ class BrainMap
             'name' => $reflection->getShortName(),
             'fullName' => $reflection->name,
             'queue' => $reflection->implementsInterface(ShouldQueue::class),
-            'type' => $isProcess ? 'process' : ($reflection->isSubclassOf(Task::class) ? 'task' : ''),
+            'type' => $isProcess ? 'process' : 'task',
             'properties' => $this->getPropertiesFor($reflection),
         ];
 

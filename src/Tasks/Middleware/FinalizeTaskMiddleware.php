@@ -13,7 +13,7 @@ use Throwable;
 final class FinalizeTaskMiddleware
 {
     /**
-     * Run the next middleware and then finalize the task. 
+     * Run the next middleware and then finalize the task.
      *
      * @throws Throwable
      */
@@ -34,7 +34,7 @@ final class FinalizeTaskMiddleware
                 'file' => $e->getFile(),
             ];
 
-            event(new TasksError(get_class($task), payload: $task->payload, runProcessId: $runProcessId, meta: $meta));
+            event(new TasksError($task::class, payload: $task->payload, runProcessId: $runProcessId, meta: $meta));
 
             $task->fail($e);
 

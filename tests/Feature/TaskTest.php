@@ -15,6 +15,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
+use Tests\Feature\Fixtures\OnQueueTask;
 
 function getJobFromReflection(PendingDispatch $task): object
 {
@@ -434,6 +435,28 @@ it('fires Processed event when finalize is called', function (): void {
     $task->finalize();
 
     Event::assertDispatched(Processed::class);
+});
+
+it('should set the queue when #[OnQueue] attribute is used', function (): void {
+    $task = OnQueueTask::dispatch();
+    $job = getJobFromReflection($task);
+
+    expect($job->queue)->toBe('custom');
+});
+
+it('should not set queue when #[OnQueue] attribute is not used', function (): void {
+    class NoOnQueueTask extends Task
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    $task = NoOnQueueTask::dispatch();
+    $job = getJobFromReflection($task);
+
+    expect($job->queue)->toBeNull();
 });
 
 it('FinalizeTaskMiddleware triggers finalize and dispatches Processed event', function (): void {

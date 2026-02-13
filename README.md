@@ -150,6 +150,171 @@ class SendWelcomeNotifications extends Task implements ShouldQueue
 }
 ```
 
+#### Setting a Specific Queue with `#[OnQueue]`
+
+> [!WARNING]
+> Do **not** declare `public string $queue = 'my-queue'` on a Task — this causes a PHP fatal error because Laravel's `Queueable` trait already declares `$queue` without a type hint.
+
+Use the `#[OnQueue('queue-name')]` attribute to assign a specific queue to a Task or Process:
+
+```php
+use Brain\Attributes\OnQueue;
+use Brain\Task;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+#[OnQueue('emails')]
+class SendWelcomeNotifications extends Task implements ShouldQueue
+{
+    public function handle(): self
+    {
+        // This task will run on the "emails" queue
+        return $this;
+    }
+}
+```
+
+When applied to a **Process**, the attribute does two things:
+
+1. The Process itself is dispatched to that queue (if it implements `ShouldQueue`)
+2. All queued child tasks **inherit** the Process queue — unless the task defines its own `#[OnQueue]`
+
+```php
+use Brain\Attributes\OnQueue;
+use Brain\Process;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+#[OnQueue('strava')]
+class SyncActivitiesProcess extends Process implements ShouldQueue
+{
+    protected array $tasks = [
+        FetchActivities::class,      // ShouldQueue → runs on "strava" (inherited)
+        SaveActivities::class,       // sync task   → unaffected
+        NotifyUser::class,           // has #[OnQueue('emails')] → runs on "emails" (own queue wins)
+    ];
+}
+```
+
+#### Queue Execution Flows
+
+Below are the three most common queue configurations.
+
+**1. Process + all Tasks on the same queue**
+
+The process and every queued task run on `strava`:
+
+```mermaid
+flowchart LR
+    D((Dispatch)) --> Q[strava queue]
+
+    subgraph Q[strava queue]
+        direction LR
+        P[SyncActivitiesProcess] --> T1[FetchActivities]
+        T1 --> T2[TransformData]
+        T2 --> T3[SaveActivities]
+    end
+
+    style Q fill:#1a1a2e,stroke:#e94560,color:#eee
+    style P fill:#0f3460,stroke:#e94560,color:#eee
+    style T1 fill:#16213e,stroke:#0f3460,color:#eee
+    style T2 fill:#16213e,stroke:#0f3460,color:#eee
+    style T3 fill:#16213e,stroke:#0f3460,color:#eee
+```
+
+```php
+#[OnQueue('strava')]
+class SyncActivitiesProcess extends Process implements ShouldQueue
+{
+    protected array $tasks = [
+        FetchActivities::class,    // implements ShouldQueue
+        TransformData::class,      // implements ShouldQueue
+        SaveActivities::class,     // implements ShouldQueue
+    ];
+}
+```
+
+**2. Process on a queue, Tasks run synchronously inside it**
+
+The process is queued, but internally its tasks run one after another in the same job:
+
+```mermaid
+flowchart LR
+    D((Dispatch)) --> Q
+
+    subgraph Q[strava queue]
+        subgraph P[SyncActivitiesProcess]
+            direction LR
+            T1[FetchActivities] --> T2[TransformData] --> T3[SaveActivities]
+        end
+    end
+
+    style Q fill:#1a1a2e,stroke:#e94560,color:#eee
+    style P fill:#0f3460,stroke:#e94560,color:#eee
+    style T1 fill:#16213e,stroke:#0f3460,color:#eee
+    style T2 fill:#16213e,stroke:#0f3460,color:#eee
+    style T3 fill:#16213e,stroke:#0f3460,color:#eee
+```
+
+```php
+#[OnQueue('strava')]
+class SyncActivitiesProcess extends Process implements ShouldQueue
+{
+    protected array $tasks = [
+        FetchActivities::class,    // sync (no ShouldQueue)
+        TransformData::class,      // sync
+        SaveActivities::class,     // sync
+    ];
+}
+```
+
+**3. Process on a queue, mixed sync and queued Tasks**
+
+The process is queued. Some tasks run synchronously inside the process job, others are dispatched to their own queue jobs:
+
+```mermaid
+flowchart LR
+    D((Dispatch)) --> Q
+
+    subgraph Q[strava queue]
+        subgraph P[SyncActivitiesProcess]
+            direction LR
+            T1[FetchActivities\nsync] --> T2[TransformData\nsync]
+        end
+        T2 --> T3[SaveActivities\nqueued]
+        T3 --> T4[NotifyUser\nqueued]
+    end
+
+    T4 -.-> E[emails queue]
+
+    subgraph E[emails queue]
+        T4real[NotifyUser]
+    end
+
+    style Q fill:#1a1a2e,stroke:#e94560,color:#eee
+    style E fill:#1a1a2e,stroke:#53a653,color:#eee
+    style P fill:#0f3460,stroke:#e94560,color:#eee
+    style T1 fill:#16213e,stroke:#0f3460,color:#eee
+    style T2 fill:#16213e,stroke:#0f3460,color:#eee
+    style T3 fill:#16213e,stroke:#0f3460,color:#eee
+    style T4 fill:#16213e,stroke:#0f3460,color:#eee
+    style T4real fill:#16213e,stroke:#53a653,color:#eee
+```
+
+```php
+#[OnQueue('strava')]
+class SyncActivitiesProcess extends Process implements ShouldQueue
+{
+    protected array $tasks = [
+        FetchActivities::class,    // sync — runs inside the process job
+        TransformData::class,      // sync — runs inside the process job
+        SaveActivities::class,     // implements ShouldQueue → dispatched to "strava"
+        NotifyUser::class,         // implements ShouldQueue + #[OnQueue('emails')] → dispatched to "emails"
+    ];
+}
+```
+
+> [!TIP]
+> A task's own `#[OnQueue]` always takes precedence over the Process-level queue.
+
 #### Conditional Run Tasks in a Process
 
 You can use a protected function `runIf()` to conditionally run a task.

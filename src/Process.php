@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Brain;
 
+use Brain\Attributes\OnQueue;
 use Brain\Processes\Events\Error;
 use Brain\Processes\Events\Processed;
 use Brain\Processes\Events\Processing;
@@ -11,6 +12,7 @@ use Brain\Tasks\Events\Cancelled;
 use Brain\Tasks\Events\Error as TasksError;
 use Brain\Tasks\Events\Skipped;
 use Exception;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Bus;
@@ -29,6 +31,7 @@ use Throwable;
 class Process
 {
     use Dispatchable;
+    use Queueable;
 
     /**
      * When running the process we will assign am uuid
@@ -66,6 +69,13 @@ class Process
         $this->name = (new ReflectionClass($this))->getName();
 
         Context::add('process', [$this->name, $this->uuid]);
+
+        $onQueue = (new ReflectionClass(static::class))
+            ->getAttributes(OnQueue::class);
+
+        if ($onQueue !== []) {
+            $this->onQueue($onQueue[0]->newInstance()->queue);
+        }
     }
 
     /**
@@ -140,8 +150,13 @@ class Process
      */
     private function runInChain(?object $payload = null): ?object
     {
-        Bus::chain($this->getChainedTasks())
-            ->dispatch();
+        $chain = Bus::chain($this->getChainedTasks());
+
+        if (($queue = $this->resolveQueue()) !== null && ($queue = $this->resolveQueue()) !== '' && ($queue = $this->resolveQueue()) !== '0') {
+            $chain->onQueue($queue);
+        }
+
+        $chain->dispatch();
 
         return $payload;
     }
@@ -194,7 +209,14 @@ class Process
                 }
 
                 if ($reflectionClass->implementsInterface(ShouldQueue::class)) {
-                    $task::dispatch($payload);
+                    $processQueue = $this->resolveQueue();
+                    $instance = new $task($payload);
+
+                    if ($instance->queue === null && $processQueue !== null) {
+                        $instance->onQueue($processQueue);
+                    }
+
+                    dispatch($instance);
 
                     continue;
                 }
@@ -240,6 +262,21 @@ class Process
         }
 
         return $payload;
+    }
+
+    /**
+     * Resolve the queue name from the #[OnQueue] attribute on this Process class.
+     */
+    private function resolveQueue(): ?string
+    {
+        $attributes = (new ReflectionClass(static::class))
+            ->getAttributes(OnQueue::class);
+
+        if ($attributes === []) {
+            return null;
+        }
+
+        return $attributes[0]->newInstance()->queue;
     }
 
     /**

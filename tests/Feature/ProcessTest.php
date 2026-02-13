@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Brain\Attributes\OnQueue;
 use Brain\Process;
 use Brain\Processes\Events\Processed;
 use Brain\Processes\Events\Processing;
@@ -11,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Tests\Feature\Fixtures\OnQueueTask;
 use Tests\Feature\Fixtures\QueuedTask;
 use Tests\Feature\Fixtures\SimpleTask;
 
@@ -302,4 +304,75 @@ it('should return the original process class name', function (): void {
     ProcessPayload::dispatchSync([]);
 
     Event::assertDispatched(Processing::class, fn (Processing $event): bool => $event->process === ProcessPayload::class);
+});
+
+it('should dispatch queued tasks to the process queue when #[OnQueue] is set on process', function (): void {
+    Bus::fake([QueuedTask::class]);
+
+    #[OnQueue('strava')]
+    class OnQueueProcess extends Process
+    {
+        protected array $tasks = [
+            QueuedTask::class,
+        ];
+    }
+
+    OnQueueProcess::dispatchSync([]);
+
+    Bus::assertDispatched(QueuedTask::class, fn (QueuedTask $task): bool => $task->queue === 'strava');
+});
+
+it('should let task #[OnQueue] override process #[OnQueue]', function (): void {
+    Bus::fake([OnQueueTask::class]);
+
+    #[OnQueue('process-queue')]
+    class OverrideQueueProcess extends Process
+    {
+        protected array $tasks = [
+            OnQueueTask::class,
+        ];
+    }
+
+    OverrideQueueProcess::dispatchSync([]);
+
+    Bus::assertDispatched(OnQueueTask::class, fn (OnQueueTask $task): bool => $task->queue === 'custom');
+});
+
+it('should not affect non-queued tasks when #[OnQueue] is set on process', function (): void {
+    #[OnQueue('strava')]
+    class OnQueueSyncProcess extends Process
+    {
+        protected array $tasks = [
+            SimpleTask::class,
+        ];
+    }
+
+    $result = (new OnQueueSyncProcess(['value' => 0]))->handle();
+
+    expect($result->value)->toBe(1);
+});
+
+it('should apply process #[OnQueue] to chained tasks', function (): void {
+    class OnQueueChainTask extends Task implements ShouldQueue {}
+    class OnQueueChainTask2 extends Task implements ShouldQueue {}
+
+    Bus::fake([OnQueueChainTask::class, OnQueueChainTask2::class]);
+
+    #[OnQueue('strava')]
+    class OnQueueChainProcess extends Process
+    {
+        protected bool $chain = true;
+
+        protected array $tasks = [
+            OnQueueChainTask::class,
+            OnQueueChainTask2::class,
+        ];
+    }
+
+    OnQueueChainProcess::dispatchSync([]);
+
+    Bus::assertChained([
+        OnQueueChainTask::class,
+        OnQueueChainTask2::class,
+    ]);
 });

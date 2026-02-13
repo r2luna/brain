@@ -76,7 +76,7 @@ class ImportData extends Process
 
 @verbatim
 <code-snippet name="Nested Process" lang="php">
-class FullfillOrder extends Process
+class FulfillOrder extends Process
 {
     protected array $tasks = [
         CreateOrder::class,  // This is itself a Process

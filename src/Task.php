@@ -40,6 +40,9 @@ abstract class Task
     use Queueable;
     use SerializesModels;
 
+    /** @var array<class-string, string[]> */
+    private static array $sensitiveKeysCache = [];
+
     /**
      * @throws Exception
      */
@@ -134,11 +137,18 @@ abstract class Task
     /** Returns the list of sensitive keys declared via the #[Sensitive] attribute, merged with process-level keys. */
     public static function getSensitiveKeys(): array
     {
-        $attributes = (new ReflectionClass(static::class))
-            ->getAttributes(Sensitive::class);
+        $taskKeys = self::$sensitiveKeysCache[static::class] ??= (function (): array {
+            $attributes = (new ReflectionClass(static::class))
+                ->getAttributes(Sensitive::class);
 
-        $taskKeys = $attributes !== [] ? $attributes[0]->newInstance()->keys : [];
+            return $attributes !== [] ? $attributes[0]->newInstance()->keys : [];
+        })();
+
         $processKeys = Context::get('brain.sensitive_keys', []);
+
+        if ($processKeys === []) {
+            return $taskKeys;
+        }
 
         return array_values(array_unique([...$taskKeys, ...$processKeys]));
     }

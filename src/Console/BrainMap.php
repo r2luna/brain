@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Brain\Console;
 
 use Brain\Attributes\OnQueue;
+use Brain\Attributes\Sensitive;
 use Brain\Process;
 use Brain\Task;
 use Exception;
@@ -250,15 +251,19 @@ class BrainMap
             return [];
         }
 
+        $sensitiveAttr = $reflection->getAttributes(Sensitive::class);
+        $sensitiveKeys = $sensitiveAttr !== [] ? $sensitiveAttr[0]->newInstance()->keys : [];
+
         $classDocBlock = $docBlockFactory->create($docBlock);
 
         return collect($classDocBlock->getTags())
-            ->map(function (Tag $tag): ?array {
+            ->map(function (Tag $tag) use ($sensitiveKeys): ?array {
                 if ($tag instanceof PropertyRead) {
                     return [
                         'name' => $tag->getVariableName(),
                         'type' => $tag->getType()->__toString(),
                         'direction' => 'output',
+                        'sensitive' => in_array($tag->getVariableName(), $sensitiveKeys),
                     ];
                 }
 
@@ -267,6 +272,7 @@ class BrainMap
                         'name' => $tag->getVariableName(),
                         'type' => $tag->getType()->__toString(),
                         'direction' => 'input',
+                        'sensitive' => in_array($tag->getVariableName(), $sensitiveKeys),
                     ];
                 }
 

@@ -389,6 +389,51 @@ class AddRoles extends Task
 > [!CAUTION]
 > This will not work if the task is setup to run in a queue.
 
+#### Sensitive Properties with `#[Sensitive]`
+
+Use the `#[Sensitive('key1', 'key2')]` attribute to mark payload properties that should be automatically redacted in logs, JSON serialization, and debug output. Sensitive values are wrapped in `SensitiveValue` — they remain accessible inside your task via `$this->key`, but are replaced with `**********` everywhere else.
+
+```php
+use Brain\Attributes\Sensitive;
+use Brain\Task;
+
+/**
+ * @property-read string $email
+ * @property string $password
+ * @property string $credit_card
+ */
+#[Sensitive('password', 'credit_card')]
+class CreateUser extends Task
+{
+    public function handle(): self
+    {
+        // $this->password returns the real value
+        // but logs, JSON, and debug output show "**********"
+        return $this;
+    }
+}
+```
+
+**Process-level inheritance:** When `#[Sensitive]` is applied to a Process, all child tasks automatically inherit the sensitive keys — even if the tasks themselves don't declare the attribute. Task-level and process-level keys are merged and deduplicated.
+
+```php
+use Brain\Attributes\Sensitive;
+use Brain\Process;
+
+#[Sensitive('password', 'credit_card')]
+class CreateUserProcess extends Process
+{
+    protected array $tasks = [
+        ValidateInput::class,     // password & credit_card are sensitive here
+        ChargeCustomer::class,    // password & credit_card are sensitive here too
+        SendConfirmation::class,
+    ];
+}
+```
+
+> [!TIP]
+> The `brain:show -vv` command displays a `[sensitive]` indicator next to sensitive properties.
+
 ### Creating a Query
 
 ```bash
@@ -487,13 +532,13 @@ php artisan brain:show -vv             # also show task properties (input/output
   │         ├── 1. T SavePaymentTask ················ queued
   │         └── 2. T InviteUserTask ·························
   ├── TASK  CreateCommentTask ·······························
-  │            ← user_id: int
-  │            → comment: \Comment|null
+  │            → user_id: int
+  │            ← comment: \Comment|null
   └── QERY  ExampleQuery ···································
 ```
 
-- `←` input property (`@property`)
-- `→` output property (`@property-read`)
+- `→` input property (`@property-read`)
+- `←` output property (`@property`)
 
 ## Architecture
 

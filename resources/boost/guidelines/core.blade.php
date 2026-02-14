@@ -217,6 +217,48 @@ class SendConfirmation extends Task implements ShouldQueue
 </code-snippet>
 @endverbatim
 
+**Sensitive properties with `#[Sensitive]`:** Mark payload properties that should be automatically redacted in logs, JSON, and debug output. Sensitive values are wrapped in `SensitiveValue` — accessible inside the task via `$this->key`, but replaced with `**********` everywhere else.
+
+@verbatim
+<code-snippet name="Sensitive Task" lang="php">
+use Brain\Attributes\Sensitive;
+
+/**
+ * @property-read string $email
+ * @property string $password
+ * @property string $credit_card
+ */
+#[Sensitive('password', 'credit_card')]
+class CreateUser extends Task
+{
+    public function handle(): self
+    {
+        // $this->password returns the real value
+        // but logs, JSON, and debug output show "**********"
+        return $this;
+    }
+}
+</code-snippet>
+@endverbatim
+
+**Process-level sensitive inheritance:** When `#[Sensitive]` is applied to a Process, all child tasks automatically inherit the sensitive keys — even if the tasks don't declare the attribute themselves. Task-level and process-level keys are merged and deduplicated.
+
+@verbatim
+<code-snippet name="Sensitive Process" lang="php">
+use Brain\Attributes\Sensitive;
+
+#[Sensitive('password', 'credit_card')]
+class CreateUserProcess extends Process
+{
+    protected array $tasks = [
+        ValidateInput::class,     // password & credit_card are sensitive here
+        ChargeCustomer::class,    // password & credit_card are sensitive here too
+        SendConfirmation::class,
+    ];
+}
+</code-snippet>
+@endverbatim
+
 ---
 
 ### Queries

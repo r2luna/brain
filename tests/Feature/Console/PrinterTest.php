@@ -158,12 +158,12 @@ it('should print task properties of a process when using -vv', function (): void
         ['  <fg=#6C7280>├── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 44).'</>'],
         ['  <fg=#6C7280>│   </>            <fg=#6C7280>└── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 24).' queued</>'],
         ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> '.str_repeat('·', 47).'</>'],
-        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>→ email</><fg=#6C7280>: string</>'],
-        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>→ paymentId</><fg=#6C7280>: int</>'],
+        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>← email</><fg=#6C7280>: string</>'],
+        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>← paymentId</><fg=#6C7280>: int</>'],
         ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> '.str_repeat('·', 46).'</>'],
-        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>→ email</><fg=#6C7280>: string</>'],
-        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>→ paymentId</><fg=#6C7280>: int</>'],
-        ['  <fg=#6C7280>│   </>               <fg=white>← id</><fg=#6C7280>: int</>'],
+        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>← email</><fg=#6C7280>: string</>'],
+        ['  <fg=#6C7280>│   </>               <fg=#A3BE8C>← paymentId</><fg=#6C7280>: int</>'],
+        ['  <fg=#6C7280>│   </>               <fg=white>→ id</><fg=#6C7280>: int</>'],
         ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> '.str_repeat('·', 46).'</>'],
         ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 39).' queued</>'],
         ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
@@ -176,6 +176,28 @@ it('should print task properties of a process when using -vv', function (): void
         ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
         [''],
     ]);
+});
+
+// --------------------
+// -vv Sensitive properties
+
+it('should show [sensitive] indicator for sensitive properties in -vv mode', function (): void {
+    $this->mockOutput->shouldReceive('isVerbose')->andReturn(true);
+    $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(true);
+
+    $task = [
+        'name' => 'SensitiveTask',
+        'properties' => [
+            ['name' => 'email', 'type' => 'string', 'direction' => 'output', 'sensitive' => false],
+            ['name' => 'password', 'type' => 'string', 'direction' => 'input', 'sensitive' => true],
+        ],
+    ];
+
+    $this->printerReflection->run('addProperties', [$task, '', 3]);
+    $lines = $this->printerReflection->get('lines');
+
+    expect($lines[0])->toBe(['   <fg=#A3BE8C>← email</><fg=#6C7280>: string</>'])
+        ->and($lines[1])->toBe(['   <fg=white>→ password</><fg=#6C7280>: string</> <fg=red>[sensitive]</>']);
 });
 
 // --------------------
@@ -344,12 +366,12 @@ describe('without domains configuration', function (): void {
             ['<fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess</><fg=#6C7280> '.str_repeat('·', 50).'</>'],
             ['      <fg=#6C7280>└── </><fg=white>1. </><fg=yellow;options=bold>T</> <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 36).' queued</>'],
             ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask</><fg=#6C7280> '.str_repeat('·', 53).'</>'],
-            ['         <fg=#A3BE8C>→ email</><fg=#6C7280>: string</>'],
-            ['         <fg=#A3BE8C>→ paymentId</><fg=#6C7280>: int</>'],
+            ['         <fg=#A3BE8C>← email</><fg=#6C7280>: string</>'],
+            ['         <fg=#A3BE8C>← paymentId</><fg=#6C7280>: int</>'],
             ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask2</><fg=#6C7280> '.str_repeat('·', 52).'</>'],
-            ['         <fg=#A3BE8C>→ email</><fg=#6C7280>: string</>'],
-            ['         <fg=#A3BE8C>→ paymentId</><fg=#6C7280>: int</>'],
-            ['         <fg=white>← id</><fg=#6C7280>: int</>'],
+            ['         <fg=#A3BE8C>← email</><fg=#6C7280>: string</>'],
+            ['         <fg=#A3BE8C>← paymentId</><fg=#6C7280>: int</>'],
+            ['         <fg=white>→ id</><fg=#6C7280>: int</>'],
             ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask3</><fg=#6C7280> '.str_repeat('·', 52).'</>'],
             ['<fg=yellow;options=bold>TASK</>  <fg=white>ExampleTask4</><fg=#6C7280> '.str_repeat('·', 45).' queued</>'],
             ['<fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 52).'</>'],

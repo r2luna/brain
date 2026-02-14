@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Brain\Console;
 
 use Brain\Console\Support\PropertyInput;
+use Brain\Console\Support\RunHistory;
 use Brain\Process;
 use Brain\SensitiveValue;
 use Brain\Task;
@@ -25,7 +26,7 @@ use function Laravel\Prompts\warning;
 class RunBrainCommand extends Command
 {
     /** @var string */
-    protected $signature = 'brain:run';
+    protected $signature = 'brain:run {--rerun : Rerun a previous execution from history}';
 
     /** @var string */
     protected $description = 'Interactively run a Brain Process or Task';
@@ -54,6 +55,10 @@ class RunBrainCommand extends Command
 
     public function handle(): int
     {
+        if ($this->option('rerun')) {
+            return $this->handleRerun();
+        }
+
         $brainMap = new BrainMap;
         $targets = $this->collectTargets($brainMap);
 
@@ -82,6 +87,7 @@ class RunBrainCommand extends Command
             return self::FAILURE;
         }
 
+        $this->saveToHistory($target, $payload, $sync);
         $this->displayResult($result, $sync);
 
         return self::SUCCESS;
@@ -316,5 +322,90 @@ class RunBrainCommand extends Command
         }
 
         return $masked;
+    }
+
+    /** Handle the --rerun flow: select a previous run and replay it. */
+    private function handleRerun(): int
+    {
+        $entries = RunHistory::default()->all();
+
+        if ($entries === []) {
+            warning('No previous runs found.');
+
+            return self::SUCCESS;
+        }
+
+        $entry = $this->selectFromHistory($entries);
+
+        $target = [
+            'class' => $entry['class'],
+            'type' => $entry['type'],
+        ];
+        $payload = $entry['payload'];
+        $sync = $entry['sync'];
+
+        if (! $this->preview($target, $payload, $sync)) {
+            note('Cancelled.');
+
+            return self::SUCCESS;
+        }
+
+        try {
+            $result = $this->runTarget($target, $payload, $sync);
+        } catch (Throwable $e) {
+            error($e::class);
+            warning($e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        $this->saveToHistory($target, $payload, $sync);
+        $this->displayResult($result, $sync);
+
+        return self::SUCCESS;
+    }
+
+    /** Let the user search and select from history entries. */
+    private function selectFromHistory(array $entries): array
+    {
+        $mapped = [];
+        foreach ($entries as $entry) {
+            $mode = $entry['sync'] ? 'sync' : 'async';
+            $shortClass = class_basename($entry['class']);
+            $label = strtoupper((string) $entry['type']).'  '.$shortClass.' ('.$mode.') — '.$entry['timestamp'];
+            $mapped[$label] = $entry;
+        }
+
+        $options = array_keys($mapped);
+
+        $selected = search(
+            label: 'Select a previous run:',
+            options: function (string $query) use ($options): array {
+                if ($query === '') {
+                    return $options; // @codeCoverageIgnore
+                }
+
+                return array_filter(
+                    $options,
+                    fn (string $label): bool => str_contains(
+                        mb_strtolower($label),
+                        mb_strtolower($query),
+                    ),
+                );
+            },
+        );
+
+        return $mapped[$selected];
+    }
+
+    /** Save a successful run to the history file. */
+    private function saveToHistory(array $target, array $payload, bool $sync): void
+    {
+        $unwrapped = array_map(
+            fn (mixed $value): mixed => $value instanceof SensitiveValue ? $value->value() : $value,
+            $payload,
+        );
+
+        RunHistory::default()->record($target, $unwrapped, $sync);
     }
 }

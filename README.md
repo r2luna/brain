@@ -540,6 +540,32 @@ php artisan brain:show -vv             # also show task properties (input/output
 - `→` input property (`@property-read`)
 - `←` output property (`@property`)
 
+## Running Processes & Tasks
+
+Use the `brain:run` command to interactively select and execute a Process or Task directly from the terminal:
+
+```bash
+php artisan brain:run
+```
+
+The command guides you through an interactive flow:
+
+1. **Select a target** — Search and pick any Process or Task in your Brain directory
+2. **Choose dispatch mode** — Sync (`dispatchSync`) or Async (`dispatch`)
+3. **Fill payload** — Enter values for required properties, optionally fill optional ones
+4. **Preview** — Review the dispatch call and payload before executing
+5. **Execute** — Run the target and see the resulting payload
+
+### Rerunning a previous execution
+
+Every successful run is saved to history (`storage/brain/run-history.json`, max 50 entries). Use `--rerun` to replay a previous execution:
+
+```bash
+php artisan brain:run --rerun
+```
+
+This lets you search through past runs, preview the saved payload, and re-execute with the same parameters.
+
 ## Architecture
 
 Brain helps you organize your code into three main concepts:

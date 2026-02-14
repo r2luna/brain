@@ -11,7 +11,7 @@ src/
 ├── Query.php            # Base Query class
 ├── BrainServiceProvider.php
 ├── Attributes/          # PHP attributes (e.g., Sensitive)
-├── Console/             # Artisan commands (make:process, make:task, make:query, brain:show)
+├── Console/             # Artisan commands (make:process, make:task, make:query, brain:show, brain:run)
 ├── Exceptions/          # InvalidPayload, etc.
 ├── Facades/
 ├── Processes/           # Process infrastructure (Events, Listeners, Middleware)

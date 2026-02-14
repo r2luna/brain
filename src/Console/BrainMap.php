@@ -166,8 +166,10 @@ class BrainMap
 
                 return [
                     'name' => basename($value, '.php'),
+                    'fullName' => $reflection->name,
                     'chain' => $chainValue,
                     'onQueue' => $queueName,
+                    'properties' => $this->getPropertiesFor($reflection),
                     'tasks' => $this->getProcessesTasks($reflection),
                 ];
             })

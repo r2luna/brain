@@ -17,6 +17,8 @@ Brain (`r2luna/brain`) organizes business logic into three core concepts: **Proc
 - Create a Query: `{{ $assist->artisanCommand('make:query GetOrdersByUser') }}`
 - Create a Test: `{{ $assist->artisanCommand('make:test CreateOrderTest --stub=process') }}`
 - Visualize structure: `{{ $assist->artisanCommand('brain:show') }}`
+- Run interactively: `{{ $assist->artisanCommand('brain:run') }}`
+- Rerun a previous execution: `{{ $assist->artisanCommand('brain:run --rerun') }}`
 
 When `brain.use_domains` is enabled, pass a domain as the second argument:
 
@@ -371,6 +373,14 @@ Use `{{ $assist->artisanCommand('brain:show') }}` to see a map of all processes,
 - `--tasks` (`-t`) — Show only tasks
 - `--queries` (`-Q`) — Show only queries
 - `--filter=Name` — Filter by class name
+
+---
+
+### Running Interactively
+
+Use `{{ $assist->artisanCommand('brain:run') }}` to interactively select and execute a Process or Task from the terminal. The command walks you through selecting a target, choosing sync or async dispatch, filling payload properties, previewing, and executing.
+
+Every successful run is saved to history (`storage/brain/run-history.json`, max 50 entries). Use `{{ $assist->artisanCommand('brain:run --rerun') }}` to replay a previous execution with the same parameters.
 
 ---
 

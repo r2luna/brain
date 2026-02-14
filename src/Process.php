@@ -120,12 +120,14 @@ class Process
             $this->payload = (object) $this->payload;
         }
 
-        $sensitiveKeys = (new ReflectionClass(static::class))
+        $previousKeys = Context::get('brain.sensitive_keys', []);
+
+        $sensitiveAttr = (new ReflectionClass(static::class))
             ->getAttributes(Sensitive::class);
 
-        if ($sensitiveKeys !== []) {
-            Context::add('brain.sensitive_keys', $sensitiveKeys[0]->newInstance()->keys);
-        }
+        Context::add('brain.sensitive_keys', $sensitiveAttr !== []
+            ? $sensitiveAttr[0]->newInstance()->keys
+            : []);
 
         $this->fireEvent(Processing::class, [
             'timestamp' => microtime(true),
@@ -147,6 +149,12 @@ class Process
             ]);
 
             throw $e;
+        } finally {
+            Context::forget('brain.sensitive_keys');
+
+            if ($previousKeys !== []) {
+                Context::add('brain.sensitive_keys', $previousKeys);
+            }
         }
 
         return $output;

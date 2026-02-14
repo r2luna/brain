@@ -30,8 +30,10 @@ describe('load testsuite', function (): void {
                 'processes' => [
                     [
                         'name' => 'ExampleProcess',
+                        'fullName' => Tests\Feature\Fixtures\Brain\Example\Processes\ExampleProcess::class,
                         'chain' => false,
                         'onQueue' => null,
+                        'properties' => [],
                         'tasks' => [
                             [
                                 'name' => 'ExampleTask4',
@@ -101,8 +103,10 @@ describe('load testsuite', function (): void {
                 'processes' => [
                     [
                         'name' => 'ExampleProcess2',
+                        'fullName' => Tests\Feature\Fixtures\Brain\Example2\Processes\ExampleProcess2::class,
                         'chain' => true,
                         'onQueue' => null,
+                        'properties' => [],
                         'tasks' => [
                             [
                                 'name' => 'ExampleTask4',
@@ -166,8 +170,10 @@ describe('loadProcessesFor testsuite', function (): void {
             ->and($output)->toMatchArray([
                 [
                     'name' => 'ExampleProcess',
+                    'fullName' => Tests\Feature\Fixtures\Brain\Example\Processes\ExampleProcess::class,
                     'chain' => false,
                     'onQueue' => null,
+                    'properties' => [],
                     'tasks' => [
                         ['name' => 'ExampleTask4', 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class, 'queue' => true, 'onQueue' => null, 'properties' => [], 'type' => 'task'],
                     ],
@@ -191,6 +197,7 @@ describe('loadProcessesFor testsuite', function (): void {
         expect($output)->toHaveCount(1)
             ->and($output[0])->toMatchArray([
                 'name' => 'ExampleProcess2',
+                'fullName' => Tests\Feature\Fixtures\Brain\Example2\Processes\ExampleProcess2::class,
                 'chain' => true,
             ]);
     });

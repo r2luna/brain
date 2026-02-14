@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Brain;
 
 use Brain\Console\EjectCommand;
+use Brain\Console\RunBrainCommand;
 use Brain\Console\ShowBrainCommand;
 use Brain\Processes\Console\MakeProcessCommand;
 use Brain\Queries\Console\MakeQueryCommand;
@@ -61,6 +62,7 @@ class BrainServiceProvider extends ServiceProvider
             MakeTaskCommand::class,
             MakeQueryCommand::class,
             ShowBrainCommand::class,
+            RunBrainCommand::class,
             MakeTestCommand::class,
             EjectCommand::class,
         ]);

@@ -20,6 +20,7 @@ use function Laravel\Prompts\search;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\spin;
 use function Laravel\Prompts\table;
+use function Laravel\Prompts\text;
 use function Laravel\Prompts\warning;
 
 /** Interactive command to select and run a Brain Process or Task. */
@@ -343,6 +344,11 @@ class RunBrainCommand extends Command
         ];
         $payload = $entry['payload'];
         $sync = $entry['sync'];
+        $sensitiveKeys = $entry['sensitiveKeys'] ?? [];
+
+        if ($sensitiveKeys !== []) {
+            $payload = $this->collectSensitivePayload($payload, $sensitiveKeys);
+        }
 
         if (! $this->preview($target, $payload, $sync)) {
             note('Cancelled.');
@@ -359,10 +365,24 @@ class RunBrainCommand extends Command
             return self::FAILURE;
         }
 
-        $this->saveToHistory($target, $payload, $sync);
+        $this->saveToHistory($target, $payload, $sync, $sensitiveKeys);
         $this->displayResult($result, $sync);
 
         return self::SUCCESS;
+    }
+
+    /** Prompt the user to re-enter sensitive values for a rerun. */
+    private function collectSensitivePayload(array $payload, array $sensitiveKeys): array
+    {
+        note('Sensitive properties (re-enter required):');
+
+        foreach ($sensitiveKeys as $key) {
+            if (array_key_exists($key, $payload)) {
+                $payload[$key] = text(label: $key, required: true);
+            }
+        }
+
+        return $payload;
     }
 
     /** Let the user search and select from history entries. */
@@ -398,14 +418,24 @@ class RunBrainCommand extends Command
         return $mapped[$selected];
     }
 
-    /** Save a successful run to the history file. */
-    private function saveToHistory(array $target, array $payload, bool $sync): void
+    /** Save a successful run to the history file, redacting sensitive values. */
+    private function saveToHistory(array $target, array $payload, bool $sync, array $sensitiveKeys = []): void
     {
-        $unwrapped = array_map(
-            fn (mixed $value): mixed => $value instanceof SensitiveValue ? $value->value() : $value,
-            $payload,
-        );
+        if ($sensitiveKeys === []) {
+            $sensitiveKeys = collect($target['properties'] ?? [])
+                ->filter(fn (array $p): bool => $p['sensitive'] ?? false)
+                ->pluck('name')
+                ->all();
+        }
 
-        RunHistory::default()->record($target, $unwrapped, $sync);
+        $redacted = $payload;
+
+        foreach ($sensitiveKeys as $key) {
+            if (array_key_exists($key, $redacted)) {
+                $redacted[$key] = '********';
+            }
+        }
+
+        RunHistory::default()->record($target, $redacted, $sync, $sensitiveKeys);
     }
 }

@@ -387,6 +387,61 @@ it('does not save failed runs to history', function (): void {
     expect(RunHistory::default()->all())->toBe([]);
 });
 
+it('redacts sensitive values in history', function (): void {
+    config()->set('brain.use_domains', false);
+    config()->set('brain.root', __DIR__.'/../Fixtures/RunBrain');
+
+    $this->artisan('brain:run')
+        ->expectsSearch(
+            'What do you want to run?',
+            Tests\Feature\Fixtures\RunBrain\Tasks\SecretTask::class,
+            'SecretTask',
+            [Tests\Feature\Fixtures\RunBrain\Tasks\SecretTask::class => 'TASK  SecretTask'],
+        )
+        ->expectsChoice('How should it be dispatched?', 'sync', [
+            'sync' => 'Sync (dispatchSync)',
+            'async' => 'Async (dispatch)',
+        ])
+        ->expectsQuestion('username', 'admin')
+        ->expectsQuestion('token', 's3cret')
+        ->expectsConfirmation('Execute?', 'yes')
+        ->assertExitCode(0);
+
+    $entries = RunHistory::default()->all();
+    expect($entries)->toHaveCount(1)
+        ->and($entries[0]['payload']['username'])->toBe('admin')
+        ->and($entries[0]['payload']['token'])->toBe('********')
+        ->and($entries[0]['sensitiveKeys'])->toBe(['token']);
+});
+
+it('reruns with sensitive data re-prompts for sensitive values', function (): void {
+    $history = RunHistory::default();
+    $history->record(
+        ['class' => Tests\Feature\Fixtures\RunBrain\Tasks\SecretTask::class, 'type' => 'task'],
+        ['username' => 'admin', 'token' => '********'],
+        true,
+        ['token'],
+    );
+
+    $entries = $history->all();
+    $label = 'TASK  SecretTask (sync) — '.$entries[0]['timestamp'];
+
+    $this->artisan('brain:run --rerun')
+        ->expectsSearch(
+            'Select a previous run:',
+            $label,
+            'SecretTask',
+            [0 => $label],
+        )
+        ->expectsQuestion('token', 'new-secret')
+        ->expectsConfirmation('Execute?', 'yes')
+        ->assertExitCode(0);
+
+    $entries = $history->all();
+    expect($entries[0]['payload']['token'])->toBe('********')
+        ->and($entries[0]['payload']['username'])->toBe('admin');
+});
+
 it('does not save cancelled runs to history', function (): void {
     $this->artisan('brain:run')
         ->expectsSearch(

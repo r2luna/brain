@@ -12,3 +12,6 @@
 *.swo
 /.peck.cache
 /tests/.peck-test.cache
+node_modules
+docs/.vitepress/cache
+docs/.vitepress/dist

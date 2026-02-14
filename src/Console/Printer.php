@@ -348,15 +348,16 @@ class Printer
         $indent = str_repeat(' ', $indentSize);
 
         foreach ($task['properties'] as $property) {
-            $arrow = $property['direction'] === 'output' ? '→ ' : '← ';
+            $arrow = $property['direction'] === 'output' ? '← ' : '→ ';
             $color = $property['direction'] === 'output' ? '#A3BE8C' : 'white';
             $propertyName = $property['name'];
             $propertyType = $property['type'];
+            $sensitive = empty($property['sensitive']) ? '' : ' <fg=red>[sensitive]</>';
 
             $this->lines[] = [
                 sprintf(
-                    '%s%s<fg=%s>%s%s</><fg=#6C7280>: %s</>',
-                    $parentPrefix, $indent, $color, $arrow, $propertyName, $propertyType
+                    '%s%s<fg=%s>%s%s</><fg=#6C7280>: %s</>%s',
+                    $parentPrefix, $indent, $color, $arrow, $propertyName, $propertyType, $sensitive
                 ),
             ];
         }

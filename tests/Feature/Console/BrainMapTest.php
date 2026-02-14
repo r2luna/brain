@@ -52,8 +52,8 @@ describe('load testsuite', function (): void {
                         'onQueue' => null,
                         'type' => 'task',
                         'properties' => [
-                            ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
-                            ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
+                            ['name' => 'email', 'type' => 'string', 'direction' => 'output', 'sensitive' => false],
+                            ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output', 'sensitive' => false],
                         ],
                     ],
                     [
@@ -63,9 +63,9 @@ describe('load testsuite', function (): void {
                         'onQueue' => null,
                         'type' => 'task',
                         'properties' => [
-                            ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
-                            ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
-                            ['name' => 'id', 'type' => 'int', 'direction' => 'input'],
+                            ['name' => 'email', 'type' => 'string', 'direction' => 'output', 'sensitive' => false],
+                            ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output', 'sensitive' => false],
+                            ['name' => 'id', 'type' => 'int', 'direction' => 'input', 'sensitive' => false],
                         ],
                     ],
                     [
@@ -211,8 +211,8 @@ describe('loadTasksFor testsuite', function (): void {
                     'onQueue' => null,
                     'type' => 'task',
                     'properties' => [
-                        ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
-                        ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
+                        ['name' => 'email', 'type' => 'string', 'direction' => 'output', 'sensitive' => false],
+                        ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output', 'sensitive' => false],
                     ],
                 ],
                 [
@@ -222,9 +222,9 @@ describe('loadTasksFor testsuite', function (): void {
                     'onQueue' => null,
                     'type' => 'task',
                     'properties' => [
-                        ['name' => 'email', 'type' => 'string', 'direction' => 'output'],
-                        ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output'],
-                        ['name' => 'id', 'type' => 'int', 'direction' => 'input'],
+                        ['name' => 'email', 'type' => 'string', 'direction' => 'output', 'sensitive' => false],
+                        ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output', 'sensitive' => false],
+                        ['name' => 'id', 'type' => 'int', 'direction' => 'input', 'sensitive' => false],
                     ],
                 ],
                 [
@@ -287,11 +287,13 @@ describe('getPropertiesFor testsuite', function (): void {
                     'name' => 'email',
                     'type' => 'string',
                     'direction' => 'output',
+                    'sensitive' => false,
                 ],
                 [
                     'name' => 'paymentId',
                     'type' => 'int',
                     'direction' => 'output',
+                    'sensitive' => false,
                 ],
             ]);
     });
@@ -309,16 +311,19 @@ describe('getPropertiesFor testsuite', function (): void {
                     'name' => 'email',
                     'type' => 'string',
                     'direction' => 'output',
+                    'sensitive' => false,
                 ],
                 [
                     'name' => 'paymentId',
                     'type' => 'int',
                     'direction' => 'output',
+                    'sensitive' => false,
                 ],
                 [
                     'name' => 'id',
                     'type' => 'int',
                     'direction' => 'input',
+                    'sensitive' => false,
                 ],
             ]);
     });
@@ -332,6 +337,36 @@ describe('getPropertiesFor testsuite', function (): void {
         expect($output)->toHaveCount(0)
             ->and($output)
             ->toMatchArray([]);
+    });
+
+    it('should mark sensitive properties when #[Sensitive] attribute is present', function (): void {
+        $reflection = new ReflectionClass(Tests\Feature\Fixtures\SensitiveUserTask::class);
+
+        $method = $this->reflection->getMethod('getPropertiesFor');
+        $output = $method->invokeArgs($this->object, [$reflection]);
+
+        expect($output)->toHaveCount(3)
+            ->and($output)
+            ->toMatchArray([
+                [
+                    'name' => 'email',
+                    'type' => 'string',
+                    'direction' => 'output',
+                    'sensitive' => false,
+                ],
+                [
+                    'name' => 'password',
+                    'type' => 'string',
+                    'direction' => 'input',
+                    'sensitive' => true,
+                ],
+                [
+                    'name' => 'credit_card',
+                    'type' => 'string',
+                    'direction' => 'input',
+                    'sensitive' => true,
+                ],
+            ]);
     });
 
     it('should return null if there is no docblock', function (): void {

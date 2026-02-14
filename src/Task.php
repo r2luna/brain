@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Brain;
 
 use Brain\Attributes\OnQueue;
+use Brain\Attributes\Sensitive;
 use Brain\Exceptions\InvalidPayload;
 use Brain\Tasks\Events\Processed;
 use Brain\Tasks\Events\Processing;
@@ -39,6 +40,9 @@ abstract class Task
     use Queueable;
     use SerializesModels;
 
+    /** @var array<class-string, string[]> */
+    private static array $sensitiveKeysCache = [];
+
     /**
      * @throws Exception
      */
@@ -48,12 +52,12 @@ abstract class Task
         $startTime = microtime(true);
 
         $this->standardizePayload();
+        $this->validate();
+        $this->wrapSensitiveKeys();
 
         $this->fireEvent(Processing::class, [
             'microtime' => $startTime,
         ]);
-
-        $this->validate();
 
         if ($runIn = $this->runIn()) {
             $this->delay($runIn);
@@ -85,9 +89,9 @@ abstract class Task
      */
     public function __get(string $property)
     {
-        $tmpArray = (array) $this->payload;
+        $value = data_get((array) $this->payload, $property);
 
-        return data_get($tmpArray, $property);
+        return $value instanceof SensitiveValue ? $value->value() : $value;
     }
 
     /**
@@ -95,6 +99,10 @@ abstract class Task
      */
     public function __set(string $property, mixed $value): void
     {
+        if (! $value instanceof SensitiveValue && in_array($property, static::getSensitiveKeys(), true)) {
+            $value = new SensitiveValue($value);
+        }
+
         $this->payload->$property = $value;
     }
 
@@ -124,6 +132,25 @@ abstract class Task
         }
 
         return new PendingDispatch($instance); // @codeCoverageIgnore
+    }
+
+    /** Returns the list of sensitive keys declared via the #[Sensitive] attribute, merged with process-level keys. */
+    public static function getSensitiveKeys(): array
+    {
+        $taskKeys = self::$sensitiveKeysCache[static::class] ??= (function (): array {
+            $attributes = (new ReflectionClass(static::class))
+                ->getAttributes(Sensitive::class);
+
+            return $attributes !== [] ? $attributes[0]->newInstance()->keys : [];
+        })();
+
+        $processKeys = Context::get('brain.sensitive_keys', []);
+
+        if ($processKeys === []) {
+            return $taskKeys;
+        }
+
+        return array_values(array_unique([...$taskKeys, ...$processKeys]));
     }
 
     /**
@@ -298,6 +325,16 @@ abstract class Task
             $runProcessId,
             $meta
         ));
+    }
+
+    /** Wraps sensitive payload keys in SensitiveValue for automatic redaction. */
+    private function wrapSensitiveKeys(): void
+    {
+        foreach (static::getSensitiveKeys() as $key) {
+            if (isset($this->payload->$key) && ! $this->payload->$key instanceof SensitiveValue) {
+                $this->payload->$key = new SensitiveValue($this->payload->$key);
+            }
+        }
     }
 
     /**

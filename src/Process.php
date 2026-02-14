@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Brain;
 
 use Brain\Attributes\OnQueue;
+use Brain\Attributes\Sensitive;
 use Brain\Processes\Events\Error;
 use Brain\Processes\Events\Processed;
 use Brain\Processes\Events\Processing;
@@ -119,6 +120,15 @@ class Process
             $this->payload = (object) $this->payload;
         }
 
+        $previousKeys = Context::get('brain.sensitive_keys', []);
+
+        $sensitiveAttr = (new ReflectionClass(static::class))
+            ->getAttributes(Sensitive::class);
+
+        Context::add('brain.sensitive_keys', $sensitiveAttr !== []
+            ? $sensitiveAttr[0]->newInstance()->keys
+            : []);
+
         $this->fireEvent(Processing::class, [
             'timestamp' => microtime(true),
         ]);
@@ -139,6 +149,12 @@ class Process
             ]);
 
             throw $e;
+        } finally {
+            Context::forget('brain.sensitive_keys');
+
+            if ($previousKeys !== []) {
+                Context::add('brain.sensitive_keys', $previousKeys);
+            }
         }
 
         return $output;

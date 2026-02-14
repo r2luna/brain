@@ -263,7 +263,7 @@ class BrainMap
                         'name' => $tag->getVariableName(),
                         'type' => $tag->getType()->__toString(),
                         'direction' => 'output',
-                        'sensitive' => in_array($tag->getVariableName(), $sensitiveKeys),
+                        'sensitive' => in_array($tag->getVariableName(), $sensitiveKeys, true),
                     ];
                 }
 
@@ -272,7 +272,7 @@ class BrainMap
                         'name' => $tag->getVariableName(),
                         'type' => $tag->getType()->__toString(),
                         'direction' => 'input',
-                        'sensitive' => in_array($tag->getVariableName(), $sensitiveKeys),
+                        'sensitive' => in_array($tag->getVariableName(), $sensitiveKeys, true),
                     ];
                 }
 

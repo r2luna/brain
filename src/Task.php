@@ -99,7 +99,7 @@ abstract class Task
      */
     public function __set(string $property, mixed $value): void
     {
-        if (! $value instanceof SensitiveValue && in_array($property, static::getSensitiveKeys())) {
+        if (! $value instanceof SensitiveValue && in_array($property, static::getSensitiveKeys(), true)) {
             $value = new SensitiveValue($value);
         }
 

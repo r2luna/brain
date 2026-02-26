@@ -254,14 +254,14 @@ class EjectCommand extends Command
         foreach ($psr4Map as $prefix => $paths) {
             $path = is_array($paths) ? $paths[0] : $paths;
 
-            if (str_starts_with($namespaceForMatch, $prefix) && strlen($prefix) > strlen($bestPrefix)) {
+            if (str_starts_with($namespaceForMatch, (string) $prefix) && strlen((string) $prefix) > strlen((string) $bestPrefix)) {
                 $bestPrefix = $prefix;
                 $bestPath = $path;
             }
         }
 
         if ($bestPrefix !== '') {
-            $remaining = substr($namespace, strlen($bestPrefix));
+            $remaining = substr($namespace, strlen((string) $bestPrefix));
             $remainingPath = str_replace('\\', '/', $remaining);
             $basePath = rtrim((string) $bestPath, '/');
 
@@ -278,7 +278,7 @@ class EjectCommand extends Command
         $namespaceForMatch = rtrim($namespace, '\\').'\\';
 
         foreach (array_keys($psr4Map) as $prefix) {
-            if (str_starts_with($namespaceForMatch, $prefix)) {
+            if (str_starts_with($namespaceForMatch, (string) $prefix)) {
                 return true;
             }
         }

@@ -75,8 +75,8 @@ class BrainMap
 
         if (config('brain.use_domains', false) === false) {
             return collect($directories)
-                ->flatMap(fn ($value) => [basename((string) $value) => $value])
-                ->map(fn ($domainPath): array => [
+                ->flatMap(fn ($value): array => [basename((string) $value) => $value])
+                ->map(fn (string $domainPath): array => [
                     'path' => $domainPath,
                     'processes' => $this->loadProcessesFor($domainPath),
                     'tasks' => $this->loadTasksFor($domainPath),
@@ -85,8 +85,8 @@ class BrainMap
         }
 
         return collect($directories)
-            ->flatMap(fn ($value) => [basename((string) $value) => $value])
-            ->map(fn ($domainPath, $domain): array => [
+            ->flatMap(fn ($value): array => [basename((string) $value) => $value])
+            ->map(fn (string $domainPath, $domain): array => [
                 'domain' => $domain,
                 'path' => $domainPath,
                 'processes' => $this->loadProcessesFor($domainPath),
@@ -302,7 +302,7 @@ class BrainMap
         }
 
         return collect(File::files($path))
-            ->map(function ($task): array {
+            ->map(function (SplFileInfo|string $task): array {
                 $reflection = $this->getReflectionClass($task);
 
                 $properties = [];

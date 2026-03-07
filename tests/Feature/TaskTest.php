@@ -497,7 +497,7 @@ it('process calls finalize on task instances and fires Processed event', functio
         ];
     }
 
-    $process = new ProcessWithFinalize;
+    $process = new ProcessWithFinalize(null);
     $process->handle();
 
     Event::assertDispatched(Processed::class);

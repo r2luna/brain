@@ -170,7 +170,7 @@ class Process
     {
         $chain = Bus::chain($this->getChainedTasks());
 
-        if (! in_array($queue = $this->resolveQueue(), [null, '', '0'], true)) {
+        if (($queue = $this->resolveQueue()) !== null && ($queue = $this->resolveQueue()) !== '' && ($queue = $this->resolveQueue()) !== '0') {
             $chain->onQueue($queue);
         }
 

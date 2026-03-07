@@ -18,7 +18,7 @@ class TestInput extends Input
 
     public function __toString(): string
     {
-        return (string) collect($this->parameters)->join(' ');
+        return collect($this->parameters)->join(' ');
     }
 
     public function getFirstArgument(): ?string
@@ -60,8 +60,8 @@ class TestInput extends Input
             if ($key === '--') {
                 return;
             }
-            if (str_starts_with((string) $key, '-')) {
-                $key = ltrim((string) $key, '-');
+            if (str_starts_with($key, '-')) {
+                $key = ltrim($key, '-');
                 $this->options[$key] = $value;
             } else {
                 $this->arguments[$key] = $value;

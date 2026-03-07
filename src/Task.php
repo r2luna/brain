@@ -89,7 +89,7 @@ abstract class Task
      *
      * @return mixed|null
      */
-    public function __get(string $property): mixed
+    public function __get(string $property)
     {
         $value = data_get((array) $this->payload, $property);
 

@@ -48,7 +48,7 @@ class PropertyInput
     /** Extract the base type, stripping nullable markers. */
     public static function baseType(string $type): string
     {
-        $parts = array_map(trim(...), explode('|', $type));
+        $parts = array_map('trim', explode('|', $type));
         $filtered = array_filter($parts, fn (string $part): bool => $part !== 'null');
 
         return $filtered !== [] ? reset($filtered) : 'string';

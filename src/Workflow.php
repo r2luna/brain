@@ -168,7 +168,7 @@ class Workflow
     {
         $chain = Bus::chain($this->getChainedActions());
 
-        if (! in_array($queue = $this->resolveQueue(), [null, '', '0'], true)) {
+        if (($queue = $this->resolveQueue()) !== null && ($queue = $this->resolveQueue()) !== '' && ($queue = $this->resolveQueue()) !== '0') {
             $chain->onQueue($queue);
         }
 

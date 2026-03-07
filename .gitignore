@@ -8,6 +8,7 @@
 /composer.lock
 /phpunit.xml
 /vendor
+/node_modules
 *.swp
 *.swo
 /.peck.cache

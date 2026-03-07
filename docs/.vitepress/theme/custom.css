@@ -1,0 +1,10 @@
+:root {
+  --vp-font-family-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace,
+    SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+}
+
+div[class*='language-'] code {
+  font-variant-ligatures: none;
+  -webkit-font-variant-ligatures: none;
+}

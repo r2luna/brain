@@ -153,7 +153,7 @@ class BrainMap
             return [];
         }
 
-        return collect(File::files($path))
+        return collect(File::allFiles($path))
             ->map(function (SplFileInfo $value): array {
                 $reflection = $this->getReflectionClass($value);
                 $hasChainProperty = $reflection->hasProperty('chain');
@@ -199,7 +199,7 @@ class BrainMap
             return [];
         }
 
-        return collect(File::files($path))
+        return collect(File::allFiles($path))
             ->map(fn (SplFileInfo $task): array => $this->getTask($task))
             ->toArray();
     }
@@ -301,7 +301,7 @@ class BrainMap
             return [];
         }
 
-        return collect(File::files($path))
+        return collect(File::allFiles($path))
             ->map(function ($task): array {
                 $reflection = $this->getReflectionClass($task);
 

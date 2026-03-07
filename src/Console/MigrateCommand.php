@@ -84,13 +84,15 @@ class MigrateCommand extends Command
         $directoriesToRename = $this->scanDirectories($basePath);
         $filesToRename = $this->scanFileRenames($basePath);
 
-        if ($filesToUpdate === [] && $directoriesToRename === [] && $filesToRename === []) {
+        $configNeedsUpdate = $this->configNeedsUpdate();
+
+        if ($filesToUpdate === [] && $directoriesToRename === [] && $filesToRename === [] && ! $configNeedsUpdate) {
             info('Nothing to migrate. Your codebase already uses Workflow/Action naming.');
 
             return self::SUCCESS;
         }
 
-        $this->printPreview($filesToUpdate, $directoriesToRename, $filesToRename);
+        $this->printPreview($filesToUpdate, $directoriesToRename, $filesToRename, $configNeedsUpdate);
 
         if ($dryRun) {
             note('Dry-run complete. No changes were made.');
@@ -117,6 +119,10 @@ class MigrateCommand extends Command
         // Phase 4: Rename directories
         $renamedDirs = $this->renameDirectories($directoriesToRename);
         $this->output->writeln(" Renamed directories: <info>{$renamedDirs} directories</info>");
+
+        // Phase 5: Update config/brain.php
+        $configUpdated = $this->updateConfig();
+        $this->output->writeln(" Updated config: <info>{$configUpdated}</info>");
 
         $this->output->writeln('');
         info('Migration complete!');
@@ -258,8 +264,23 @@ class MigrateCommand extends Command
         }
     }
 
+    /** Check if the published config/brain.php needs updating. */
+    private function configNeedsUpdate(): bool
+    {
+        $configPath = config_path('brain.php');
+
+        if (! File::exists($configPath)) {
+            return false;
+        }
+
+        $content = File::get($configPath);
+
+        return str_contains($content, "'process' => env('BRAIN_PROCESS_SUFFIX'")
+            || str_contains($content, "'task' => env('BRAIN_TASK_SUFFIX'");
+    }
+
     /** Print a preview of all planned changes. */
-    private function printPreview(array $filesToUpdate, array $directoriesToRename, array $filesToRename): void
+    private function printPreview(array $filesToUpdate, array $directoriesToRename, array $filesToRename, bool $configNeedsUpdate): void
     {
         if ($filesToUpdate !== []) {
             $this->output->writeln(' <options=bold>Files to update:</>');
@@ -296,6 +317,12 @@ class MigrateCommand extends Command
                 $this->output->writeln('   • <comment>'.basename($oldPath).'</comment> → <info>'.basename((string) $newPath).'</info> in '.dirname($oldPath));
             }
 
+            $this->output->writeln('');
+        }
+
+        if ($configNeedsUpdate) {
+            $this->output->writeln(' <options=bold>Config to update:</>');
+            $this->output->writeln('   • <comment>config/brain.php</comment> → remove deprecated process/task suffix entries');
             $this->output->writeln('');
         }
     }
@@ -380,6 +407,50 @@ class MigrateCommand extends Command
         }
 
         return $count;
+    }
+
+    /** Update the published config/brain.php to use Workflow/Action naming. */
+    private function updateConfig(): string
+    {
+        $configPath = config_path('brain.php');
+
+        if (! File::exists($configPath)) {
+            return 'skipped (not published)';
+        }
+
+        $content = File::get($configPath);
+        $original = $content;
+
+        $content = str_replace(
+            [
+                'processes, tasks, and queries',
+                'processes, tasks, and queries',
+                "'process' => env('BRAIN_PROCESS_SUFFIX', 'Process'),",
+                "'task' => env('BRAIN_TASK_SUFFIX', 'Task'),",
+                "/** @deprecated Use 'workflow' instead. */",
+                "/** @deprecated Use 'action' instead. */",
+            ],
+            [
+                'workflows, actions, and queries',
+                'workflows, actions, and queries',
+                '',
+                '',
+                '',
+                '',
+            ],
+            $content
+        );
+
+        // Clean up leftover blank lines from removed entries
+        $content = preg_replace("/\n{3,}/", "\n\n", $content);
+
+        if ($content === $original) {
+            return 'already up to date';
+        }
+
+        File::put($configPath, $content);
+
+        return 'done';
     }
 
     /** Get a relative path from base to file. */

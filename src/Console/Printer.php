@@ -235,25 +235,66 @@ class Printer
                 return;
             }
 
-            $totalItems = count($items);
-
             if ($useDomains) {
                 $domain = data_get($domainData, 'domain', '');
                 $this->lines[] = [sprintf('  <fg=%s;options=bold>%s</>', $this->elemColors['DOMAIN'], strtoupper($domain))];
 
-                foreach ($items as $index => $item) {
-                    $isLast = ($index === $totalItems - 1);
-                    $this->addItemLine($item, $isLast, true);
-                }
+                $this->renderGroupedItems($items, true);
             } else {
-                foreach ($items as $index => $item) {
-                    $isLast = ($index === $totalItems - 1);
-                    $this->addItemLine($item, $isLast, false);
-                }
+                $this->renderGroupedItems($items, false);
             }
 
             $this->addNewLine();
         });
+    }
+
+    /** Render items, grouping by subdirectory when present. */
+    private function renderGroupedItems(array $items, bool $useDomains): void
+    {
+        $ungrouped = array_values(array_filter($items, fn (array $item): bool => data_get($item, 'data.group') === null));
+        $grouped = [];
+
+        foreach ($items as $item) {
+            $group = data_get($item, 'data.group');
+
+            if ($group !== null) {
+                $grouped[$group][] = $item;
+            }
+        }
+
+        $totalUngrouped = count($ungrouped);
+        $hasGroups = $grouped !== [];
+
+        foreach ($ungrouped as $index => $item) {
+            $isLast = ($index === $totalUngrouped - 1) && ! $hasGroups;
+            $this->addItemLine($item, $isLast, $useDomains);
+        }
+
+        if ($ungrouped !== [] && $hasGroups) {
+            $this->addNewLine();
+        }
+
+        $groupNames = array_keys($grouped);
+        $totalGroups = count($groupNames);
+
+        foreach ($groupNames as $groupIndex => $groupName) {
+            $groupItems = $grouped[$groupName];
+            $isLastGroup = ($groupIndex === $totalGroups - 1);
+
+            $indent = $useDomains ? '  ' : '';
+            $this->lines[] = [sprintf('%s<fg=%s;options=bold>%s</>', $indent, $this->elemColors['DOMAIN'], strtoupper((string) $groupName))];
+
+            $totalGroupItems = count($groupItems);
+
+            foreach ($groupItems as $itemIndex => $item) {
+                $isLast = ($itemIndex === $totalGroupItems - 1);
+                $this->addItemLine($item, $isLast, true);
+            }
+
+            if (! $isLastGroup) {
+                $this->addNewLine();
+            }
+        }
     }
 
     /**

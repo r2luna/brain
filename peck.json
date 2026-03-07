@@ -13,7 +13,8 @@
             "qery",
             "captainhook",
             "phpstsan",
-            "laravel's"
+            "laravel's",
+            "subdirectory"
         ],
         "paths": []
     }

@@ -477,6 +477,177 @@ PHP);
     expect($content)->not->toContain('extends task');
 });
 
+test('it updates config/brain.php removing deprecated suffix entries', function (): void {
+    File::ensureDirectoryExists($this->brainBase.'/Processes');
+    File::put($this->brainBase.'/Processes/CreateOrder.php', <<<'PHP'
+<?php
+
+namespace App\Brain\Processes;
+
+use Brain\Process;
+
+class CreateOrder extends Process
+{
+    protected array $tasks = [
+        //
+    ];
+}
+PHP);
+
+    $configContent = <<<'PHP'
+<?php
+
+return [
+    'root' => env('BRAIN_ROOT', 'Brain'),
+    'use_domains' => env('BRAIN_USE_DOMAINS', false),
+    'use_suffix' => env('BRAIN_USE_SUFFIX', false),
+    'suffixes' => [
+        'workflow' => env('BRAIN_WORKFLOW_SUFFIX', env('BRAIN_PROCESS_SUFFIX', 'Workflow')),
+        'action' => env('BRAIN_ACTION_SUFFIX', env('BRAIN_TASK_SUFFIX', 'Action')),
+        'query' => env('BRAIN_QUERY_SUFFIX', 'Query'),
+
+        /** @deprecated Use 'workflow' instead. */
+        'process' => env('BRAIN_PROCESS_SUFFIX', 'Process'),
+        /** @deprecated Use 'action' instead. */
+        'task' => env('BRAIN_TASK_SUFFIX', 'Task'),
+    ],
+    'log' => env('BRAIN_LOG_ENABLED', false),
+];
+PHP;
+
+    File::put(config_path('brain.php'), $configContent);
+
+    $this->artisan('brain:migrate')
+        ->expectsConfirmation('Apply these changes?', 'yes')
+        ->assertExitCode(0);
+
+    $updated = File::get(config_path('brain.php'));
+    expect($updated)->not->toContain("'process' => env('BRAIN_PROCESS_SUFFIX'");
+    expect($updated)->not->toContain("'task' => env('BRAIN_TASK_SUFFIX'");
+    expect($updated)->not->toContain('@deprecated');
+    expect($updated)->toContain("'workflow' => env('BRAIN_WORKFLOW_SUFFIX'");
+    expect($updated)->toContain("'action' => env('BRAIN_ACTION_SUFFIX'");
+
+    // Cleanup
+    File::delete(config_path('brain.php'));
+});
+
+test('it skips config update when config is not published', function (): void {
+    File::ensureDirectoryExists($this->brainBase.'/Processes');
+    File::put($this->brainBase.'/Processes/CreateOrder.php', <<<'PHP'
+<?php
+
+namespace App\Brain\Processes;
+
+use Brain\Process;
+
+class CreateOrder extends Process
+{
+    protected array $tasks = [
+        //
+    ];
+}
+PHP);
+
+    // Ensure no config file exists
+    if (File::exists(config_path('brain.php'))) {
+        File::delete(config_path('brain.php'));
+    }
+
+    $this->artisan('brain:migrate')
+        ->expectsConfirmation('Apply these changes?', 'yes')
+        ->expectsOutputToContain('skipped (not published)')
+        ->assertExitCode(0);
+});
+
+test('it reports config already up to date when no deprecated entries exist', function (): void {
+    File::ensureDirectoryExists($this->brainBase.'/Processes');
+    File::put($this->brainBase.'/Processes/CreateOrder.php', <<<'PHP'
+<?php
+
+namespace App\Brain\Processes;
+
+use Brain\Process;
+
+class CreateOrder extends Process
+{
+    protected array $tasks = [
+        //
+    ];
+}
+PHP);
+
+    $configContent = <<<'PHP'
+<?php
+
+return [
+    'suffixes' => [
+        'workflow' => env('BRAIN_WORKFLOW_SUFFIX', 'Workflow'),
+        'action' => env('BRAIN_ACTION_SUFFIX', 'Action'),
+        'query' => env('BRAIN_QUERY_SUFFIX', 'Query'),
+    ],
+];
+PHP;
+
+    File::put(config_path('brain.php'), $configContent);
+
+    $this->artisan('brain:migrate')
+        ->expectsConfirmation('Apply these changes?', 'yes')
+        ->expectsOutputToContain('already up to date')
+        ->assertExitCode(0);
+
+    // Cleanup
+    File::delete(config_path('brain.php'));
+});
+
+test('it shows config in dry-run preview', function (): void {
+    File::ensureDirectoryExists($this->brainBase.'/Workflows');
+    File::put($this->brainBase.'/Workflows/CreateOrder.php', <<<'PHP'
+<?php
+
+namespace App\Brain\Workflows;
+
+use Brain\Workflow;
+
+class CreateOrder extends Workflow
+{
+    protected array $actions = [
+        //
+    ];
+}
+PHP);
+
+    $configContent = <<<'PHP'
+<?php
+
+return [
+    'suffixes' => [
+        'workflow' => env('BRAIN_WORKFLOW_SUFFIX', env('BRAIN_PROCESS_SUFFIX', 'Workflow')),
+        'action' => env('BRAIN_ACTION_SUFFIX', env('BRAIN_TASK_SUFFIX', 'Action')),
+        'query' => env('BRAIN_QUERY_SUFFIX', 'Query'),
+        /** @deprecated Use 'workflow' instead. */
+        'process' => env('BRAIN_PROCESS_SUFFIX', 'Process'),
+        /** @deprecated Use 'action' instead. */
+        'task' => env('BRAIN_TASK_SUFFIX', 'Task'),
+    ],
+];
+PHP;
+
+    File::put(config_path('brain.php'), $configContent);
+
+    $this->artisan('brain:migrate', ['--dry-run' => true])
+        ->expectsOutputToContain('config/brain.php')
+        ->expectsOutputToContain('Dry-run complete')
+        ->assertExitCode(0);
+
+    // Config should NOT have been modified
+    $content = File::get(config_path('brain.php'));
+    expect($content)->toContain("'process' => env('BRAIN_PROCESS_SUFFIX'");
+
+    // Cleanup
+    File::delete(config_path('brain.php'));
+});
+
 test('it works with null root config (flat structure)', function (): void {
     config()->set('brain.root', null);
 

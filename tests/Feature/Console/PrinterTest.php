@@ -379,3 +379,122 @@ describe('without domains configuration', function (): void {
         ]);
     });
 });
+
+describe('subdirectory grouping', function (): void {
+    it('should group items by subdirectory', function (): void {
+        config()->set('brain.use_domains', false);
+        Terminal::shouldReceive('cols')->andReturn(71);
+
+        $mockOutput = Mockery::mock(OutputStyle::class);
+        $mockOutput->shouldReceive('isVerbose')->andReturn(false);
+        $mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+
+        $map = new BrainMap;
+        $map->map = collect([
+            'Root' => [
+                'path' => '/fake',
+                'processes' => [
+                    ['name' => 'RootProcess', 'fullName' => 'App\\RootProcess', 'chain' => false, 'onQueue' => null, 'group' => null, 'properties' => [], 'tasks' => []],
+                ],
+                'tasks' => [
+                    ['name' => 'AuthTask', 'fullName' => 'App\\Auth\\AuthTask', 'queue' => false, 'onQueue' => null, 'type' => 'task', 'group' => 'Auth', 'properties' => []],
+                    ['name' => 'AuthTask2', 'fullName' => 'App\\Auth\\AuthTask2', 'queue' => false, 'onQueue' => null, 'type' => 'task', 'group' => 'Auth', 'properties' => []],
+                ],
+                'queries' => [
+                    ['name' => 'AuthQuery', 'fullName' => 'App\\Auth\\AuthQuery', 'group' => 'Auth', 'properties' => []],
+                ],
+            ],
+        ]);
+
+        $printer = new Printer($map);
+        $printerReflection = new PrinterReflection($printer);
+        $printerReflection->set('output', $mockOutput);
+        $printerReflection->run('getTerminalWidth');
+        $printerReflection->run('run');
+        $lines = $printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['<fg=blue;options=bold>PROC</>  <fg=white>RootProcess</><fg=#6C7280> '.str_repeat('·', 53).'</>'],
+            [''],
+            ['<fg=#6C7280;options=bold>AUTH</>'],
+            ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>AuthTask</><fg=#6C7280> '.str_repeat('·', 50).'</>'],
+            ['  <fg=#6C7280>├── </><fg=yellow;options=bold>TASK</>  <fg=white>AuthTask2</><fg=#6C7280> '.str_repeat('·', 49).'</>'],
+            ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>AuthQuery</> <fg=#6C7280>'.str_repeat('·', 49).'</>'],
+            [''],
+        ]);
+    });
+
+    it('should render multiple groups with separator between them', function (): void {
+        config()->set('brain.use_domains', false);
+        Terminal::shouldReceive('cols')->andReturn(71);
+
+        $mockOutput = Mockery::mock(OutputStyle::class);
+        $mockOutput->shouldReceive('isVerbose')->andReturn(false);
+        $mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+
+        $map = new BrainMap;
+        $map->map = collect([
+            'Root' => [
+                'path' => '/fake',
+                'processes' => [],
+                'tasks' => [
+                    ['name' => 'AuthTask', 'fullName' => 'App\\AuthTask', 'queue' => false, 'onQueue' => null, 'type' => 'task', 'group' => 'Auth', 'properties' => []],
+                    ['name' => 'PayTask', 'fullName' => 'App\\PayTask', 'queue' => false, 'onQueue' => null, 'type' => 'task', 'group' => 'Payment', 'properties' => []],
+                ],
+                'queries' => [],
+            ],
+        ]);
+
+        $printer = new Printer($map);
+        $printerReflection = new PrinterReflection($printer);
+        $printerReflection->set('output', $mockOutput);
+        $printerReflection->run('getTerminalWidth');
+        $printerReflection->run('run');
+        $lines = $printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['<fg=#6C7280;options=bold>AUTH</>'],
+            ['  <fg=#6C7280>└── </><fg=yellow;options=bold>TASK</>  <fg=white>AuthTask</><fg=#6C7280> '.str_repeat('·', 50).'</>'],
+            [''],
+            ['<fg=#6C7280;options=bold>PAYMENT</>'],
+            ['  <fg=#6C7280>└── </><fg=yellow;options=bold>TASK</>  <fg=white>PayTask</><fg=#6C7280> '.str_repeat('·', 51).'</>'],
+            [''],
+        ]);
+    });
+
+    it('should group items by subdirectory with domains enabled', function (): void {
+        config()->set('brain.use_domains', true);
+        Terminal::shouldReceive('cols')->andReturn(71);
+
+        $mockOutput = Mockery::mock(OutputStyle::class);
+        $mockOutput->shouldReceive('isVerbose')->andReturn(false);
+        $mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+
+        $map = new BrainMap;
+        $map->map = collect([
+            'MyDomain' => [
+                'domain' => 'MyDomain',
+                'path' => '/fake',
+                'processes' => [],
+                'tasks' => [
+                    ['name' => 'PayTask', 'fullName' => 'App\\PayTask', 'queue' => false, 'onQueue' => null, 'type' => 'task', 'group' => 'Payment', 'properties' => []],
+                ],
+                'queries' => [],
+            ],
+        ]);
+
+        $printer = new Printer($map);
+        $printerReflection = new PrinterReflection($printer);
+        $printerReflection->set('output', $mockOutput);
+        $printerReflection->run('getTerminalWidth');
+        $printerReflection->run('run');
+        $lines = $printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['  <fg=#6C7280;options=bold>MYDOMAIN</>'],
+            ['  <fg=#6C7280;options=bold>PAYMENT</>'],
+            ['  <fg=#6C7280>└── </><fg=yellow;options=bold>TASK</>  <fg=white>PayTask</><fg=#6C7280> '.str_repeat('·', 51).'</>'],
+            [''],
+        ]);
+    });
+});

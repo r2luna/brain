@@ -159,6 +159,7 @@ class BrainMap
                 $hasChainProperty = $reflection->hasProperty('chain');
                 $chainProperty = $hasChainProperty ? $reflection->getProperty('chain') : null;
                 $chainValue = $chainProperty->getValue(new $reflection->name([]));
+                $group = $value->getRelativePath();
                 $value = $value->getPathname();
 
                 $onQueueAttr = $reflection->getAttributes(OnQueue::class);
@@ -169,6 +170,7 @@ class BrainMap
                     'fullName' => $reflection->name,
                     'chain' => $chainValue,
                     'onQueue' => $queueName,
+                    'group' => $group !== '' ? $group : null,
                     'properties' => $this->getPropertiesFor($reflection),
                     'tasks' => $this->getProcessesTasks($reflection),
                 ];
@@ -200,7 +202,7 @@ class BrainMap
         }
 
         return collect(File::allFiles($path))
-            ->map(fn (SplFileInfo $task): array => $this->getTask($task))
+            ->map(fn (SplFileInfo $task): array => $this->getTask($task, $task->getRelativePath()))
             ->toArray();
     }
 
@@ -214,7 +216,7 @@ class BrainMap
      *               - 'queue': A boolean indicating if the class implements the ShouldQueue interface.
      *               - 'properties': An array of properties for the class.
      */
-    private function getTask(SplFileInfo|string $task): array
+    private function getTask(SplFileInfo|string $task, string $relativePath = ''): array
     {
         $reflection = $this->getReflectionClass($task);
         $isProcess = $reflection->isSubclassOf(Process::class);
@@ -228,6 +230,7 @@ class BrainMap
             'queue' => $reflection->implementsInterface(ShouldQueue::class),
             'onQueue' => $queueName,
             'type' => $isProcess ? 'process' : 'task',
+            'group' => $relativePath !== '' ? $relativePath : null,
             'properties' => $this->getPropertiesFor($reflection),
         ];
 
@@ -302,8 +305,9 @@ class BrainMap
         }
 
         return collect(File::allFiles($path))
-            ->map(function ($task): array {
+            ->map(function (SplFileInfo $task): array {
                 $reflection = $this->getReflectionClass($task);
+                $group = $task->getRelativePath();
 
                 $properties = [];
                 $constructor = $reflection->getConstructor();
@@ -322,6 +326,7 @@ class BrainMap
                 return [
                     'name' => $reflection->getShortName(),
                     'fullName' => $reflection->name,
+                    'group' => $group !== '' ? $group : null,
                     'properties' => $properties,
                 ];
             })

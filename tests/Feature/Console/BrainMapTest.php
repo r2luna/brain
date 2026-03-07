@@ -33,6 +33,7 @@ describe('load testsuite', function (): void {
                         'fullName' => Tests\Feature\Fixtures\Brain\Example\Processes\ExampleProcess::class,
                         'chain' => false,
                         'onQueue' => null,
+                        'group' => null,
                         'properties' => [],
                         'tasks' => [
                             [
@@ -41,6 +42,7 @@ describe('load testsuite', function (): void {
                                 'queue' => true,
                                 'onQueue' => null,
                                 'type' => 'task',
+                                'group' => null,
                                 'properties' => [],
                             ],
                         ],
@@ -53,6 +55,7 @@ describe('load testsuite', function (): void {
                         'queue' => false,
                         'onQueue' => null,
                         'type' => 'task',
+                        'group' => null,
                         'properties' => [
                             ['name' => 'email', 'type' => 'string', 'direction' => 'output', 'sensitive' => false],
                             ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output', 'sensitive' => false],
@@ -64,6 +67,7 @@ describe('load testsuite', function (): void {
                         'queue' => false,
                         'onQueue' => null,
                         'type' => 'task',
+                        'group' => null,
                         'properties' => [
                             ['name' => 'email', 'type' => 'string', 'direction' => 'output', 'sensitive' => false],
                             ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output', 'sensitive' => false],
@@ -76,6 +80,7 @@ describe('load testsuite', function (): void {
                         'queue' => false,
                         'onQueue' => null,
                         'type' => 'task',
+                        'group' => null,
                         'properties' => [],
                     ],
                     [
@@ -84,6 +89,7 @@ describe('load testsuite', function (): void {
                         'queue' => true,
                         'onQueue' => null,
                         'type' => 'task',
+                        'group' => null,
                         'properties' => [],
                     ],
                 ],
@@ -91,6 +97,7 @@ describe('load testsuite', function (): void {
                     [
                         'name' => 'ExampleQuery',
                         'fullName' => Tests\Feature\Fixtures\Brain\Example\Queries\ExampleQuery::class,
+                        'group' => null,
                         'properties' => [
                             ['name' => 'name', 'type' => 'string'],
                         ],
@@ -106,6 +113,7 @@ describe('load testsuite', function (): void {
                         'fullName' => Tests\Feature\Fixtures\Brain\Example2\Processes\ExampleProcess2::class,
                         'chain' => true,
                         'onQueue' => null,
+                        'group' => null,
                         'properties' => [],
                         'tasks' => [
                             [
@@ -114,6 +122,7 @@ describe('load testsuite', function (): void {
                                 'queue' => true,
                                 'onQueue' => null,
                                 'type' => 'task',
+                                'group' => null,
                                 'properties' => [],
                             ],
                             [
@@ -122,6 +131,7 @@ describe('load testsuite', function (): void {
                                 'queue' => false,
                                 'onQueue' => null,
                                 'type' => 'process',
+                                'group' => null,
                                 'properties' => [],
                                 'tasks' => [
                                     [
@@ -130,6 +140,7 @@ describe('load testsuite', function (): void {
                                         'queue' => true,
                                         'onQueue' => null,
                                         'type' => 'task',
+                                        'group' => null,
                                         'properties' => [],
                                     ],
                                 ],
@@ -142,6 +153,7 @@ describe('load testsuite', function (): void {
                     [
                         'name' => 'ExampleQuery',
                         'fullName' => Tests\Feature\Fixtures\Brain\Example2\Queries\ExampleQuery::class,
+                        'group' => null,
                         'properties' => [],
                     ],
                 ],
@@ -174,8 +186,9 @@ describe('loadProcessesFor testsuite', function (): void {
                     'chain' => false,
                     'onQueue' => null,
                     'properties' => [],
+                    'group' => null,
                     'tasks' => [
-                        ['name' => 'ExampleTask4', 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class, 'queue' => true, 'onQueue' => null, 'properties' => [], 'type' => 'task'],
+                        ['name' => 'ExampleTask4', 'fullName' => Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4::class, 'queue' => true, 'onQueue' => null, 'type' => 'task', 'group' => null, 'properties' => []],
                     ],
                 ],
             ]);
@@ -217,6 +230,7 @@ describe('loadTasksFor testsuite', function (): void {
                     'queue' => false,
                     'onQueue' => null,
                     'type' => 'task',
+                    'group' => null,
                     'properties' => [
                         ['name' => 'email', 'type' => 'string', 'direction' => 'output', 'sensitive' => false],
                         ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output', 'sensitive' => false],
@@ -228,6 +242,7 @@ describe('loadTasksFor testsuite', function (): void {
                     'queue' => false,
                     'onQueue' => null,
                     'type' => 'task',
+                    'group' => null,
                     'properties' => [
                         ['name' => 'email', 'type' => 'string', 'direction' => 'output', 'sensitive' => false],
                         ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output', 'sensitive' => false],
@@ -240,6 +255,7 @@ describe('loadTasksFor testsuite', function (): void {
                     'queue' => false,
                     'onQueue' => null,
                     'type' => 'task',
+                    'group' => null,
                     'properties' => [],
                 ],
                 [
@@ -248,6 +264,7 @@ describe('loadTasksFor testsuite', function (): void {
                     'queue' => true,
                     'onQueue' => null,
                     'type' => 'task',
+                    'group' => null,
                     'properties' => [],
                 ],
             ]);

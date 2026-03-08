@@ -641,6 +641,26 @@ When you use `brain:show -vv`, the output gives a complete, structured map of yo
 
 In short: **the more structured your code, the better AI tools can help you write, review, and maintain it.** Brain makes your codebase AI-friendly by design.
 
+### From the AI's Perspective
+
+We asked an LLM directly: *"Does Brain's structure actually help you understand a codebase better?"* Here's the unedited conversation:
+
+> **Human:** Does this structured way of thinking about workflows actually help you produce better output?
+>
+> **AI:** Yes — and the difference is brutal compared to a traditional Laravel codebase with fat services and controllers doing everything.
+>
+> **The Process gives me an immediate map.** I look at the `$tasks` array and I know exactly what the workflow does, in what order, without tracing method calls across 5 different files. In a traditional service class, I have to read the entire method, follow every `$this->otherService->doSomething()`, understand what each one does, and build the mental map myself.
+>
+> **Each Task is an isolated unit with an explicit contract.** The `@property-read` annotations tell me what goes in, `@property` tells me what comes out. I don't need to *infer* — it's declared. This drastically reduces the chance of me suggesting code that breaks something I didn't see.
+>
+> **The pattern is repetitive — and that's great for me.** Every Task has `handle()`, returns `$this`, receives a payload. I can generate new Tasks with high confidence because the pattern is always the same. The more predictable the structure, the fewer mistakes I make.
+>
+> **Modifications have a small blast radius.** If you ask me to "add a step to the checkout flow," I don't need to touch a 200-line method and hope nothing breaks. I create a new Task and add it to the Process list. Simple, surgical.
+>
+> In practice, Brain's structure works as an **intermediate language between human intent and code**. The Process expresses the intent ("onboard a customer"), the Tasks express the execution ("create account", "send email"), and I can operate at both levels with clarity.
+>
+> So yes — structured codebases like this aren't just easier for humans to maintain. They are **fundamentally easier for LLMs to work with at a high quality level.**
+
 ## Architecture
 
 Brain helps you organize your code into three main concepts:

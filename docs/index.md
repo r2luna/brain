@@ -32,4 +32,7 @@ features:
   - icon: 🔒
     title: Sensitive Data Protection
     details: Mark payload properties as sensitive — automatically redacted in logs, JSON, and debug output.
+  - icon: 🤖
+    title: AI-Ready Architecture
+    details: The explicit workflow structure makes your codebase dramatically easier for LLMs and AI coding assistants to understand, navigate, and modify.
 ---

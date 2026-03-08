@@ -55,6 +55,7 @@ export default defineConfig({
           { text: 'Queues', link: '/queues' },
           { text: 'Events & Logging', link: '/events' },
           { text: 'Sensitive Data', link: '/sensitive' },
+          { text: 'AI & LLM Benefits', link: '/ai-benefits' },
         ],
       },
       {

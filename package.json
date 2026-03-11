@@ -8,5 +8,9 @@
   },
   "devDependencies": {
     "vitepress": "^1.6.4"
+  },
+  "overrides": {
+    "esbuild": "^0.25.0",
+    "rollup": "^4.59.0"
   }
 }

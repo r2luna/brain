@@ -27,11 +27,11 @@ class CreateUser extends Workflow
 }
 ```
 
-## Dispatching
+## Running
 
 ```php
 // Synchronous (within a transaction)
-CreateUser::dispatchSync([
+CreateUser::run([
     'name'  => 'John Doe',
     'email' => 'john@example.com',
 ]);

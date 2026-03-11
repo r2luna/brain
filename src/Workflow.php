@@ -80,6 +80,14 @@ class Workflow
     }
 
     /**
+     * Run the workflow synchronously.
+     */
+    public static function run(array|object|null $payload = null): object|array|null
+    {
+        return static::dispatchSync($payload);
+    }
+
+    /**
      * Be able to access all actions publicly.
      */
     public function getActions(): array
@@ -136,7 +144,7 @@ class Workflow
         try {
             $output = $this->chain
                 ? $this->runInChain($this->payload)
-                : $this->run($this->payload);
+                : $this->runActions($this->payload);
 
             $this->fireEvent(Processed::class, [
                 'timestamp' => microtime(true),
@@ -193,7 +201,7 @@ class Workflow
      *
      * @throws ReflectionException|Throwable
      */
-    private function run(array|object|null $payload): ?object
+    private function runActions(array|object|null $payload): ?object
     {
         DB::beginTransaction();
 

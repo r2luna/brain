@@ -20,6 +20,22 @@ The primary class names have changed:
 | `make:process` | `make:workflow` |
 | `make:task` | `make:action` |
 
+#### Static `run()` Method
+
+Workflows and Actions now have a static `run()` method that wraps `dispatchSync()`:
+
+```php
+// v2.x
+CreateUser::dispatchSync($payload);
+RegisterUser::dispatchSync($payload);
+
+// v3.0
+CreateUser::run($payload);
+RegisterUser::run($payload);
+```
+
+`dispatchSync()` still works, but `run()` is the recommended way to execute synchronously.
+
 #### Configuration Suffixes
 
 ```php

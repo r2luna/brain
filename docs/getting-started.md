@@ -84,10 +84,10 @@ class CreateUser extends Workflow
 }
 ```
 
-## Dispatch
+## Run
 
 ```php
-CreateUser::dispatchSync([
+CreateUser::run([
     'name'  => 'John Doe',
     'email' => 'john@example.com',
 ]);

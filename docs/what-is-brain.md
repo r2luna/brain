@@ -8,8 +8,8 @@ Instead of scattering business logic across controllers, models, and services, B
 
 | Concept   | Purpose                                       | Invocation                            |
 |-----------|-----------------------------------------------|---------------------------------------|
-| Workflow  | Orchestrates a sequence of actions in a transaction | `MyWorkflow::dispatchSync($payload)` |
-| Action    | A single unit of work that mutates state       | `MyAction::dispatchSync($payload)`    |
+| Workflow  | Orchestrates a sequence of actions in a transaction | `MyWorkflow::run($payload)` |
+| Action    | A single unit of work that mutates state       | `MyAction::run($payload)`    |
 | Query     | A read-only operation that returns data        | `MyQuery::run($args)`               |
 
 ## Why Brain?
@@ -32,8 +32,8 @@ class CreateUser extends Workflow
     ];
 }
 
-// Dispatch it
-CreateUser::dispatchSync([
+// Run it
+CreateUser::run([
     'name'  => 'John Doe',
     'email' => 'john@example.com',
 ]);

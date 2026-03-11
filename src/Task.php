@@ -109,6 +109,14 @@ abstract class Task
     }
 
     /**
+     * Run the task synchronously.
+     */
+    public static function run(array|object|null $payload = null): static
+    {
+        return static::dispatchSync($payload);
+    }
+
+    /**
      * Dispatch the job with the given arguments.
      *
      * @param  mixed  ...$arguments

@@ -82,6 +82,14 @@ class Process
     }
 
     /**
+     * Run the process synchronously.
+     */
+    public static function run(array|object|null $payload = null): object|array|null
+    {
+        return static::dispatchSync($payload);
+    }
+
+    /**
      * Be able to access all tasks publicly.
      */
     public function getTasks(): array
@@ -138,7 +146,7 @@ class Process
         try {
             $output = $this->chain
                 ? $this->runInChain($this->payload)
-                : $this->run($this->payload);
+                : $this->runTasks($this->payload);
 
             $this->fireEvent(Processed::class, [
                 'timestamp' => microtime(true),
@@ -195,7 +203,7 @@ class Process
      *
      * @throws ReflectionException|Throwable
      */
-    private function run(array|object|null $payload): ?object
+    private function runTasks(array|object|null $payload): ?object
     {
         DB::beginTransaction();
 

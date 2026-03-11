@@ -91,10 +91,10 @@ class SendWelcomeEmail extends Action
 
 ## Standalone Usage
 
-Actions can be dispatched independently, outside of a workflow:
+Actions can be run independently, outside of a workflow:
 
 ```php
-RegisterUser::dispatchSync([
+RegisterUser::run([
     'name'  => 'John Doe',
     'email' => 'john@example.com',
 ]);
@@ -181,6 +181,6 @@ class CheckEligibility extends Action
 - `toArray()` — Returns the action payload as an array.
 
 ```php
-$action = RegisterUser::dispatchSync(['name' => 'John', 'email' => 'john@example.com']);
+$action = RegisterUser::run(['name' => 'John', 'email' => 'john@example.com']);
 $action->toArray(); // ['name' => 'John', 'email' => 'john@example.com']
 ```

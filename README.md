@@ -465,15 +465,21 @@ class CreateUserProcess extends Process
     ];
 }
 
-// Using a Process
-CreateUserProcess::dispatch([
+// Running a Process synchronously
+CreateUserProcess::run([
     'name' => 'John Doe',
     'email' => 'john@example.com'
 ]);
 
-// Using a Task without a process
-SendWelcomeEmailTask::dispatch([
+// Running a Task without a process
+SendWelcomeEmailTask::run([
     'user' => $user
+]);
+
+// Dispatching to the queue
+CreateUserProcess::dispatch([
+    'name' => 'John Doe',
+    'email' => 'john@example.com'
 ]);
 ```
 

@@ -648,6 +648,49 @@ PHP;
     File::delete(config_path('brain.php'));
 });
 
+test('it handles findDirectoriesToRename with non-directory path gracefully', function (): void {
+    $command = new Brain\Console\MigrateCommand;
+    $reflection = new ReflectionClass($command);
+    $method = $reflection->getMethod('findDirectoriesToRename');
+
+    $directories = [];
+    $method->invokeArgs($command, ['/nonexistent/path/that/does/not/exist', &$directories]);
+
+    expect($directories)->toBeEmpty();
+});
+
+test('it skips non-php files when renaming suffixed classes', function (): void {
+    File::ensureDirectoryExists($this->brainBase.'/Tasks');
+    File::put($this->brainBase.'/Tasks/ChargeUserTask.php', <<<'PHP'
+<?php
+
+namespace App\Brain\Tasks;
+
+use Brain\Task;
+
+class ChargeUserTask extends Task
+{
+    public function handle(): self
+    {
+        return $this;
+    }
+}
+PHP);
+
+    // Add a non-PHP file alongside
+    File::put($this->brainBase.'/Tasks/notes.txt', 'ChargeUserTask reference here');
+
+    $this->artisan('brain:migrate')
+        ->expectsConfirmation('Apply these changes?', 'yes')
+        ->assertExitCode(0);
+
+    // PHP file should be renamed
+    expect(File::exists($this->brainBase.'/Actions/ChargeUserAction.php'))->toBeTrue();
+
+    // Non-PHP file should not have been modified
+    expect(File::get($this->brainBase.'/Actions/notes.txt'))->toBe('ChargeUserTask reference here');
+});
+
 test('it works with null root config (flat structure)', function (): void {
     config()->set('brain.root');
 

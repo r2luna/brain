@@ -347,6 +347,20 @@ it('should not affect non-queued actions when #[OnQueue] is set on workflow', fu
     expect($result->value)->toBe(1);
 });
 
+it('should run synchronously using the static run method', function (): void {
+    class RunWorkflow extends Workflow
+    {
+        protected array $actions = [
+            SimpleAction::class,
+        ];
+    }
+
+    $result = RunWorkflow::run(['value' => 0]);
+
+    expect($result)->toBeObject()
+        ->and($result->value)->toBe(1);
+});
+
 it('should apply workflow #[OnQueue] to chained actions', function (): void {
     class OnQueueChainAction extends Action implements ShouldQueue {}
     class OnQueueChainAction2 extends Action implements ShouldQueue {}

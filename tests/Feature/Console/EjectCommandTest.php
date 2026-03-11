@@ -323,6 +323,56 @@ test('it warns when no PSR-4 mapping matches the namespace', function (): void {
     }
 });
 
+test('it handles missing composer.json gracefully', function (): void {
+    $composerPath = base_path('composer.json');
+    $originalComposer = File::exists($composerPath) ? File::get($composerPath) : null;
+
+    // Remove composer.json
+    if (File::exists($composerPath)) {
+        File::delete($composerPath);
+    }
+
+    $this->artisan('brain:eject', ['--namespace' => 'Custom\\Brain'])
+        ->expectsConfirmation('Do you want to proceed with the eject?', 'yes')
+        ->assertExitCode(0);
+
+    // Fallback should use lcfirst
+    $fallbackTarget = base_path('custom/Brain');
+    expect(File::isDirectory($fallbackTarget))->toBeTrue();
+
+    // Cleanup
+    File::deleteDirectory(base_path('custom'));
+
+    if ($originalComposer !== null) {
+        File::put($composerPath, $originalComposer);
+    }
+});
+
+test('it handles invalid composer.json gracefully', function (): void {
+    $composerPath = base_path('composer.json');
+    $originalComposer = File::exists($composerPath) ? File::get($composerPath) : null;
+
+    // Write invalid JSON
+    File::put($composerPath, 'not valid json{{{');
+
+    $this->artisan('brain:eject', ['--namespace' => 'Custom\\Brain'])
+        ->expectsConfirmation('Do you want to proceed with the eject?', 'yes')
+        ->assertExitCode(0);
+
+    // Fallback should use lcfirst
+    $fallbackTarget = base_path('custom/Brain');
+    expect(File::isDirectory($fallbackTarget))->toBeTrue();
+
+    // Cleanup
+    File::deleteDirectory(base_path('custom'));
+
+    if ($originalComposer !== null) {
+        File::put($composerPath, $originalComposer);
+    } else {
+        File::delete($composerPath);
+    }
+});
+
 test('it handles PSR-4 mapping with array paths', function (): void {
     $composerPath = base_path('composer.json');
     $originalComposer = File::exists($composerPath) ? File::get($composerPath) : null;

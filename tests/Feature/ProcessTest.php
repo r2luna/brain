@@ -352,6 +352,20 @@ it('should not affect non-queued tasks when #[OnQueue] is set on process', funct
     expect($result->value)->toBe(1);
 });
 
+it('should run synchronously using the static run method', function (): void {
+    class RunProcess extends Process
+    {
+        protected array $tasks = [
+            SimpleTask::class,
+        ];
+    }
+
+    $result = RunProcess::run(['value' => 0]);
+
+    expect($result)->toBeObject()
+        ->and($result->value)->toBe(1);
+});
+
 it('should apply process #[OnQueue] to chained tasks', function (): void {
     class OnQueueChainTask extends Task implements ShouldQueue {}
     class OnQueueChainTask2 extends Task implements ShouldQueue {}

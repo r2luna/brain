@@ -196,6 +196,59 @@ it('should print task properties of a process when using -vv', function (): void
     ]);
 });
 
+it('should display W type for workflow sub-items in verbose mode', function (): void {
+    config()->set('brain.use_domains', false);
+    Terminal::shouldReceive('cols')->andReturn(71);
+
+    $mockOutput = Mockery::mock(OutputStyle::class);
+    $mockOutput->shouldReceive('isVerbose')->andReturn(true);
+    $mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+
+    $map = new BrainMap;
+    $map->map = collect([
+        'Root' => [
+            'path' => '/fake',
+            'workflows' => [
+                [
+                    'name' => 'ParentWorkflow',
+                    'fullName' => 'App\\ParentWorkflow',
+                    'chain' => false,
+                    'onQueue' => null,
+                    'group' => null,
+                    'properties' => [],
+                    'tasks' => [
+                        [
+                            'name' => 'SubWorkflow',
+                            'fullName' => 'App\\SubWorkflow',
+                            'queue' => false,
+                            'onQueue' => null,
+                            'type' => 'workflow',
+                            'group' => null,
+                            'properties' => [],
+                            'tasks' => [],
+                        ],
+                    ],
+                ],
+            ],
+            'actions' => [],
+            'processes' => [],
+            'tasks' => [],
+            'queries' => [],
+        ],
+    ]);
+
+    $printer = new Printer($map);
+    $printerReflection = new PrinterReflection($printer);
+    $printerReflection->set('output', $mockOutput);
+    $printerReflection->run('getTerminalWidth');
+    $printerReflection->run('run');
+    $lines = $printerReflection->get('lines');
+
+    // The sub-item line should contain 'W' for workflow type
+    $subItemLine = $lines[1][0];
+    expect($subItemLine)->toContain('<fg=blue;options=bold>W</>');
+});
+
 // --------------------
 // -vv Sensitive properties
 

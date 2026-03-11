@@ -499,6 +499,31 @@ describe('loadQueriesFor testsuite', function (): void {
     });
 });
 
+describe('getTask with workflow class', function (): void {
+    it('should detect workflow type and include sub-actions when a workflow is passed to getTask', function (): void {
+        $method = $this->reflection->getMethod('getTask');
+        $output = $method->invokeArgs($this->object, [Tests\Feature\Fixtures\Brain\Example3\Workflows\ExampleWorkflow::class]);
+
+        expect($output['type'])->toBe('workflow')
+            ->and($output['name'])->toBe('ExampleWorkflow')
+            ->and($output)->toHaveKey('tasks')
+            ->and($output['tasks'])->toHaveCount(1)
+            ->and($output['tasks'][0]['name'])->toBe('ExampleAction');
+    });
+});
+
+describe('getAction with workflow class', function (): void {
+    it('should detect workflow type and include sub-actions when a workflow is passed to getAction', function (): void {
+        $method = $this->reflection->getMethod('getAction');
+        $output = $method->invokeArgs($this->object, [Tests\Feature\Fixtures\Brain\Example3\Workflows\ExampleWorkflow::class]);
+
+        expect($output['type'])->toBe('workflow')
+            ->and($output)->toHaveKey('tasks')
+            ->and($output['tasks'])->toHaveCount(1)
+            ->and($output['tasks'][0]['name'])->toBe('ExampleAction');
+    });
+});
+
 describe('getReflectionClass testsuite', function (): void {
     it('should create a reflection class from a given string', function (): void {
         $method = $this->reflection->getMethod('getReflectionClass');

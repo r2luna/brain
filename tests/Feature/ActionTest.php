@@ -503,6 +503,23 @@ it('workflow calls finalize on action instances and fires Processed event', func
     Event::assertDispatched(Processed::class);
 });
 
+it('should run synchronously using the static run method', function (): void {
+    class RunAction extends Action
+    {
+        public function handle(): self
+        {
+            $this->payload->ran = true;
+
+            return $this;
+        }
+    }
+
+    $result = RunAction::run(['value' => 1]);
+
+    expect($result)->toBeInstanceOf(RunAction::class)
+        ->and($result->payload->ran)->toBeTrue();
+});
+
 it('queued actions are finalized before going through next middleware', function (): void {
     Event::fake();
 

@@ -503,6 +503,23 @@ it('process calls finalize on task instances and fires Processed event', functio
     Event::assertDispatched(Processed::class);
 });
 
+it('should run synchronously using the static run method', function (): void {
+    class RunTask extends Task
+    {
+        public function handle(): self
+        {
+            $this->payload->ran = true;
+
+            return $this;
+        }
+    }
+
+    $result = RunTask::run(['value' => 1]);
+
+    expect($result)->toBeInstanceOf(RunTask::class)
+        ->and($result->payload->ran)->toBeTrue();
+});
+
 it('queued tasks are finalized before going through next middleware', function (): void {
     Event::fake();
 

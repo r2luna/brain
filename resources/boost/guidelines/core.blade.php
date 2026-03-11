@@ -1,40 +1,40 @@
 @php /** @var \Laravel\Boost\Install\GuidelineAssist $assist */ @endphp
 
-## Brain - Process, Task & Query Architecture
+## Brain - Workflow, Action & Query Architecture
 
-Brain (`r2luna/brain`) organizes business logic into three core concepts: **Processes**, **Tasks**, and **Queries**. Use them to keep controllers thin, logic reusable, and side-effects traceable.
+Brain (`r2luna/brain`) organizes business logic into three core concepts: **Workflows**, **Actions**, and **Queries**. Use them to keep controllers thin, logic reusable, and side-effects traceable.
 
-| Concept | Purpose | Invocation |
-|---------|---------|------------|
-| Process | Orchestrates a sequence of tasks | `MyProcess::dispatchSync($payload)` |
-| Task    | A single unit of work that mutates state | `MyTask::dispatchSync($payload)` |
-| Query   | A read-only operation that returns data | `MyQuery::run($args)` |
+| Concept  | Purpose | Invocation |
+|----------|---------|------------|
+| Workflow | Orchestrates a sequence of actions | `MyWorkflow::run($payload)` |
+| Action   | A single unit of work that mutates state | `MyAction::run($payload)` |
+| Query    | A read-only operation that returns data | `MyQuery::run($args)` |
 
 ### Artisan Commands
 
-- Create a Process: `{{ $assist->artisanCommand('make:process CreateOrder') }}`
-- Create a Task: `{{ $assist->artisanCommand('make:task ChargeCustomer') }}`
+- Create a Workflow: `{{ $assist->artisanCommand('make:workflow CreateOrder') }}`
+- Create an Action: `{{ $assist->artisanCommand('make:action ChargeCustomer') }}`
 - Create a Query: `{{ $assist->artisanCommand('make:query GetOrdersByUser') }}`
-- Create a Test: `{{ $assist->artisanCommand('make:test CreateOrderTest --stub=process') }}`
+- Create a Test: `{{ $assist->artisanCommand('make:test CreateOrderTest --stub=workflow') }}`
 - Visualize structure: `{{ $assist->artisanCommand('brain:show') }}`
 - Run interactively: `{{ $assist->artisanCommand('brain:run') }}`
 - Rerun a previous execution: `{{ $assist->artisanCommand('brain:run --rerun') }}`
 
 When `brain.use_domains` is enabled, pass a domain as the second argument:
 
-`{{ $assist->artisanCommand('make:task ChargeCustomer Orders') }}`
+`{{ $assist->artisanCommand('make:action ChargeCustomer Orders') }}`
 
 ---
 
-### Processes
+### Workflows
 
-A Process runs a list of tasks in order, wrapping them in a database transaction. Define tasks in the `$tasks` array.
+A Workflow runs a list of actions in order, wrapping them in a database transaction. Define actions in the `$actions` array.
 
 @verbatim
-<code-snippet name="Process Example" lang="php">
-class CreateOrder extends Process
+<code-snippet name="Workflow Example" lang="php">
+class CreateOrder extends Workflow
 {
-    protected array $tasks = [
+    protected array $actions = [
         ValidateInventory::class,
         ChargeCustomer::class,
         CreateOrderRecord::class,
@@ -42,30 +42,30 @@ class CreateOrder extends Process
     ];
 }
 
-// Dispatch synchronously
-$result = CreateOrder::dispatchSync(['userId' => 1, 'items' => $items]);
+// Run synchronously
+$result = CreateOrder::run(['userId' => 1, 'items' => $items]);
 </code-snippet>
 @endverbatim
 
-**Adding tasks dynamically:**
+**Adding actions dynamically:**
 
 @verbatim
-<code-snippet name="Dynamic Tasks" lang="php">
-$process = new CreateOrder(['userId' => 1]);
-$process->addTask(ApplyDiscount::class);
-$result = $process->handle();
+<code-snippet name="Dynamic Actions" lang="php">
+$workflow = new CreateOrder(['userId' => 1]);
+$workflow->addAction(ApplyDiscount::class);
+$result = $workflow->handle();
 </code-snippet>
 @endverbatim
 
-**Chaining (queue all tasks as a Bus chain):**
+**Chaining (queue all actions as a Bus chain):**
 
 @verbatim
-<code-snippet name="Chained Process" lang="php">
-class ImportData extends Process
+<code-snippet name="Chained Workflow" lang="php">
+class ImportData extends Workflow
 {
     protected bool $chain = true;
 
-    protected array $tasks = [
+    protected array $actions = [
         ParseCsvFile::class,
         ValidateRows::class,
         InsertRecords::class,
@@ -74,14 +74,14 @@ class ImportData extends Process
 </code-snippet>
 @endverbatim
 
-**Nesting sub-processes:** Add another Process class to the `$tasks` array. If a sub-process cancels itself, cancellation does not propagate to the parent process.
+**Nesting sub-workflows:** Add another Workflow class to the `$actions` array. If a sub-workflow cancels itself, cancellation does not propagate to the parent workflow.
 
 @verbatim
-<code-snippet name="Nested Process" lang="php">
-class FulfillOrder extends Process
+<code-snippet name="Nested Workflow" lang="php">
+class FulfillOrder extends Workflow
 {
-    protected array $tasks = [
-        CreateOrder::class,  // This is itself a Process
+    protected array $actions = [
+        CreateOrder::class,  // This is itself a Workflow
         NotifyWarehouse::class,
     ];
 }
@@ -90,17 +90,17 @@ class FulfillOrder extends Process
 
 ---
 
-### Tasks
+### Actions
 
-A Task is a single unit of work. It receives a payload object and must implement `handle()`. Always return `$this` from `handle()` so the payload flows to the next task in the process.
+An Action is a single unit of work. It receives a payload object and must implement `handle()`. Always return `$this` from `handle()` so the payload flows to the next action in the workflow.
 
 @verbatim
-<code-snippet name="Task Example" lang="php">
+<code-snippet name="Action Example" lang="php">
 /**
  * @property-read int $userId
  * @property-read array $items
  */
-class ChargeCustomer extends Task
+class ChargeCustomer extends Action
 {
     public function handle(): self
     {
@@ -116,17 +116,17 @@ class ChargeCustomer extends Task
 </code-snippet>
 @endverbatim
 
-**Payload:** Tasks access payload properties directly via magic methods (`$this->userId`). Set new properties to pass data to subsequent tasks (`$this->chargeId = $id`). Define expected properties with `@property-read` docblocks — Brain validates that at least one expected key exists at construction time.
+**Payload:** Actions access payload properties directly via magic methods (`$this->userId`). Set new properties to pass data to subsequent actions (`$this->chargeId = $id`). Define expected properties with `@property-read` docblocks — Brain validates that at least one expected key exists at construction time.
 
 **Validation with `rules()`:** Override `rules()` to validate payload using Laravel's Validator before `handle()` runs.
 
 @verbatim
-<code-snippet name="Task Validation" lang="php">
+<code-snippet name="Action Validation" lang="php">
 /**
  * @property-read string $email
  * @property-read int $age
  */
-class RegisterUser extends Task
+class RegisterUser extends Action
 {
     protected function rules(): array
     {
@@ -145,11 +145,11 @@ class RegisterUser extends Task
 </code-snippet>
 @endverbatim
 
-**Conditional execution with `runIf()`:** Override `runIf()` to skip the task based on payload data. Skipped tasks fire a `Skipped` event.
+**Conditional execution with `runIf()`:** Override `runIf()` to skip the action based on payload data. Skipped actions fire a `Skipped` event.
 
 @verbatim
-<code-snippet name="Conditional Task" lang="php">
-class SendWelcomeEmail extends Task
+<code-snippet name="Conditional Action" lang="php">
+class SendWelcomeEmail extends Action
 {
     protected function runIf(): bool
     {
@@ -165,11 +165,11 @@ class SendWelcomeEmail extends Task
 </code-snippet>
 @endverbatim
 
-**Delayed execution with `runIn()`:** Override `runIn()` to delay the task by seconds or a Carbon instance.
+**Delayed execution with `runIn()`:** Override `runIn()` to delay the action by seconds or a Carbon instance.
 
 @verbatim
-<code-snippet name="Delayed Task" lang="php">
-class SendFollowUp extends Task
+<code-snippet name="Delayed Action" lang="php">
+class SendFollowUp extends Action
 {
     protected function runIn(): int
     {
@@ -184,16 +184,16 @@ class SendFollowUp extends Task
 </code-snippet>
 @endverbatim
 
-**Cancelling the process:** Call `$this->cancelProcess()` inside `handle()` to stop remaining tasks from executing. The process still commits its transaction.
+**Cancelling the workflow:** Call `$this->cancelWorkflow()` inside `handle()` to stop remaining actions from executing. The workflow still commits its transaction.
 
 @verbatim
-<code-snippet name="Cancel Process" lang="php">
-class ValidateInventory extends Task
+<code-snippet name="Cancel Workflow" lang="php">
+class ValidateInventory extends Action
 {
     public function handle(): self
     {
         if (! $this->hasStock) {
-            $this->cancelProcess();
+            $this->cancelWorkflow();
         }
 
         return $this;
@@ -202,13 +202,13 @@ class ValidateInventory extends Task
 </code-snippet>
 @endverbatim
 
-**Queueable tasks:** Implement `ShouldQueue` to dispatch the task asynchronously when run inside a process.
+**Queueable actions:** Implement `ShouldQueue` to dispatch the action asynchronously when run inside a workflow.
 
 @verbatim
-<code-snippet name="Queueable Task" lang="php">
+<code-snippet name="Queueable Action" lang="php">
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class SendConfirmation extends Task implements ShouldQueue
+class SendConfirmation extends Action implements ShouldQueue
 {
     public function handle(): self
     {
@@ -219,10 +219,10 @@ class SendConfirmation extends Task implements ShouldQueue
 </code-snippet>
 @endverbatim
 
-**Sensitive properties with `#[Sensitive]`:** Mark payload properties that should be automatically redacted in logs, JSON, and debug output. Sensitive values are wrapped in `SensitiveValue` — accessible inside the task via `$this->key`, but replaced with `**********` everywhere else.
+**Sensitive properties with `#[Sensitive]`:** Mark payload properties that should be automatically redacted in logs, JSON, and debug output. Sensitive values are wrapped in `SensitiveValue` — accessible inside the action via `$this->key`, but replaced with `**********` everywhere else.
 
 @verbatim
-<code-snippet name="Sensitive Task" lang="php">
+<code-snippet name="Sensitive Action" lang="php">
 use Brain\Attributes\Sensitive;
 
 /**
@@ -231,7 +231,7 @@ use Brain\Attributes\Sensitive;
  * @property string $credit_card
  */
 #[Sensitive('password', 'credit_card')]
-class CreateUser extends Task
+class CreateUser extends Action
 {
     public function handle(): self
     {
@@ -243,16 +243,16 @@ class CreateUser extends Task
 </code-snippet>
 @endverbatim
 
-**Process-level sensitive inheritance:** When `#[Sensitive]` is applied to a Process, all child tasks automatically inherit the sensitive keys — even if the tasks don't declare the attribute themselves. Task-level and process-level keys are merged and deduplicated.
+**Workflow-level sensitive inheritance:** When `#[Sensitive]` is applied to a Workflow, all child actions automatically inherit the sensitive keys — even if the actions don't declare the attribute themselves. Action-level and workflow-level keys are merged and deduplicated.
 
 @verbatim
-<code-snippet name="Sensitive Process" lang="php">
+<code-snippet name="Sensitive Workflow" lang="php">
 use Brain\Attributes\Sensitive;
 
 #[Sensitive('password', 'credit_card')]
-class CreateUserProcess extends Process
+class CreateUserWorkflow extends Workflow
 {
-    protected array $tasks = [
+    protected array $actions = [
         ValidateInput::class,     // password & credit_card are sensitive here
         ChargeCustomer::class,    // password & credit_card are sensitive here too
         SendConfirmation::class,
@@ -296,22 +296,22 @@ $orders = GetOrdersByUser::run(userId: 1, status: 'completed');
 
 Brain is configured in `config/brain.php`:
 
-- `root` — Base directory for Brain classes (default: `'Brain'` → `App\Brain\`). Set to `null` for flat structure (`App\Processes`, `App\Tasks`).
-- `use_domains` — When `true`, organizes into domain subdirectories: `App\Brain\{Domain}\Processes\`.
-- `use_suffix` — When `true`, appends type suffix to class names (e.g., `CreateOrderProcess`).
-- `suffixes` — Customize suffix per type: `task`, `process`, `query`.
-- `log` — When `true`, logs all process and task events.
+- `root` — Base directory for Brain classes (default: `'Brain'` → `App\Brain\`). Set to `null` for flat structure (`App\Workflows`, `App\Actions`).
+- `use_domains` — When `true`, organizes into domain subdirectories: `App\Brain\{Domain}\Workflows\`.
+- `use_suffix` — When `true`, appends type suffix to class names (e.g., `CreateOrderWorkflow`).
+- `suffixes` — Customize suffix per type: `workflow`, `action`, `query`.
+- `log` — When `true`, logs all workflow and action events.
 
 ---
 
 ### Testing Patterns
 
-**Testing a Process:**
+**Testing a Workflow:**
 
 @verbatim
-<code-snippet name="Process Test" lang="php">
-test('create order process runs all tasks', function () {
-    $result = CreateOrder::dispatchSync([
+<code-snippet name="Workflow Test" lang="php">
+test('create order workflow runs all actions', function () {
+    $result = CreateOrder::run([
         'userId' => 1,
         'items'  => [['id' => 1, 'qty' => 2]],
     ]);
@@ -319,10 +319,10 @@ test('create order process runs all tasks', function () {
     expect($result->orderId)->not->toBeNull();
 });
 
-test('create order process has expected tasks', function () {
-    $process = new CreateOrder;
+test('create order workflow has expected actions', function () {
+    $workflow = new CreateOrder;
 
-    expect($process->getTasks())->toBe([
+    expect($workflow->getActions())->toBe([
         ValidateInventory::class,
         ChargeCustomer::class,
         CreateOrderRecord::class,
@@ -332,14 +332,14 @@ test('create order process has expected tasks', function () {
 </code-snippet>
 @endverbatim
 
-**Testing a Task:**
+**Testing an Action:**
 
 @verbatim
-<code-snippet name="Task Test" lang="php">
-test('charge customer task charges the user', function () {
+<code-snippet name="Action Test" lang="php">
+test('charge customer action charges the user', function () {
     $user = User::factory()->create();
 
-    $result = ChargeCustomer::dispatchSync([
+    $result = ChargeCustomer::run([
         'userId' => $user->id,
         'items'  => [['id' => 1, 'qty' => 2]],
     ]);
@@ -367,10 +367,10 @@ test('get orders by user returns matching orders', function () {
 
 ### Visualization
 
-Use `{{ $assist->artisanCommand('brain:show') }}` to see a map of all processes, tasks, and queries.
+Use `{{ $assist->artisanCommand('brain:show') }}` to see a map of all workflows, actions, and queries.
 
-- `--processes` (`-p`) — Show only processes and their tasks
-- `--tasks` (`-t`) — Show only tasks
+- `--workflows` (`-w`) — Show only workflows and their actions
+- `--actions` (`-a`) — Show only actions
 - `--queries` (`-Q`) — Show only queries
 - `--filter=Name` — Filter by class name
 
@@ -378,7 +378,7 @@ Use `{{ $assist->artisanCommand('brain:show') }}` to see a map of all processes,
 
 ### Running Interactively
 
-Use `{{ $assist->artisanCommand('brain:run') }}` to interactively select and execute a Process or Task from the terminal. The command walks you through selecting a target, choosing sync or async dispatch, filling payload properties, previewing, and executing.
+Use `{{ $assist->artisanCommand('brain:run') }}` to interactively select and execute a Workflow or Action from the terminal. The command walks you through selecting a target, choosing sync or async dispatch, filling payload properties, previewing, and executing.
 
 Every successful run is saved to history (`storage/brain/run-history.json`, max 50 entries). Use `{{ $assist->artisanCommand('brain:run --rerun') }}` to replay a previous execution with the same parameters.
 
@@ -386,9 +386,9 @@ Every successful run is saved to history (`storage/brain/run-history.json`, max 
 
 ### Best Practices
 
-- **Processes wrap tasks in a DB transaction** — tasks that throw will roll back all previous work in the process. Keep side-effects (emails, API calls) in queueable tasks so they run after commit.
-- **Payload flows between tasks** — each task receives the payload from the previous one. Set new properties on `$this` to pass data forward.
-- **Return `$this` from `handle()`** — this ensures the payload (with any new properties) continues to the next task.
+- **Workflows wrap actions in a DB transaction** — actions that throw will roll back all previous work in the workflow. Keep side-effects (emails, API calls) in queueable actions so they run after commit.
+- **Payload flows between actions** — each action receives the payload from the previous one. Set new properties on `$this` to pass data forward.
+- **Return `$this` from `handle()`** — this ensures the payload (with any new properties) continues to the next action.
 - **Use `@property-read` docblocks** — they document expected payload shape, enable IDE autocompletion, and Brain validates their presence.
-- **Queries are for reads, Tasks are for writes** — keep this separation clean. Never mutate state inside a Query.
-- **Reuse Tasks across Processes** — tasks are independent units. The same task can appear in multiple processes.
+- **Queries are for reads, Actions are for writes** — keep this separation clean. Never mutate state inside a Query.
+- **Reuse Actions across Workflows** — actions are independent units. The same action can appear in multiple workflows.

@@ -103,7 +103,7 @@ test('process maintains task order', function (): void {
 });
 
 test('process can handle null payload', function (): void {
-    $process = new Process(null);
+    $process = new Process;
 
     expect(fn (): object|array|null => $process->handle())->not->toThrow(Exception::class);
 });

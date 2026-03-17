@@ -103,7 +103,7 @@ test('workflow maintains action order', function (): void {
 });
 
 test('workflow can handle null payload', function (): void {
-    $workflow = new Workflow(null);
+    $workflow = new Workflow;
 
     expect(fn (): object|array|null => $workflow->handle())->not->toThrow(Exception::class);
 });

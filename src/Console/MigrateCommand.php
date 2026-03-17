@@ -169,7 +169,7 @@ class MigrateCommand extends Command
         $exact = [];
 
         foreach ($this->contentReplacements as $search => $replace) {
-            if (str_contains($content, $search)) {
+            if (str_contains($content, (string) $search)) {
                 $exact[$search] = $replace;
             }
         }
@@ -208,8 +208,8 @@ class MigrateCommand extends Command
             $filename = $file->getFilenameWithoutExtension();
 
             foreach ($this->suffixRenames as $oldSuffix => $newSuffix) {
-                if (str_ends_with($filename, $oldSuffix) && $filename !== $oldSuffix) {
-                    $newFilename = substr($filename, 0, -strlen($oldSuffix)).$newSuffix;
+                if (str_ends_with($filename, (string) $oldSuffix) && $filename !== $oldSuffix) {
+                    $newFilename = substr($filename, 0, -strlen((string) $oldSuffix)).$newSuffix;
                     $newPath = dirname($file->getPathname()).DIRECTORY_SEPARATOR.$newFilename.'.php';
 
                     if (! File::exists($newPath)) {
@@ -314,7 +314,7 @@ class MigrateCommand extends Command
             $this->output->writeln(' <options=bold>Directories to rename:</>');
 
             foreach ($directoriesToRename as $oldPath => $newPath) {
-                $this->output->writeln('   • <comment>'.basename($oldPath).'</comment> → <info>'.basename((string) $newPath).'</info> in '.dirname($oldPath));
+                $this->output->writeln('   • <comment>'.basename((string) $oldPath).'</comment> → <info>'.basename((string) $newPath).'</info> in '.dirname((string) $oldPath));
             }
 
             $this->output->writeln('');
@@ -382,7 +382,7 @@ class MigrateCommand extends Command
 
         foreach ($filesToRename as $oldPath => $info) {
             if (File::exists($oldPath)) {
-                $newPath = dirname($oldPath).DIRECTORY_SEPARATOR.$info['newClass'].'.php';
+                $newPath = dirname((string) $oldPath).DIRECTORY_SEPARATOR.$info['newClass'].'.php';
                 File::move($oldPath, $newPath);
                 $count++;
             }

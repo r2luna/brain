@@ -497,7 +497,7 @@ it('workflow calls finalize on action instances and fires Processed event', func
         ];
     }
 
-    $workflow = new WorkflowWithFinalize(null);
+    $workflow = new WorkflowWithFinalize;
     $workflow->handle();
 
     Event::assertDispatched(Processed::class);

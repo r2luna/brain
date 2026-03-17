@@ -649,7 +649,7 @@ PHP;
 });
 
 test('it works with null root config (flat structure)', function (): void {
-    config()->set('brain.root', null);
+    config()->set('brain.root');
 
     $appBase = app_path();
 

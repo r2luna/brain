@@ -87,7 +87,7 @@ abstract class Action
      *
      * @return mixed|null
      */
-    public function __get(string $property)
+    public function __get(string $property): mixed
     {
         $value = data_get((array) $this->payload, $property);
 

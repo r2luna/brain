@@ -346,7 +346,7 @@ class Printer
         ];
 
         if ($this->output->isVerbose() || ($this->onlyTypes !== [] && $this->filter !== null)) {
-            $this->addProcessTasks($process, $childPrefix, $prefixLen, $prefixLen);
+            $this->addProcessTasks($process, $childPrefix, $prefixLen);
         }
     }
 
@@ -371,7 +371,7 @@ class Printer
         ];
 
         if ($this->output->isVerbose() || ($this->onlyTypes !== [] && $this->filter !== null)) {
-            $this->addProcessTasks($workflow, $childPrefix, $prefixLen, $prefixLen);
+            $this->addProcessTasks($workflow, $childPrefix, $prefixLen);
         }
     }
 
@@ -403,7 +403,7 @@ class Printer
     /**
      * Adds sub-tasks of a process with tree connectors.
      */
-    private function addProcessTasks(array $process, string $parentChildPrefix, int $parentPrefixLen, int $prefixVisualWidth): void
+    private function addProcessTasks(array $process, string $parentChildPrefix, int $prefixVisualWidth): void
     {
         $tasks = data_get($process, 'tasks', []);
         $totalTasks = count($tasks);
@@ -414,10 +414,7 @@ class Printer
 
             $connector = $isLastTask ? '└── ' : '├── ';
 
-            // Sub-task tree connectors start at the name column of the parent
-            // Without domains: col 6 (after "PROC  ")
-            // With domains: col 12 (after "  ├── PROC  ")
-            $nameCol = $parentPrefixLen + 4 + 2; // prefix + TYPE(4) + spaces(2)
+            $nameCol = 7;
             $indentSpaces = str_repeat(' ', $nameCol);
 
             [$color, $type] = match ($task['type']) {
@@ -448,7 +445,7 @@ class Printer
             $subtaskPrefixVisualWidth = $prefixVisualWidth + $nameCol + 4;
 
             if (($task['type'] === 'process' || $task['type'] === 'workflow') && ! empty($task['tasks'])) {
-                $this->addProcessTasks($task, $subtaskChildPrefix, 0, $subtaskPrefixVisualWidth);
+                $this->addProcessTasks($task, $subtaskChildPrefix, $subtaskPrefixVisualWidth);
             } elseif ($this->output->isVeryVerbose()) {
                 $this->addProperties($task, $subtaskChildPrefix, 3);
             }

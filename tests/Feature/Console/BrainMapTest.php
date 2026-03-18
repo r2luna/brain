@@ -505,6 +505,34 @@ PHP;
     });
 });
 
+describe('isClassFile testsuite', function (): void {
+    it('should skip traits in tasks directory', function (): void {
+        $method = $this->reflection->getMethod('loadTasksFor');
+        $path = __DIR__.'/../Fixtures/BrainWithTraits';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(1)
+            ->and($output[0]['name'])->toBe('ValidTask');
+    });
+
+    it('should skip traits in queries directory', function (): void {
+        $method = $this->reflection->getMethod('loadQueriesFor');
+        $path = __DIR__.'/../Fixtures/BrainWithTraits';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(1)
+            ->and($output[0]['name'])->toBe('ValidQuery');
+    });
+
+    it('should skip traits in processes directory', function (): void {
+        $method = $this->reflection->getMethod('loadProcessesFor');
+        $path = __DIR__.'/../Fixtures/BrainWithTraits';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(0);
+    });
+});
+
 describe('without domains configuration', function (): void {
     beforeEach(function (): void {
         config()->set('brain.use_domains', false);

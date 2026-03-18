@@ -73,3 +73,8 @@ it('executes the command with --filter option', function (): void {
     $this->artisan('brain:show', ['--filter' => 'Example'])
         ->assertExitCode(0);
 });
+
+it('executes the command with --domain option', function (): void {
+    $this->artisan('brain:show', ['--domain' => 'Example'])
+        ->assertExitCode(0);
+});

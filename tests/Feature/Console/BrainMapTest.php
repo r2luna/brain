@@ -572,6 +572,47 @@ PHP;
     });
 });
 
+describe('isClassFile testsuite', function (): void {
+    it('should skip traits in actions directory', function (): void {
+        $method = $this->reflection->getMethod('loadActionsFor');
+        $path = __DIR__.'/../Fixtures/BrainWithTraits';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(1)
+            ->and($output[0]['name'])->toBe('ValidAction');
+    });
+
+    it('should skip traits in tasks directory', function (): void {
+        $method = $this->reflection->getMethod('loadTasksFor');
+        $path = __DIR__.'/../Fixtures/BrainWithTraits';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(1)
+            ->and($output[0]['name'])->toBe('ValidTask');
+    });
+
+    it('should skip traits in queries directory', function (): void {
+        $method = $this->reflection->getMethod('loadQueriesFor');
+        $path = __DIR__.'/../Fixtures/BrainWithTraits';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(1)
+            ->and($output[0]['name'])->toBe('ValidQuery');
+    });
+
+    it('should skip interfaces and enums in actions directory', function (): void {
+        $method = $this->reflection->getMethod('loadActionsFor');
+        $path = __DIR__.'/../Fixtures/BrainWithTraits';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        $names = array_column($output, 'name');
+
+        expect($names)->not->toContain('ExampleInterface')
+            ->and($names)->not->toContain('ExampleEnum')
+            ->and($names)->not->toContain('ExampleTrait');
+    });
+});
+
 describe('without domains configuration', function (): void {
     beforeEach(function (): void {
         config()->set('brain.use_domains', false);

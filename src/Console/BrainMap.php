@@ -159,6 +159,8 @@ class BrainMap
         }
 
         return collect(File::allFiles($path))
+            ->filter(fn (SplFileInfo $file): bool => $this->isClassFile($file))
+            ->values()
             ->map(function (SplFileInfo $value): array {
                 $reflection = $this->getReflectionClass($value);
                 $hasChainProperty = $reflection->hasProperty('chain');
@@ -207,6 +209,8 @@ class BrainMap
         }
 
         return collect(File::allFiles($path))
+            ->filter(fn (SplFileInfo $file): bool => $this->isClassFile($file))
+            ->values()
             ->map(fn (SplFileInfo $task): array => $this->getTask($task, $task->getRelativePath()))
             ->toArray();
     }
@@ -293,6 +297,8 @@ class BrainMap
         }
 
         return collect(File::allFiles($path))
+            ->filter(fn (SplFileInfo $file): bool => $this->isClassFile($file))
+            ->values()
             ->map(function (SplFileInfo $value): array {
                 $reflection = $this->getReflectionClass($value);
                 $hasChainProperty = $reflection->hasProperty('chain');
@@ -326,6 +332,8 @@ class BrainMap
         }
 
         return collect(File::allFiles($path))
+            ->filter(fn (SplFileInfo $file): bool => $this->isClassFile($file))
+            ->values()
             ->map(fn (SplFileInfo $action): array => $this->getAction($action, $action->getRelativePath()))
             ->toArray();
     }
@@ -403,6 +411,8 @@ class BrainMap
         }
 
         return collect(File::allFiles($path))
+            ->filter(fn (SplFileInfo $file): bool => $this->isClassFile($file))
+            ->values()
             ->map(function (SplFileInfo $task): array {
                 $reflection = $this->getReflectionClass($task);
                 $group = $task->getRelativePath();
@@ -429,6 +439,14 @@ class BrainMap
                 ];
             })
             ->toArray();
+    }
+
+    /** Check whether a PHP file declares a class (not a trait, interface, or enum). */
+    private function isClassFile(SplFileInfo $file): bool
+    {
+        $content = file_get_contents($file->getPathname());
+
+        return (bool) preg_match('/^\s*(?:abstract\s+|final\s+|readonly\s+)*class\s+/m', $content);
     }
 
     // region Helper Methods

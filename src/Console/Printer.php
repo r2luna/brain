@@ -40,6 +40,9 @@ class Printer
     /** @var string|null Case-insensitive class name filter. */
     private ?string $filter = null;
 
+    /** @var string|null Case-insensitive domain filter. */
+    private ?string $domainFilter = null;
+
     /** Create a new Printer instance. */
     public function __construct(
         private readonly BrainMap $brain,
@@ -113,6 +116,14 @@ class Printer
     public function filterBy(string $filter): self
     {
         $this->filter = $filter;
+
+        return $this;
+    }
+
+    /** Set a domain filter for the output. */
+    public function filterByDomain(string $domain): self
+    {
+        $this->domainFilter = $domain;
 
         return $this;
     }
@@ -228,7 +239,11 @@ class Printer
     {
         $useDomains = config('brain.use_domains', false);
 
-        $this->brain->map->each(function ($domainData) use ($useDomains): void {
+        $map = $this->domainFilter !== null
+            ? $this->brain->map->filter(fn ($domainData, $key): bool => str_contains(mb_strtolower((string) $key), mb_strtolower($this->domainFilter)))
+            : $this->brain->map;
+
+        $map->each(function ($domainData) use ($useDomains): void {
             $items = $this->collectDomainItems($domainData);
 
             if ($items === []) {

@@ -20,7 +20,8 @@ class ShowBrainCommand extends Command
         {--p|processes : Show only processes (deprecated, use --workflows)}
         {--t|tasks : Show only tasks (deprecated, use --actions)}
         {--Q|queries : Show only queries}
-        {--filter= : Filter by class name}';
+        {--filter= : Filter by class name}
+        {--domain= : Filter by domain name}';
 
     /**
      * The console command description.
@@ -55,6 +56,10 @@ class ShowBrainCommand extends Command
 
         if ($filter = $this->input?->getOption('filter')) {
             $printer->filterBy($filter);
+        }
+
+        if ($domain = $this->input?->getOption('domain')) {
+            $printer->filterByDomain($domain);
         }
 
         $printer->print();

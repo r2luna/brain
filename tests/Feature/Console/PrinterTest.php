@@ -370,6 +370,33 @@ describe('filtering', function (): void {
             [''],
         ]);
     });
+    it('should filter by domain name', function (): void {
+        $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
+        $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+        $this->printer->filterByDomain('Example2');
+        $this->printerReflection->run('getTerminalWidth');
+        $this->printerReflection->run('run');
+        $lines = $this->printerReflection->get('lines');
+
+        expect($lines)->toBe([
+            ['  <fg=#6C7280;options=bold>EXAMPLE2</>'],
+            ['  <fg=#6C7280>├── </><fg=blue;options=bold>PROC</>  <fg=white>ExampleProcess2</><fg=#6C7280> '.str_repeat('·', 35).' chained</>'],
+            ['  <fg=#6C7280>└── </><fg=green;options=bold>QERY</>  <fg=white>ExampleQuery</> <fg=#6C7280>'.str_repeat('·', 46).'</>'],
+            [''],
+        ]);
+    });
+
+    it('should filter by domain name case-insensitively', function (): void {
+        $this->mockOutput->shouldReceive('isVerbose')->andReturn(false);
+        $this->mockOutput->shouldReceive('isVeryVerbose')->andReturn(false);
+        $this->printer->filterByDomain('example2');
+        $this->printerReflection->run('getTerminalWidth');
+        $this->printerReflection->run('run');
+        $lines = $this->printerReflection->get('lines');
+
+        expect($lines)->toHaveCount(4)
+            ->and($lines[0][0])->toContain('EXAMPLE2');
+    });
 });
 
 // --------------------

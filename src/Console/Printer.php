@@ -40,6 +40,9 @@ class Printer
     /** @var string|null Case-insensitive class name filter. */
     private ?string $filter = null;
 
+    /** @var string|null Case-insensitive domain filter. */
+    private ?string $domainFilter = null;
+
     /** Create a new Printer instance. */
     public function __construct(
         private readonly BrainMap $brain,
@@ -113,6 +116,14 @@ class Printer
     public function filterBy(string $filter): self
     {
         $this->filter = $filter;
+
+        return $this;
+    }
+
+    /** Set a domain filter for the output. */
+    public function filterByDomain(string $domain): self
+    {
+        $this->domainFilter = $domain;
 
         return $this;
     }
@@ -228,7 +239,11 @@ class Printer
     {
         $useDomains = config('brain.use_domains', false);
 
-        $this->brain->map->each(function ($domainData) use ($useDomains): void {
+        $map = $this->domainFilter !== null
+            ? $this->brain->map->filter(fn ($domainData, $key): bool => str_contains(mb_strtolower((string) $key), mb_strtolower($this->domainFilter)))
+            : $this->brain->map;
+
+        $map->each(function ($domainData) use ($useDomains): void {
             $items = $this->collectDomainItems($domainData);
 
             if ($items === []) {
@@ -346,7 +361,7 @@ class Printer
         ];
 
         if ($this->output->isVerbose() || ($this->onlyTypes !== [] && $this->filter !== null)) {
-            $this->addProcessTasks($process, $childPrefix, $prefixLen, $prefixLen);
+            $this->addProcessTasks($process, $childPrefix, $prefixLen);
         }
     }
 
@@ -371,7 +386,7 @@ class Printer
         ];
 
         if ($this->output->isVerbose() || ($this->onlyTypes !== [] && $this->filter !== null)) {
-            $this->addProcessTasks($workflow, $childPrefix, $prefixLen, $prefixLen);
+            $this->addProcessTasks($workflow, $childPrefix, $prefixLen);
         }
     }
 
@@ -403,7 +418,7 @@ class Printer
     /**
      * Adds sub-tasks of a process with tree connectors.
      */
-    private function addProcessTasks(array $process, string $parentChildPrefix, int $parentPrefixLen, int $prefixVisualWidth): void
+    private function addProcessTasks(array $process, string $parentChildPrefix, int $prefixVisualWidth): void
     {
         $tasks = data_get($process, 'tasks', []);
         $totalTasks = count($tasks);
@@ -414,10 +429,7 @@ class Printer
 
             $connector = $isLastTask ? '└── ' : '├── ';
 
-            // Sub-task tree connectors start at the name column of the parent
-            // Without domains: col 6 (after "PROC  ")
-            // With domains: col 12 (after "  ├── PROC  ")
-            $nameCol = $parentPrefixLen + 4 + 2; // prefix + TYPE(4) + spaces(2)
+            $nameCol = 7;
             $indentSpaces = str_repeat(' ', $nameCol);
 
             [$color, $type] = match ($task['type']) {
@@ -448,7 +460,7 @@ class Printer
             $subtaskPrefixVisualWidth = $prefixVisualWidth + $nameCol + 4;
 
             if (($task['type'] === 'process' || $task['type'] === 'workflow') && ! empty($task['tasks'])) {
-                $this->addProcessTasks($task, $subtaskChildPrefix, 0, $subtaskPrefixVisualWidth);
+                $this->addProcessTasks($task, $subtaskChildPrefix, $subtaskPrefixVisualWidth);
             } elseif ($this->output->isVeryVerbose()) {
                 $this->addProperties($task, $subtaskChildPrefix, 3);
             }

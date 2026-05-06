@@ -9,7 +9,33 @@
 
 ---
 
+> [!WARNING]
+> **v2 support ends on June 1, 2026.** After that date, only **v3** will receive bug fixes and new features. v3 renames the core concepts (`Process` → `Workflow`, `Task` → `Action`) — see the [Deprecation Map](#deprecation-map) below to migrate.
+
 **Brain** is an elegant Laravel Package that helps you organize your Laravel application using Domain-Driven Design principles through a simple command-line interface.
+
+## Deprecation Map
+
+The following v2 names are deprecated and will be removed when v2 support ends on **June 1, 2026**. Update your code to the v3 equivalents before that date.
+
+| v2 (deprecated) | v3 (current) | Notes |
+|---|---|---|
+| `Brain\Process` | `Brain\Workflow` | Base class for orchestrating a sequence of steps |
+| `Brain\Task` | `Brain\Action` | Base class for a single unit of work |
+| `MyProcess::dispatchSync($payload)` | `MyWorkflow::run($payload)` | Synchronous invocation |
+| `MyTask::dispatchSync($payload)` | `MyAction::run($payload)` | Synchronous invocation |
+| `protected array $tasks = [...]` | `protected array $actions = [...]` | List of steps inside a Workflow |
+| `$this->cancelProcess()` | `$this->cancelWorkflow()` | Cancel from inside an Action |
+| `php artisan make:process` | `php artisan make:workflow` | Generator command |
+| `php artisan make:task` | `php artisan make:action` | Generator command |
+| `Brain\Processes\Events\*` | `Brain\Workflows\Events\*` | Lifecycle events (`Processing`, `Processed`, `Error`) |
+| `Brain\Tasks\Events\*` | `Brain\Actions\Events\*` | Lifecycle events (`Processing`, `Processed`, `Cancelled`, `Skipped`, `Error`) |
+| `BRAIN_PROCESS_SUFFIX` | `BRAIN_WORKFLOW_SUFFIX` | Suffix env var |
+| `BRAIN_TASK_SUFFIX` | `BRAIN_ACTION_SUFFIX` | Suffix env var |
+| `suffixes.process` | `suffixes.workflow` | Config key in `config/brain.php` |
+| `suffixes.task` | `suffixes.action` | Config key in `config/brain.php` |
+
+The v2 classes (`Process`, `Task`) remain as aliases until **June 1, 2026** so existing projects keep working during the migration window.
 
 ## Features
 

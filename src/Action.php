@@ -110,10 +110,13 @@ abstract class Action
 
     /**
      * Run the action synchronously, applying the before/after/onError/finally hooks.
+     * Returns the final payload (consistent with Workflow::run()).
      */
-    public static function run(array|object|null $payload = null): static
+    public static function run(array|object|null $payload = null): object|array|null
     {
-        return static::runWithHooks($payload);
+        $result = static::runWithHooks($payload);
+
+        return $result instanceof self ? $result->payload : $result;
     }
 
     /**

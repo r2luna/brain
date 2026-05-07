@@ -516,8 +516,8 @@ it('should run synchronously using the static run method', function (): void {
 
     $result = RunAction::run(['value' => 1]);
 
-    expect($result)->toBeInstanceOf(RunAction::class)
-        ->and($result->payload->ran)->toBeTrue();
+    expect($result)->toBeObject()
+        ->and($result->ran)->toBeTrue();
 });
 
 it('queued actions are finalized before going through next middleware', function (): void {
@@ -564,7 +564,7 @@ describe('action lifecycle hooks', function (): void {
 
         $result = HookedActionBefore::run(['value' => 1]);
 
-        expect($result->payload->seen)->toBe(101);
+        expect($result->seen)->toBe(101);
     });
 
     it('should call after() to transform the action instance', function (): void {
@@ -587,8 +587,8 @@ describe('action lifecycle hooks', function (): void {
 
         $result = HookedActionAfter::run([]);
 
-        expect($result->payload->value)->toBe(42)
-            ->and($result->payload->wrapped)->toBeTrue();
+        expect($result->value)->toBe(42)
+            ->and($result->wrapped)->toBeTrue();
     });
 
     it('should call onError() and let it return a fallback action', function (): void {
@@ -610,7 +610,7 @@ describe('action lifecycle hooks', function (): void {
 
         $result = HookedActionFailing::run([]);
 
-        expect($result->payload->recovered)->toBe('boom');
+        expect($result->recovered)->toBe('boom');
     });
 
     it('should re-throw by default when onError() is not overridden on Action', function (): void {

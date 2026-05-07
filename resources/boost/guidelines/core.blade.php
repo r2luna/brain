@@ -4,11 +4,13 @@
 
 Brain (`r2luna/brain`) organizes business logic into three core concepts: **Workflows**, **Actions**, and **Queries**. Use them to keep controllers thin, logic reusable, and side-effects traceable.
 
-| Concept  | Purpose | Invocation |
-|----------|---------|------------|
-| Workflow | Orchestrates a sequence of actions | `MyWorkflow::run($payload)` |
-| Action   | A single unit of work that mutates state | `MyAction::run($payload)` |
-| Query    | A read-only operation that returns data | `MyQuery::run($args)` |
+| Concept  | Purpose | Invocation | Returns |
+|----------|---------|------------|---------|
+| Workflow | Orchestrates a sequence of actions | `MyWorkflow::run($payload)` | the final payload |
+| Action   | A single unit of work that mutates state | `MyAction::run($payload)` | the final payload |
+| Query    | A read-only operation that returns data | `MyQuery::run($args)` | whatever `handle()` returns |
+
+`run()` on both Workflows and Actions returns the **payload object** (not the action/workflow instance) — access fields directly: `MyAction::run($p)->orderId`.
 
 > **v2 → v3 rename:** the v2 names `Process` (now `Workflow`) and `Task` (now `Action`) still work as deprecated aliases until **June 1, 2026**. Always use the v3 names in new code: `Brain\Workflow`, `Brain\Action`, `make:workflow`, `make:action`, `protected array $actions = [...]`, `$this->cancelWorkflow()`.
 
@@ -157,7 +159,8 @@ class ChargeCustomer extends Action
 
     protected static function after(Action $result): static
     {
-        // $result is the action instance after handle()
+        // $result is the action instance after handle().
+        // `Action::run()` will unwrap and return $result->payload to the caller.
         return $result;
     }
 }

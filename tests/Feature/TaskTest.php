@@ -516,8 +516,8 @@ it('should run synchronously using the static run method', function (): void {
 
     $result = RunTask::run(['value' => 1]);
 
-    expect($result)->toBeInstanceOf(RunTask::class)
-        ->and($result->payload->ran)->toBeTrue();
+    expect($result)->toBeObject()
+        ->and($result->ran)->toBeTrue();
 });
 
 it('queued tasks are finalized before going through next middleware', function (): void {

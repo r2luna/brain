@@ -14,7 +14,9 @@
             "captainhook",
             "phpstsan",
             "laravel's",
-            "subdirectory"
+            "subdirectory",
+            "formatters",
+            "unparseable"
         ],
         "paths": []
     }

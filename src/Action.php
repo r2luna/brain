@@ -9,6 +9,7 @@ use Brain\Actions\Events\Processing;
 use Brain\Actions\Middleware\FinalizeActionMiddleware;
 use Brain\Attributes\OnQueue;
 use Brain\Attributes\Sensitive;
+use Brain\Concerns\HasLifecycleHooks;
 use Brain\Exceptions\InvalidPayload;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -37,6 +38,7 @@ use Throwable;
 abstract class Action
 {
     use Dispatchable;
+    use HasLifecycleHooks;
     use InteractsWithQueue;
     use Queueable;
     use SerializesModels;
@@ -112,21 +114,7 @@ abstract class Action
      */
     public static function run(array|object|null $payload = null): static
     {
-        $error = null;
-        $result = null;
-
-        try {
-            $payload = static::before($payload);
-            $result = static::dispatchSync($payload);
-            $result = static::after($result);
-        } catch (Throwable $e) {
-            $error = $e;
-            $result = static::onError($e, $payload);
-        } finally {
-            static::finally($payload, $error);
-        }
-
-        return $result;
+        return static::runWithHooks($payload);
     }
 
     /**
@@ -212,14 +200,6 @@ abstract class Action
     }
 
     /**
-     * Override to transform the payload before the action is dispatched.
-     */
-    protected static function before(array|object|null $payload): array|object|null
-    {
-        return $payload;
-    }
-
-    /**
      * Override to transform the action instance after it finishes successfully.
      */
     protected static function after(Action $result): static
@@ -234,15 +214,6 @@ abstract class Action
     protected static function onError(Throwable $e, array|object|null $payload): static
     {
         throw $e;
-    }
-
-    /**
-     * Override to run cleanup or logging that must happen regardless of success.
-     * Receives the (possibly transformed) payload and the error if one was thrown.
-     */
-    protected static function finally(array|object|null $payload, ?Throwable $error): void
-    {
-        //
     }
 
     /**

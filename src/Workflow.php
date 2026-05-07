@@ -9,6 +9,7 @@ use Brain\Actions\Events\Error as ActionsError;
 use Brain\Actions\Events\Skipped;
 use Brain\Attributes\OnQueue;
 use Brain\Attributes\Sensitive;
+use Brain\Concerns\HasLifecycleHooks;
 use Brain\Workflows\Events\Error;
 use Brain\Workflows\Events\Processed;
 use Brain\Workflows\Events\Processing;
@@ -32,6 +33,7 @@ use Throwable;
 class Workflow
 {
     use Dispatchable;
+    use HasLifecycleHooks;
     use Queueable;
 
     /**
@@ -84,21 +86,7 @@ class Workflow
      */
     public static function run(array|object|null $payload = null): object|array|null
     {
-        $error = null;
-        $result = null;
-
-        try {
-            $payload = static::before($payload);
-            $result = static::dispatchSync($payload);
-            $result = static::after($result);
-        } catch (Throwable $e) {
-            $error = $e;
-            $result = static::onError($e, $payload);
-        } finally {
-            static::finally($payload, $error);
-        }
-
-        return $result;
+        return static::runWithHooks($payload);
     }
 
     /**
@@ -183,14 +171,6 @@ class Workflow
     }
 
     /**
-     * Override to transform the payload before the workflow is dispatched.
-     */
-    protected static function before(array|object|null $payload): array|object|null
-    {
-        return $payload;
-    }
-
-    /**
      * Override to transform the result after the workflow finishes successfully.
      */
     protected static function after(object|array|null $result): object|array|null
@@ -205,15 +185,6 @@ class Workflow
     protected static function onError(Throwable $e, array|object|null $payload): object|array|null
     {
         throw $e;
-    }
-
-    /**
-     * Override to run cleanup or logging that must happen regardless of success.
-     * Receives the (possibly transformed) payload and the error if one was thrown.
-     */
-    protected static function finally(array|object|null $payload, ?Throwable $error): void
-    {
-        //
     }
 
     /**

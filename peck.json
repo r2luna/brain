@@ -16,7 +16,8 @@
             "laravel's",
             "subdirectory",
             "formatters",
-            "unparseable"
+            "unparseable",
+            "dispatchable"
         ],
         "paths": []
     }

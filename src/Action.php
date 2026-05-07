@@ -10,6 +10,7 @@ use Brain\Actions\Middleware\FinalizeActionMiddleware;
 use Brain\Attributes\OnQueue;
 use Brain\Attributes\Sensitive;
 use Brain\Concerns\HasLifecycleHooks;
+use Brain\Concerns\Middleware\HookLifecycleMiddleware;
 use Brain\Exceptions\InvalidPayload;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -109,7 +110,8 @@ abstract class Action
     }
 
     /**
-     * Run the action synchronously, applying the before/after/onError/finally hooks.
+     * Run the action synchronously. Lifecycle hooks (before/after/onError/finally)
+     * fire via HookLifecycleMiddleware on every dispatch path (sync or queued).
      * Returns the final payload (consistent with Workflow::run()).
      */
     public static function run(array|object|null $payload = null): object|array|null
@@ -167,6 +169,14 @@ abstract class Action
     }
 
     /**
+     * Override to transform the action instance after it finishes successfully.
+     */
+    public static function after(Action $result): static
+    {
+        return $result;
+    }
+
+    /**
      * It will fire an event to tell anyone that
      * the action has been finished to process
      */
@@ -198,15 +208,10 @@ abstract class Action
     /** Return the middleware that should be applied to the action. */
     public function middleware(): array
     {
-        return [new FinalizeActionMiddleware];
-    }
-
-    /**
-     * Override to transform the action instance after it finishes successfully.
-     */
-    protected static function after(Action $result): static
-    {
-        return $result;
+        return [
+            new HookLifecycleMiddleware,
+            new FinalizeActionMiddleware,
+        ];
     }
 
     /**

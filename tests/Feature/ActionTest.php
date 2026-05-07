@@ -402,7 +402,7 @@ it('should be able to pass rules to the action to be validated using Validator f
     );
 });
 
-it('returns middleware array containing FinalizeActionMiddleware', function (): void {
+it('returns middleware array containing HookLifecycleMiddleware and FinalizeActionMiddleware', function (): void {
     class MiddlewareAction extends Action
     {
         public function handle(): self
@@ -415,8 +415,9 @@ it('returns middleware array containing FinalizeActionMiddleware', function (): 
     $middlewares = $action->middleware();
 
     expect($middlewares)->toBeArray()
-        ->and($middlewares)->toHaveCount(1)
-        ->and($middlewares[0])->toBeInstanceOf(FinalizeActionMiddleware::class);
+        ->and($middlewares)->toHaveCount(2)
+        ->and($middlewares[0])->toBeInstanceOf(Brain\Concerns\Middleware\HookLifecycleMiddleware::class)
+        ->and($middlewares[1])->toBeInstanceOf(FinalizeActionMiddleware::class);
 });
 
 it('fires Processed event when finalize is called on action', function (): void {
@@ -547,18 +548,18 @@ describe('action lifecycle hooks', function (): void {
     it('should call before() to transform the payload before dispatch', function (): void {
         class HookedActionBefore extends Action
         {
+            public static function before(array|object|null $payload): array|object|null
+            {
+                $payload['value'] = ($payload['value'] ?? 0) + 100;
+
+                return $payload;
+            }
+
             public function handle(): self
             {
                 $this->payload->seen = $this->payload->value;
 
                 return $this;
-            }
-
-            protected static function before(array|object|null $payload): array|object|null
-            {
-                $payload['value'] = ($payload['value'] ?? 0) + 100;
-
-                return $payload;
             }
         }
 
@@ -570,18 +571,18 @@ describe('action lifecycle hooks', function (): void {
     it('should call after() to transform the action instance', function (): void {
         class HookedActionAfter extends Action
         {
+            public static function after(Action $result): static
+            {
+                $result->payload->wrapped = true;
+
+                return $result;
+            }
+
             public function handle(): self
             {
                 $this->payload->value = 42;
 
                 return $this;
-            }
-
-            protected static function after(Action $result): static
-            {
-                $result->payload->wrapped = true;
-
-                return $result;
             }
         }
 
@@ -594,17 +595,17 @@ describe('action lifecycle hooks', function (): void {
     it('should call onError() and let it return a fallback action', function (): void {
         class HookedActionFailing extends Action
         {
-            public function handle(): self
-            {
-                throw new RuntimeException('boom');
-            }
-
-            protected static function onError(Throwable $e, array|object|null $payload): static
+            public static function onError(Throwable $e, array|object|null $payload): static
             {
                 $instance = new static($payload);
                 $instance->payload->recovered = $e->getMessage();
 
                 return $instance;
+            }
+
+            public function handle(): self
+            {
+                throw new RuntimeException('boom');
             }
         }
 
@@ -633,15 +634,15 @@ describe('action lifecycle hooks', function (): void {
 
         class HookedActionFinallyHappy extends Action
         {
-            public function handle(): self
-            {
-                return $this;
-            }
-
-            protected static function finally(array|object|null $payload, ?Throwable $error): void
+            public static function finally(array|object|null $payload, ?Throwable $error): void
             {
                 $GLOBALS['__action_finally_happy']->called = true;
                 $GLOBALS['__action_finally_happy']->error = $error;
+            }
+
+            public function handle(): self
+            {
+                return $this;
             }
         }
 
@@ -659,20 +660,20 @@ describe('action lifecycle hooks', function (): void {
 
         class HookedActionFinallyErr extends Action
         {
-            public function handle(): self
-            {
-                throw new RuntimeException('kaboom');
-            }
-
-            protected static function onError(Throwable $e, array|object|null $payload): static
+            public static function onError(Throwable $e, array|object|null $payload): static
             {
                 return new static($payload);
             }
 
-            protected static function finally(array|object|null $payload, ?Throwable $error): void
+            public static function finally(array|object|null $payload, ?Throwable $error): void
             {
                 $GLOBALS['__action_finally_err']->called = true;
                 $GLOBALS['__action_finally_err']->error = $error;
+            }
+
+            public function handle(): self
+            {
+                throw new RuntimeException('kaboom');
             }
         }
 

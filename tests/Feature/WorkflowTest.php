@@ -402,7 +402,7 @@ describe('lifecycle hooks', function (): void {
         {
             protected array $actions = [HookedBeforeAction::class];
 
-            protected static function before(array|object|null $payload): array|object|null
+            public static function before(array|object|null $payload): array|object|null
             {
                 $payload['value'] = ($payload['value'] ?? 0) + 100;
 
@@ -420,7 +420,7 @@ describe('lifecycle hooks', function (): void {
         {
             protected array $actions = [SimpleAction::class];
 
-            protected static function after(object|array|null $result): object|array|null
+            public static function after(object|array|null $result): object|array|null
             {
                 $result->wrapped = true;
 
@@ -447,7 +447,7 @@ describe('lifecycle hooks', function (): void {
         {
             protected array $actions = [HookedFailingAction::class];
 
-            protected static function onError(Throwable $e, array|object|null $payload): object|array|null
+            public static function onError(Throwable $e, array|object|null $payload): object|array|null
             {
                 return (object) ['fallback' => true, 'error' => $e->getMessage()];
             }
@@ -494,7 +494,7 @@ describe('lifecycle hooks', function (): void {
         {
             protected array $actions = [HookedFinallyAction::class];
 
-            protected static function finally(array|object|null $payload, ?Throwable $error): void
+            public static function finally(array|object|null $payload, ?Throwable $error): void
             {
                 $GLOBALS['__finally_capture']->called = true;
                 $GLOBALS['__finally_capture']->error = $error;
@@ -525,12 +525,12 @@ describe('lifecycle hooks', function (): void {
         {
             protected array $actions = [HookedFinallyErrorAction::class];
 
-            protected static function onError(Throwable $e, array|object|null $payload): object|array|null
+            public static function onError(Throwable $e, array|object|null $payload): object|array|null
             {
                 return null;
             }
 
-            protected static function finally(array|object|null $payload, ?Throwable $error): void
+            public static function finally(array|object|null $payload, ?Throwable $error): void
             {
                 $GLOBALS['__finally_capture_err']->called = true;
                 $GLOBALS['__finally_capture_err']->error = $error;
@@ -557,14 +557,14 @@ describe('lifecycle hooks', function (): void {
         {
             protected array $actions = [SubHookedAction::class];
 
-            protected static function before(array|object|null $payload): array|object|null
+            public static function before(array|object|null $payload): array|object|null
             {
                 $payload->subBeforeCalled = true;
 
                 return $payload;
             }
 
-            protected static function after(object|array|null $result): object|array|null
+            public static function after(object|array|null $result): object|array|null
             {
                 $result->subAfterCalled = true;
 

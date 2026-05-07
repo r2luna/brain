@@ -10,6 +10,7 @@ use Brain\Actions\Events\Skipped;
 use Brain\Attributes\OnQueue;
 use Brain\Attributes\Sensitive;
 use Brain\Concerns\HasLifecycleHooks;
+use Brain\Concerns\Middleware\HookLifecycleMiddleware;
 use Brain\Workflows\Events\Error;
 use Brain\Workflows\Events\Processed;
 use Brain\Workflows\Events\Processing;
@@ -17,6 +18,7 @@ use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +36,7 @@ class Workflow
 {
     use Dispatchable;
     use HasLifecycleHooks;
+    use InteractsWithQueue;
     use Queueable;
 
     /**
@@ -65,7 +68,7 @@ class Workflow
      * Workflow constructor.
      */
     public function __construct(
-        private array|object|null $payload = null
+        public array|object|null $payload = null
     ) {
         $this->uuid = Str::uuid()->toString();
 
@@ -82,11 +85,26 @@ class Workflow
     }
 
     /**
-     * Run the workflow synchronously, applying the before/after/onError/finally hooks.
+     * Run the workflow synchronously. Lifecycle hooks (before/after/onError/finally)
+     * fire via HookLifecycleMiddleware on every dispatch path (sync or queued).
      */
     public static function run(array|object|null $payload = null): object|array|null
     {
         return static::runWithHooks($payload);
+    }
+
+    /**
+     * Override to transform the result after the workflow finishes successfully.
+     */
+    public static function after(object|array|null $result): object|array|null
+    {
+        return $result;
+    }
+
+    /** Return the middleware that should be applied to the workflow. */
+    public function middleware(): array
+    {
+        return [new HookLifecycleMiddleware];
     }
 
     /**
@@ -168,14 +186,6 @@ class Workflow
         }
 
         return $output;
-    }
-
-    /**
-     * Override to transform the result after the workflow finishes successfully.
-     */
-    protected static function after(object|array|null $result): object|array|null
-    {
-        return $result;
     }
 
     /**

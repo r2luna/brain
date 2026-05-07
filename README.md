@@ -105,9 +105,15 @@ class CreateOrder extends Workflow
 }
 ```
 
-**Order:** happy path runs `before → dispatchSync → after`. On exception: `before → dispatchSync → onError`. The `finally` hook always runs last.
+**Order:** happy path runs `before → handle → after`. On exception: `before → handle → onError`. The `finally` hook always runs last.
 
-**Sub-workflows fire their own hooks.** When a Workflow lists another Workflow in its `$actions` array, the sub-workflow is invoked through `::run()` so its hooks fire too. Actions queued via `ShouldQueue` do not pass through their own `::run()` when dispatched as part of a workflow.
+**Sync vs queued execution:**
+- **Sync** (`::run()`): hooks fire in-process. `onError` may return a fallback to recover.
+- **Queued** (`::dispatch()`, or any `ShouldQueue` Workflow/Action — including ones dispatched from inside another Workflow): hooks fire in the worker via `HookLifecycleMiddleware`. `onError` is invoked for instrumentation but its return value is **ignored** and the original exception is re-thrown so Laravel handles retries.
+- **Chained workflows** (`$chain = true`): the workflow itself doesn't fire hooks. Each chained action fires its own hooks when the worker picks it up.
+- Calling `::dispatchSync()` directly skips the hook pipeline (raw escape hatch).
+
+**Sub-workflows fire their own hooks.** When a Workflow lists another Workflow in its `$actions` array, the sub-workflow is invoked through `::run()` so its hooks fire too.
 
 ## Features
 

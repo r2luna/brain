@@ -167,7 +167,13 @@ class ChargeCustomer extends Action
 </code-snippet>
 @endverbatim
 
-> **Hook ordering:** `before → dispatchSync → after`. On exception: `before → dispatchSync → onError`. The `finally` hook always runs last. Hooks only fire on the entry-point call to `::run()` — actions queued via `ShouldQueue` do not pass through their own `::run()` when dispatched as part of a workflow.
+> **Hook ordering:** `before → handle → after`. On exception: `before → handle → onError`. The `finally` hook always runs last.
+
+> **Sync vs queued execution:**
+> - **Sync** (`::run()`): hooks fire in-process. `onError` may return a fallback to recover.
+> - **Queued** (`::dispatch()`, or any `ShouldQueue` Workflow/Action — including ones running inside another Workflow): hooks fire in the worker via `HookLifecycleMiddleware`. `onError` is invoked for instrumentation but its return value is **ignored** and the original exception is re-thrown so Laravel handles retries.
+> - **Chained workflows** (`$chain = true`): the workflow itself doesn't fire hooks (the chain is fire-and-forget). Each chained action fires its own hooks when the worker picks it up.
+> - Calling `::dispatchSync()` directly skips the hook pipeline (escape hatch).
 
 ---
 

@@ -8,6 +8,7 @@ use Brain\Facades\Terminal;
 use Exception;
 use Illuminate\Console\OutputStyle;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /** Renders the brain map as a tree-style console output. */
 class Printer
@@ -252,7 +253,7 @@ class Printer
 
             if ($useDomains) {
                 $domain = data_get($domainData, 'domain', '');
-                $this->lines[] = [sprintf('  <fg=%s;options=bold>%s</>', $this->elemColors['DOMAIN'], strtoupper($domain))];
+                $this->lines[] = [sprintf('  <fg=%s;options=bold>%s</>', $this->elemColors['DOMAIN'], $this->formatDomainLabel($domain))];
 
                 $this->renderGroupedItems($items, true);
             } else {
@@ -297,7 +298,7 @@ class Printer
             $isLastGroup = ($groupIndex === $totalGroups - 1);
 
             $indent = $useDomains ? '  ' : '';
-            $this->lines[] = [sprintf('%s<fg=%s;options=bold>%s</>', $indent, $this->elemColors['DOMAIN'], strtoupper((string) $groupName))];
+            $this->lines[] = [sprintf('%s<fg=%s;options=bold>%s</>', $indent, $this->elemColors['DOMAIN'], $this->formatDomainLabel((string) $groupName))];
 
             $totalGroupItems = count($groupItems);
 
@@ -566,5 +567,14 @@ class Printer
     private function getTerminalWidth(): void
     {
         $this->terminalWidth = Terminal::cols();
+    }
+
+    /**
+     * Format a domain name for display: split CamelCase / snake_case / kebab-case
+     * into spaced words, then uppercase. "AccessControl" becomes "ACCESS CONTROL".
+     */
+    private function formatDomainLabel(string $domain): string
+    {
+        return mb_strtoupper(Str::headline($domain));
     }
 }

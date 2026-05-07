@@ -497,6 +497,38 @@ describe('loadQueriesFor testsuite', function (): void {
 
         expect($output)->toHaveCount(0);
     });
+
+    it('should support union types in query constructor parameters', function (): void {
+        $method = $this->reflection->getMethod('loadQueriesFor');
+        $path = __DIR__.'/../Fixtures/BrainMixed';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(1)
+            ->and($output[0]['name'])->toBe('UnionQuery')
+            ->and($output[0]['properties'][0]['name'])->toBe('id')
+            ->and($output[0]['properties'][0]['type'])->toContain('int')
+            ->and($output[0]['properties'][0]['type'])->toContain('string');
+    });
+
+    it('should skip non-Query classes inside the Queries directory', function (): void {
+        $method = $this->reflection->getMethod('loadQueriesFor');
+        $path = __DIR__.'/../Fixtures/BrainMixed';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(1)
+            ->and($output[0]['name'])->toBe('UnionQuery');
+    });
+});
+
+describe('non-Brain class filtering', function (): void {
+    it('should skip non-Action classes inside the Actions directory and its subdirectories', function (): void {
+        $method = $this->reflection->getMethod('loadActionsFor');
+        $path = __DIR__.'/../Fixtures/BrainMixed';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toHaveCount(1)
+            ->and($output[0]['name'])->toBe('RealAction');
+    });
 });
 
 describe('getTask with workflow class', function (): void {

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Brain\Console;
 
+use Brain\Action;
 use Brain\Attributes\OnQueue;
 use Brain\Attributes\Sensitive;
 use Brain\Process;
+use Brain\Query;
 use Brain\Task;
 use Brain\Workflow;
 use Exception;
@@ -21,6 +23,7 @@ use ReflectionClass;
 use ReflectionException;
 use ReflectionType;
 use SplFileInfo;
+use Throwable;
 
 /**
  * Class BrainMap
@@ -160,6 +163,7 @@ class BrainMap
 
         return collect(File::allFiles($path))
             ->filter(fn (SplFileInfo $file): bool => $this->isClassFile($file))
+            ->filter(fn (SplFileInfo $file): bool => $this->extendsBrainBase($file, Process::class))
             ->values()
             ->map(function (SplFileInfo $value): array {
                 $reflection = $this->getReflectionClass($value);
@@ -210,6 +214,7 @@ class BrainMap
 
         return collect(File::allFiles($path))
             ->filter(fn (SplFileInfo $file): bool => $this->isClassFile($file))
+            ->filter(fn (SplFileInfo $file): bool => $this->extendsBrainBase($file, Task::class))
             ->values()
             ->map(fn (SplFileInfo $task): array => $this->getTask($task, $task->getRelativePath()))
             ->toArray();
@@ -298,6 +303,7 @@ class BrainMap
 
         return collect(File::allFiles($path))
             ->filter(fn (SplFileInfo $file): bool => $this->isClassFile($file))
+            ->filter(fn (SplFileInfo $file): bool => $this->extendsBrainBase($file, Workflow::class))
             ->values()
             ->map(function (SplFileInfo $value): array {
                 $reflection = $this->getReflectionClass($value);
@@ -333,6 +339,7 @@ class BrainMap
 
         return collect(File::allFiles($path))
             ->filter(fn (SplFileInfo $file): bool => $this->isClassFile($file))
+            ->filter(fn (SplFileInfo $file): bool => $this->extendsBrainBase($file, Action::class))
             ->values()
             ->map(fn (SplFileInfo $action): array => $this->getAction($action, $action->getRelativePath()))
             ->toArray();
@@ -412,6 +419,7 @@ class BrainMap
 
         return collect(File::allFiles($path))
             ->filter(fn (SplFileInfo $file): bool => $this->isClassFile($file))
+            ->filter(fn (SplFileInfo $file): bool => $this->extendsBrainBase($file, Query::class))
             ->values()
             ->map(function (SplFileInfo $task): array {
                 $reflection = $this->getReflectionClass($task);
@@ -424,9 +432,10 @@ class BrainMap
                     $parameters = $constructor->getParameters();
 
                     foreach ($parameters as $parameter) {
+                        $type = $parameter->getType();
                         $properties[] = [
                             'name' => $parameter->getName(),
-                            'type' => $parameter->getType() instanceof ReflectionType ? $parameter->getType()->getName() : 'mixed',
+                            'type' => $type instanceof ReflectionType ? (string) $type : 'mixed',
                         ];
                     }
                 }
@@ -447,6 +456,19 @@ class BrainMap
         $content = file_get_contents($file->getPathname());
 
         return (bool) preg_match('/^\s*(?:abstract\s+|final\s+|readonly\s+)*class\s+/m', $content);
+    }
+
+    /**
+     * Whether the class declared in the given file extends the expected Brain base class.
+     * Returns false on any reflection error so unparseable or non-Brain files are skipped.
+     */
+    private function extendsBrainBase(SplFileInfo $file, string $baseClass): bool
+    {
+        try {
+            return $this->getReflectionClass($file)->isSubclassOf($baseClass);
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     // region Helper Methods

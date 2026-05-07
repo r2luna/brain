@@ -9,16 +9,37 @@
 
 ---
 
-> [!WARNING]
-> **v2 support ends on June 1, 2026.** After that date, only **v3** will receive bug fixes and new features. v3 renames the core concepts (`Process` → `Workflow`, `Task` → `Action`) — see the [Deprecation Map](#deprecation-map) below to migrate.
+> [!IMPORTANT]
+> **v4 is the current major release.**
+> - **Breaking change vs v3:** `MyAction::run($payload)` now returns the payload object (was: the Action instance). This makes it consistent with `MyWorkflow::run($payload)`. See [Migrating from v3 to v4](#migrating-from-v3-to-v4).
+> - **New in v4:** lifecycle hooks (`before`, `after`, `onError`, `finally`) on Workflow and Action — see [Lifecycle Hooks](#lifecycle-hooks).
+> - **v2 support ends on June 1, 2026.** After that date only v3+ will receive bug fixes. v2 renames the core concepts (`Process` → `Workflow`, `Task` → `Action`) — see the [v2 → v3 Deprecation Map](#v2--v3-deprecation-map).
 
 **Brain** is an elegant Laravel Package that helps you organize your Laravel application using Domain-Driven Design principles through a simple command-line interface.
 
-## Deprecation Map
+## Migrating from v3 to v4
 
-The following v2 names are deprecated and will be removed when v2 support ends on **June 1, 2026**. Update your code to the v3 equivalents before that date.
+v4 has **one breaking change**: `Action::run()` now returns the final payload instead of the Action instance, matching `Workflow::run()`.
 
-| v2 (deprecated) | v3 (current) | Notes |
+```php
+// v3
+$action = MyAction::run(['user_id' => 1]);
+$id     = $action->payload->orderId;
+
+// v4
+$payload = MyAction::run(['user_id' => 1]);
+$id      = $payload->orderId;
+```
+
+If you still need the Action instance (rare — typically only for `finalize()` or middleware introspection), call `MyAction::dispatchSync($payload)` directly.
+
+The new lifecycle hooks (`before`, `after`, `onError`, `finally`) are also available in v3 — only the return-type change is v4-only.
+
+## v2 → v3 Deprecation Map
+
+The following v2 names are deprecated and will be removed when v2 support ends on **June 1, 2026**.
+
+| v2 (deprecated) | v3+ (current) | Notes |
 |---|---|---|
 | `Brain\Process` | `Brain\Workflow` | Base class for orchestrating a sequence of steps |
 | `Brain\Task` | `Brain\Action` | Base class for a single unit of work |
@@ -37,14 +58,66 @@ The following v2 names are deprecated and will be removed when v2 support ends o
 
 The v2 classes (`Process`, `Task`) remain as aliases until **June 1, 2026** so existing projects keep working during the migration window.
 
+## Lifecycle Hooks
+
+Both `Workflow` and `Action` expose four optional static hooks that wrap `::run()`. Override only what you need.
+
+| Hook | Signature | When |
+|------|-----------|------|
+| `before` | `before($payload): payload` | Transform the payload before `dispatchSync()`. |
+| `after` | `after($result): $result` | Transform the result after a successful run. |
+| `onError` | `onError(Throwable $e, $payload): result` | Catch exceptions and return a fallback (default re-throws). |
+| `finally` | `finally($payload, ?Throwable $error): void` | Cleanup/logging. Always runs, success or failure. |
+
+```php
+use Brain\Workflow;
+
+class CreateOrder extends Workflow
+{
+    protected array $actions = [
+        ValidateInventory::class,
+        ChargeCustomer::class,
+        CreateOrderRecord::class,
+    ];
+
+    protected static function before(array|object|null $payload): array|object|null
+    {
+        $payload['received_at'] = now();
+        return $payload;
+    }
+
+    protected static function after(object|array|null $result): object|array|null
+    {
+        Log::info('Order created', ['order_id' => $result->orderId]);
+        return $result;
+    }
+
+    protected static function onError(Throwable $e, array|object|null $payload): object|array|null
+    {
+        // Recover gracefully, or omit this method to re-throw
+        return (object) ['failed' => true, 'reason' => $e->getMessage()];
+    }
+
+    protected static function finally(array|object|null $payload, ?Throwable $error): void
+    {
+        Metric::record('create_order.duration', $error !== null ? 'failed' : 'ok');
+    }
+}
+```
+
+**Order:** happy path runs `before → dispatchSync → after`. On exception: `before → dispatchSync → onError`. The `finally` hook always runs last.
+
+**Sub-workflows fire their own hooks.** When a Workflow lists another Workflow in its `$actions` array, the sub-workflow is invoked through `::run()` so its hooks fire too. Actions queued via `ShouldQueue` do not pass through their own `::run()` when dispatched as part of a workflow.
+
 ## Features
 
 -   🎯 **Domain-Driven Structure**: Easily create new domains with proper architecture (optional)
--   🔄 **Process Management**: Generate process classes for complex business operations
+-   🔄 **Workflow Orchestration**: Generate workflow classes for complex, multi-step business operations
+-   🧩 **Action Composition**: Generate action classes that flow a payload through a pipeline
+-   🪝 **Lifecycle Hooks**: `before`, `after`, `onError`, `finally` on Workflows and Actions
 -   🔍 **Query Objects**: Create dedicated query classes for database operations
--   ⚡ **Task Management**: Generate task classes for background jobs and queue operations
 -   🔧 **Flexible Configuration**: Customize root directory, domain organization, and class naming conventions
--   📊 **Built-in Logging**: Track process and task execution with comprehensive event system
+-   📊 **Built-in Logging**: Track workflow and action execution with a comprehensive event system
 
 ## Gains
 

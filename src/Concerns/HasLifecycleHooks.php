@@ -23,6 +23,16 @@ trait HasLifecycleHooks
     }
 
     /**
+     * Override to handle exceptions raised during the component.
+     * The default re-throws; an override may return a fallback value to recover
+     * (a subclass may narrow the return type via covariance).
+     */
+    protected static function onError(Throwable $e, array|object|null $payload): mixed
+    {
+        throw $e;
+    }
+
+    /**
      * Override to run cleanup or logging that must happen regardless of success.
      * Receives the (possibly transformed) payload and the error if one was thrown.
      */

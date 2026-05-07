@@ -26,7 +26,6 @@ use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
 use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 use ReflectionException;
-use Throwable;
 
 /**
  * Class Action
@@ -205,15 +204,6 @@ abstract class Action
     protected static function after(Action $result): static
     {
         return $result;
-    }
-
-    /**
-     * Override to handle exceptions raised during the action.
-     * The default re-throws; an override may return a fallback instance to recover.
-     */
-    protected static function onError(Throwable $e, array|object|null $payload): static
-    {
-        throw $e;
     }
 
     /**

@@ -179,15 +179,6 @@ class Workflow
     }
 
     /**
-     * Override to handle exceptions raised during the workflow.
-     * The default re-throws; an override may return a fallback value to recover.
-     */
-    protected static function onError(Throwable $e, array|object|null $payload): object|array|null
-    {
-        throw $e;
-    }
-
-    /**
      * Chain all actions in the order that they were added, and
      * use Bus::chain to dispatch them.
      */

@@ -385,3 +385,201 @@ it('should apply workflow #[OnQueue] to chained actions', function (): void {
         OnQueueChainAction2::class,
     ]);
 });
+
+describe('lifecycle hooks', function (): void {
+    it('should call before() to transform the payload before dispatch', function (): void {
+        class HookedBeforeAction extends Action
+        {
+            public function handle(): self
+            {
+                $this->payload->seen = $this->payload->value;
+
+                return $this;
+            }
+        }
+
+        class HookedBeforeWorkflow extends Workflow
+        {
+            protected array $actions = [HookedBeforeAction::class];
+
+            protected static function before(array|object|null $payload): array|object|null
+            {
+                $payload['value'] = ($payload['value'] ?? 0) + 100;
+
+                return $payload;
+            }
+        }
+
+        $result = HookedBeforeWorkflow::run(['value' => 1]);
+
+        expect($result->seen)->toBe(101);
+    });
+
+    it('should call after() to transform the result after dispatch', function (): void {
+        class HookedAfterWorkflow extends Workflow
+        {
+            protected array $actions = [SimpleAction::class];
+
+            protected static function after(object|array|null $result): object|array|null
+            {
+                $result->wrapped = true;
+
+                return $result;
+            }
+        }
+
+        $result = HookedAfterWorkflow::run(['value' => 0]);
+
+        expect($result->value)->toBe(1)
+            ->and($result->wrapped)->toBeTrue();
+    });
+
+    it('should call onError() when the workflow throws and let it return a fallback', function (): void {
+        class HookedFailingAction extends Action
+        {
+            public function handle(): self
+            {
+                throw new RuntimeException('boom');
+            }
+        }
+
+        class HookedRecoveringWorkflow extends Workflow
+        {
+            protected array $actions = [HookedFailingAction::class];
+
+            protected static function onError(Throwable $e, array|object|null $payload): object|array|null
+            {
+                return (object) ['fallback' => true, 'error' => $e->getMessage()];
+            }
+        }
+
+        $result = HookedRecoveringWorkflow::run(['value' => 0]);
+
+        expect($result->fallback)->toBeTrue()
+            ->and($result->error)->toBe('boom');
+    });
+
+    it('should re-throw by default when onError() is not overridden', function (): void {
+        class HookedDefaultErrorAction extends Action
+        {
+            public function handle(): self
+            {
+                throw new RuntimeException('uncaught');
+            }
+        }
+
+        class HookedDefaultErrorWorkflow extends Workflow
+        {
+            protected array $actions = [HookedDefaultErrorAction::class];
+        }
+
+        HookedDefaultErrorWorkflow::run([]);
+    })->throws(RuntimeException::class, 'uncaught');
+
+    it('should call finally() on the happy path with no error', function (): void {
+        class HookedFinallyAction extends Action
+        {
+            public function handle(): self
+            {
+                return $this;
+            }
+        }
+
+        $captured = new stdClass;
+        $captured->called = false;
+        $captured->error = 'unset';
+        $GLOBALS['__finally_capture'] = $captured;
+
+        class HookedFinallyHappyWorkflow extends Workflow
+        {
+            protected array $actions = [HookedFinallyAction::class];
+
+            protected static function finally(array|object|null $payload, ?Throwable $error): void
+            {
+                $GLOBALS['__finally_capture']->called = true;
+                $GLOBALS['__finally_capture']->error = $error;
+            }
+        }
+
+        HookedFinallyHappyWorkflow::run([]);
+
+        expect($captured->called)->toBeTrue()
+            ->and($captured->error)->toBeNull();
+    });
+
+    it('should call finally() on the error path with the exception', function (): void {
+        class HookedFinallyErrorAction extends Action
+        {
+            public function handle(): self
+            {
+                throw new RuntimeException('kaboom');
+            }
+        }
+
+        $captured = new stdClass;
+        $captured->called = false;
+        $captured->error = 'unset';
+        $GLOBALS['__finally_capture_err'] = $captured;
+
+        class HookedFinallyErrorWorkflow extends Workflow
+        {
+            protected array $actions = [HookedFinallyErrorAction::class];
+
+            protected static function onError(Throwable $e, array|object|null $payload): object|array|null
+            {
+                return null;
+            }
+
+            protected static function finally(array|object|null $payload, ?Throwable $error): void
+            {
+                $GLOBALS['__finally_capture_err']->called = true;
+                $GLOBALS['__finally_capture_err']->error = $error;
+            }
+        }
+
+        HookedFinallyErrorWorkflow::run([]);
+
+        expect($captured->called)->toBeTrue()
+            ->and($captured->error)->toBeInstanceOf(RuntimeException::class)
+            ->and($captured->error->getMessage())->toBe('kaboom');
+    });
+
+    it('should fire hooks of a sub-workflow when invoked from a parent workflow', function (): void {
+        class SubHookedAction extends Action
+        {
+            public function handle(): self
+            {
+                return $this;
+            }
+        }
+
+        class SubHookedWorkflow extends Workflow
+        {
+            protected array $actions = [SubHookedAction::class];
+
+            protected static function before(array|object|null $payload): array|object|null
+            {
+                $payload->subBeforeCalled = true;
+
+                return $payload;
+            }
+
+            protected static function after(object|array|null $result): object|array|null
+            {
+                $result->subAfterCalled = true;
+
+                return $result;
+            }
+        }
+
+        class ParentWithSubWorkflow extends Workflow
+        {
+            protected array $actions = [SubHookedWorkflow::class];
+        }
+
+        $result = ParentWithSubWorkflow::run((object) []);
+
+        expect($result->subBeforeCalled)->toBeTrue()
+            ->and($result->subAfterCalled)->toBeTrue();
+    });
+});

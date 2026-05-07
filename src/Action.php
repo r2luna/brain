@@ -25,6 +25,7 @@ use phpDocumentor\Reflection\DocBlock\Tags\PropertyRead;
 use phpDocumentor\Reflection\DocBlockFactory;
 use ReflectionClass;
 use ReflectionException;
+use Throwable;
 
 /**
  * Class Action
@@ -107,11 +108,25 @@ abstract class Action
     }
 
     /**
-     * Run the action synchronously.
+     * Run the action synchronously, applying the before/after/onError/finally hooks.
      */
     public static function run(array|object|null $payload = null): static
     {
-        return static::dispatchSync($payload);
+        $error = null;
+        $result = null;
+
+        try {
+            $payload = static::before($payload);
+            $result = static::dispatchSync($payload);
+            $result = static::after($result);
+        } catch (Throwable $e) {
+            $error = $e;
+            $result = static::onError($e, $payload);
+        } finally {
+            static::finally($payload, $error);
+        }
+
+        return $result;
     }
 
     /**
@@ -194,6 +209,40 @@ abstract class Action
     public function middleware(): array
     {
         return [new FinalizeActionMiddleware];
+    }
+
+    /**
+     * Override to transform the payload before the action is dispatched.
+     */
+    protected static function before(array|object|null $payload): array|object|null
+    {
+        return $payload;
+    }
+
+    /**
+     * Override to transform the action instance after it finishes successfully.
+     */
+    protected static function after(Action $result): static
+    {
+        return $result;
+    }
+
+    /**
+     * Override to handle exceptions raised during the action.
+     * The default re-throws; an override may return a fallback instance to recover.
+     */
+    protected static function onError(Throwable $e, array|object|null $payload): static
+    {
+        throw $e;
+    }
+
+    /**
+     * Override to run cleanup or logging that must happen regardless of success.
+     * Receives the (possibly transformed) payload and the error if one was thrown.
+     */
+    protected static function finally(array|object|null $payload, ?Throwable $error): void
+    {
+        //
     }
 
     /**

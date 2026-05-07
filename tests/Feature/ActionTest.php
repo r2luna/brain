@@ -542,3 +542,144 @@ it('queued actions are finalized before going through next middleware', function
 
     Event::assertDispatched(Processed::class);
 });
+
+describe('action lifecycle hooks', function (): void {
+    it('should call before() to transform the payload before dispatch', function (): void {
+        class HookedActionBefore extends Action
+        {
+            public function handle(): self
+            {
+                $this->payload->seen = $this->payload->value;
+
+                return $this;
+            }
+
+            protected static function before(array|object|null $payload): array|object|null
+            {
+                $payload['value'] = ($payload['value'] ?? 0) + 100;
+
+                return $payload;
+            }
+        }
+
+        $result = HookedActionBefore::run(['value' => 1]);
+
+        expect($result->payload->seen)->toBe(101);
+    });
+
+    it('should call after() to transform the action instance', function (): void {
+        class HookedActionAfter extends Action
+        {
+            public function handle(): self
+            {
+                $this->payload->value = 42;
+
+                return $this;
+            }
+
+            protected static function after(Action $result): static
+            {
+                $result->payload->wrapped = true;
+
+                return $result;
+            }
+        }
+
+        $result = HookedActionAfter::run([]);
+
+        expect($result->payload->value)->toBe(42)
+            ->and($result->payload->wrapped)->toBeTrue();
+    });
+
+    it('should call onError() and let it return a fallback action', function (): void {
+        class HookedActionFailing extends Action
+        {
+            public function handle(): self
+            {
+                throw new RuntimeException('boom');
+            }
+
+            protected static function onError(Throwable $e, array|object|null $payload): static
+            {
+                $instance = new static($payload);
+                $instance->payload->recovered = $e->getMessage();
+
+                return $instance;
+            }
+        }
+
+        $result = HookedActionFailing::run([]);
+
+        expect($result->payload->recovered)->toBe('boom');
+    });
+
+    it('should re-throw by default when onError() is not overridden on Action', function (): void {
+        class HookedActionDefaultError extends Action
+        {
+            public function handle(): self
+            {
+                throw new RuntimeException('uncaught');
+            }
+        }
+
+        HookedActionDefaultError::run([]);
+    })->throws(RuntimeException::class, 'uncaught');
+
+    it('should call finally() on the happy path', function (): void {
+        $captured = new stdClass;
+        $captured->called = false;
+        $captured->error = 'unset';
+        $GLOBALS['__action_finally_happy'] = $captured;
+
+        class HookedActionFinallyHappy extends Action
+        {
+            public function handle(): self
+            {
+                return $this;
+            }
+
+            protected static function finally(array|object|null $payload, ?Throwable $error): void
+            {
+                $GLOBALS['__action_finally_happy']->called = true;
+                $GLOBALS['__action_finally_happy']->error = $error;
+            }
+        }
+
+        HookedActionFinallyHappy::run([]);
+
+        expect($captured->called)->toBeTrue()
+            ->and($captured->error)->toBeNull();
+    });
+
+    it('should call finally() on the error path with the exception', function (): void {
+        $captured = new stdClass;
+        $captured->called = false;
+        $captured->error = 'unset';
+        $GLOBALS['__action_finally_err'] = $captured;
+
+        class HookedActionFinallyErr extends Action
+        {
+            public function handle(): self
+            {
+                throw new RuntimeException('kaboom');
+            }
+
+            protected static function onError(Throwable $e, array|object|null $payload): static
+            {
+                return new static($payload);
+            }
+
+            protected static function finally(array|object|null $payload, ?Throwable $error): void
+            {
+                $GLOBALS['__action_finally_err']->called = true;
+                $GLOBALS['__action_finally_err']->error = $error;
+            }
+        }
+
+        HookedActionFinallyErr::run([]);
+
+        expect($captured->called)->toBeTrue()
+            ->and($captured->error)->toBeInstanceOf(RuntimeException::class)
+            ->and($captured->error->getMessage())->toBe('kaboom');
+    });
+});

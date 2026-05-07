@@ -10,6 +10,8 @@ Brain (`r2luna/brain`) organizes business logic into three core concepts: **Work
 | Action   | A single unit of work that mutates state | `MyAction::run($payload)` |
 | Query    | A read-only operation that returns data | `MyQuery::run($args)` |
 
+> **v2 → v3 rename:** the v2 names `Process` (now `Workflow`) and `Task` (now `Action`) still work as deprecated aliases until **June 1, 2026**. Always use the v3 names in new code: `Brain\Workflow`, `Brain\Action`, `make:workflow`, `make:action`, `protected array $actions = [...]`, `$this->cancelWorkflow()`.
+
 ### Artisan Commands
 
 - Create a Workflow: `{{ $assist->artisanCommand('make:workflow CreateOrder') }}`
@@ -74,7 +76,7 @@ class ImportData extends Workflow
 </code-snippet>
 @endverbatim
 
-**Nesting sub-workflows:** Add another Workflow class to the `$actions` array. If a sub-workflow cancels itself, cancellation does not propagate to the parent workflow.
+**Nesting sub-workflows:** Add another Workflow class to the `$actions` array. Sub-workflows are invoked through `::run()` so their lifecycle hooks fire. If a sub-workflow cancels itself, cancellation does not propagate to the parent workflow.
 
 @verbatim
 <code-snippet name="Nested Workflow" lang="php">
@@ -87,6 +89,82 @@ class FulfillOrder extends Workflow
 }
 </code-snippet>
 @endverbatim
+
+---
+
+### Lifecycle Hooks (`before`, `after`, `onError`, `finally`)
+
+Both `Workflow` and `Action` expose four optional static hooks that run around `::run()`. Override only the ones you need.
+
+| Hook | Signature | When |
+|------|-----------|------|
+| `before` | `before($payload): payload` | Transform the payload before `dispatchSync()`. |
+| `after` | `after($result): $result` | Transform the result after a successful run. |
+| `onError` | `onError(Throwable $e, $payload): $result` | Catch exceptions and return a fallback (default re-throws). |
+| `finally` | `finally($payload, ?Throwable $error): void` | Cleanup/logging. Always runs, success or failure. |
+
+@verbatim
+<code-snippet name="Workflow Hooks" lang="php">
+class CreateOrder extends Workflow
+{
+    protected array $actions = [
+        ValidateInventory::class,
+        ChargeCustomer::class,
+        CreateOrderRecord::class,
+    ];
+
+    protected static function before(array|object|null $payload): array|object|null
+    {
+        $payload['received_at'] = now();
+        return $payload;
+    }
+
+    protected static function after(object|array|null $result): object|array|null
+    {
+        Log::info('Order created', ['order_id' => $result->orderId]);
+        return $result;
+    }
+
+    protected static function onError(Throwable $e, array|object|null $payload): object|array|null
+    {
+        // Recover gracefully, or re-throw to bubble up
+        return (object) ['failed' => true, 'reason' => $e->getMessage()];
+    }
+
+    protected static function finally(array|object|null $payload, ?Throwable $error): void
+    {
+        Metric::record('create_order.duration', $error !== null ? 'failed' : 'ok');
+    }
+}
+</code-snippet>
+@endverbatim
+
+@verbatim
+<code-snippet name="Action Hooks" lang="php">
+class ChargeCustomer extends Action
+{
+    public function handle(): self
+    {
+        // ...
+        return $this;
+    }
+
+    protected static function before(array|object|null $payload): array|object|null
+    {
+        $payload['amount_cents'] = (int) ($payload['amount'] * 100);
+        return $payload;
+    }
+
+    protected static function after(Action $result): static
+    {
+        // $result is the action instance after handle()
+        return $result;
+    }
+}
+</code-snippet>
+@endverbatim
+
+> **Hook ordering:** `before → dispatchSync → after`. On exception: `before → dispatchSync → onError`. The `finally` hook always runs last. Hooks only fire on the entry-point call to `::run()` — actions queued via `ShouldQueue` do not pass through their own `::run()` when dispatched as part of a workflow.
 
 ---
 
@@ -373,6 +451,11 @@ Use `{{ $assist->artisanCommand('brain:show') }}` to see a map of all workflows,
 - `--actions` (`-a`) — Show only actions
 - `--queries` (`-Q`) — Show only queries
 - `--filter=Name` — Filter by class name
+- `--domain=Name` — Filter by domain (when `use_domains=true`)
+- `-v` — Show sub-actions inside workflows
+- `-vv` — Also show action properties (input/output)
+
+**Mixing helpers with Brain components:** It's safe to keep helper classes (interfaces, traits, factories, DTOs, formatters) inside `Workflows/`, `Actions/`, `Queries/`, including in subdirectories like `Actions/Formatters/`. `brain:show` skips any file whose class doesn't extend the matching Brain base, so non-Brain code stays organized without polluting the map.
 
 ---
 
@@ -392,3 +475,4 @@ Every successful run is saved to history (`storage/brain/run-history.json`, max 
 - **Use `@property-read` docblocks** — they document expected payload shape, enable IDE autocompletion, and Brain validates their presence.
 - **Queries are for reads, Actions are for writes** — keep this separation clean. Never mutate state inside a Query.
 - **Reuse Actions across Workflows** — actions are independent units. The same action can appear in multiple workflows.
+- **Use lifecycle hooks for cross-cutting concerns** — `before` for input normalization, `after` for response shaping, `onError` for graceful degradation, `finally` for metrics/logging. Don't put business logic in hooks; that belongs in actions.

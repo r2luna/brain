@@ -613,7 +613,7 @@ describe('subdirectory grouping', function (): void {
         $lines = $printerReflection->get('lines');
 
         expect($lines)->toBe([
-            ['  <fg=#6C7280;options=bold>MYDOMAIN</>'],
+            ['  <fg=#6C7280;options=bold>MY DOMAIN</>'],
             ['  <fg=#6C7280;options=bold>PAYMENT</>'],
             ['  <fg=#6C7280>└── </><fg=yellow;options=bold>ACTN</>  <fg=white>PayAction</><fg=#6C7280> '.str_repeat('·', 49).'</>'],
             [''],

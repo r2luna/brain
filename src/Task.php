@@ -61,6 +61,8 @@ abstract class Task
             'microtime' => $startTime,
         ]);
 
+        $this->fireBroadcastEvent('started');
+
         if ($runIn = $this->runIn()) {
             $this->delay($runIn);
         }
@@ -131,9 +133,11 @@ abstract class Task
         // @phpstan-ignore-next-line
         $instance = new static(...$arguments);
 
-        if ($runIfMethod
+        if (
+            $runIfMethod
             && $runIfMethod->getDeclaringClass()->getName() === $reflectionClass->getName()
-            && ! $instance->runIf()) {
+            && ! $instance->runIf()
+        ) {
             return null;
         }
 
@@ -174,6 +178,8 @@ abstract class Task
         $this->fireEvent(Processed::class, [
             'microtime' => $endTime,
         ]);
+
+        $this->fireBroadcastEvent('finished');
     }
 
     /**
@@ -217,6 +223,20 @@ abstract class Task
     protected function runIf(): bool
     {
         return true;
+    }
+
+    protected function startedBroadcastMessage(): array
+    {
+        return [
+            'message' => 'Task started',
+        ];
+    }
+
+    protected function finishedBroadcastMessage(): array
+    {
+        return [
+            'message' => 'Task completed successfully',
+        ];
     }
 
     /**
@@ -316,7 +336,6 @@ abstract class Task
         ) {
             throw new InvalidPayload('Task '.static::class.' :: Expected keys: '.implode(', ', $expectedKeys));
         }
-
     }
 
     /**
@@ -334,6 +353,32 @@ abstract class Task
             $process,
             $runProcessId,
             $meta
+        ));
+    }
+
+    private function fireBroadcastEvent(string $eventType): void
+    {
+        if (! \Illuminate\Support\Facades\Config::get('brain.broadcast.enabled') || ! \Illuminate\Support\Facades\Config::get('brain.broadcast.tasks')) {
+            return;
+        }
+
+        [$process, $runProcessId] = Context::get('process');
+
+        $taskId = $runProcessId.'.'.md5(static::class.serialize($this->payload));
+
+        $eventClass = $eventType === 'started' ? Broadcasting\Events\TaskStarted::class : Broadcasting\Events\TaskFinished::class;
+        $messageMethod = $eventType === 'started' ? 'startedBroadcastMessage' : 'finishedBroadcastMessage';
+
+        event(new $eventClass(
+            $taskId,
+            static::class,
+            $this->$messageMethod(),
+            [
+                'timestamp' => microtime(true),
+                'process' => $process,
+                'runProcessId' => $runProcessId,
+                'payload_keys' => is_object($this->payload) ? array_keys(get_object_vars($this->payload)) : [],
+            ]
         ));
     }
 

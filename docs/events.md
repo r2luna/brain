@@ -2,6 +2,10 @@
 
 Brain dispatches events throughout the lifecycle of workflows and actions. These can be used for logging, monitoring, or triggering additional logic.
 
+::: tip
+For real-time monitoring via WebSockets, see [Broadcasting](/broadcasting) for live event streaming.
+:::
+
 ## Enabling Logging
 
 ```bash
@@ -76,4 +80,40 @@ Event::listen(Processed::class, function ($event) {
         'process' => $event->process,
     ]);
 });
+```
+
+## Broadcasting
+
+Brain also supports real-time broadcasting of workflow and action events for live monitoring. This allows you to track execution progress via WebSocket connections.
+
+See the [Broadcasting documentation](/broadcasting) for detailed information on:
+
+- Enabling broadcast events
+- Customizing broadcast messages
+- Frontend integration examples
+- Real-time progress tracking
+
+### Quick Example
+
+```php
+// Enable broadcasting
+BRAIN_BROADCAST_ENABLED=true
+
+// Custom broadcast messages in your process
+protected function startedBroadcastMessage(): array
+{
+    return [
+        'message' => 'Order processing started',
+        'order_id' => $this->orderId,
+        'customer' => $this->customerName,
+    ];
+}
+```
+
+```javascript
+// Listen for events in your frontend
+Echo.channel('brain')
+    .listen('.brain.process.started', (e) => {
+        showNotification(`${e.message.message} for ${e.message.customer}`);
+    });
 ```

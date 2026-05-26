@@ -227,6 +227,15 @@ class Workflow
 
         try {
             foreach ($this->actions as $action) {
+                if (
+                    isset($payload->cancelWorkflow)
+                    && $payload->cancelWorkflow
+                ) {
+                    event(new Cancelled($action, payload: $payload, runWorkflowId: $this->uuid));
+
+                    break;
+                }
+
                 $reflectionClass = new ReflectionClass($action);
 
                 if ($reflectionClass->hasMethod('runIf')) {
@@ -241,15 +250,6 @@ class Workflow
                             continue;
                         }
                     }
-                }
-
-                if (
-                    isset($payload->cancelWorkflow)
-                    && $payload->cancelWorkflow
-                ) {
-                    event(new Cancelled($action, payload: $payload, runWorkflowId: $this->uuid));
-
-                    break;
                 }
 
                 if ($reflectionClass->implementsInterface(ShouldQueue::class)) {

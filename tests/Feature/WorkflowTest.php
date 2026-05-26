@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Brain\Action;
+use Brain\Actions\Events\Cancelled;
 use Brain\Attributes\OnQueue;
 use Brain\Workflow;
 use Brain\Workflows\Events\Processed;
@@ -582,4 +583,46 @@ describe('lifecycle hooks', function (): void {
         expect($result->subBeforeCalled)->toBeTrue()
             ->and($result->subAfterCalled)->toBeTrue();
     });
+});
+
+it('does not instantiate the next action when the workflow was cancelled, even if it declares runIf', function (): void {
+    class CancellingAction extends Action
+    {
+        public function handle(): self
+        {
+            $this->cancelWorkflow();
+
+            return $this;
+        }
+    }
+
+    /**
+     * @property-read int $requiredKey
+     */
+    class RunIfNextAction extends Action
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+
+        protected function runIf(): bool
+        {
+            return true;
+        }
+    }
+
+    class CancelBeforeRunIfWorkflow extends Workflow
+    {
+        protected array $actions = [
+            CancellingAction::class,
+            RunIfNextAction::class,
+        ];
+    }
+
+    Event::fake();
+
+    expect(fn () => CancelBeforeRunIfWorkflow::dispatchSync([]))->not->toThrow(Exception::class);
+
+    Event::assertDispatched(Cancelled::class, fn (Cancelled $event): bool => $event->action === RunIfNextAction::class);
 });

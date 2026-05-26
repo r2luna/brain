@@ -12,6 +12,9 @@ on:
       - 2.x
       - 3.x
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ${{ matrix.os }}

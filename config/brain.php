@@ -80,4 +80,21 @@ return [
 
     'log' => env('BRAIN_LOG_ENABLED', false),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Broadcasting
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, this setting activates real-time broadcasting for
+    | process and task events. This allows you to track execution progress
+    | live through WebSocket connections or other broadcast drivers.
+    |
+    */
+
+    'broadcast' => [
+        'enabled' => env('BRAIN_BROADCAST_ENABLED', false),
+        'processes' => env('BRAIN_BROADCAST_PROCESSES', true),
+        'tasks' => env('BRAIN_BROADCAST_TASKS', true),
+    ],
+
 ];

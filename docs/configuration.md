@@ -75,6 +75,22 @@ Enables logging for all workflows and actions. See [Events & Logging](/events) f
 BRAIN_LOG_ENABLED=false
 ```
 
+### Broadcasting
+
+Enables real-time broadcasting of workflow and action events. See [Broadcasting](/broadcasting) for details.
+
+```bash
+BRAIN_BROADCAST_ENABLED=false
+BRAIN_BROADCAST_PROCESSES=true
+BRAIN_BROADCAST_TASKS=true
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `BRAIN_BROADCAST_ENABLED` | Enable/disable all broadcasting | `false` |
+| `BRAIN_BROADCAST_PROCESSES` | Broadcast process start/finish events | `true` |
+| `BRAIN_BROADCAST_TASKS` | Broadcast task start/finish events | `true` |
+
 ## Full Config File
 
 ```php
@@ -90,5 +106,10 @@ return [
         'query'   => env('BRAIN_QUERY_SUFFIX', 'Query'),
     ],
     'log'         => env('BRAIN_LOG_ENABLED', false),
+    'broadcast'   => [
+        'enabled' => env('BRAIN_BROADCAST_ENABLED', false),
+        'processes' => env('BRAIN_BROADCAST_PROCESSES', true),
+        'tasks' => env('BRAIN_BROADCAST_TASKS', true),
+    ],
 ];
 ```

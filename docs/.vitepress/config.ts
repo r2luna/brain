@@ -54,6 +54,7 @@ export default defineConfig({
         items: [
           { text: 'Queues', link: '/queues' },
           { text: 'Events & Logging', link: '/events' },
+          { text: 'Broadcasting', link: '/broadcasting' },
           { text: 'Sensitive Data', link: '/sensitive' },
         ],
       },

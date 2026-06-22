@@ -25,8 +25,6 @@ final class FinalizeActionMiddleware
             $next($action);
 
             $action->finalize();
-            // @codeCoverageIgnoreStart
-            // The coverage is ignored because the event doesn't dispatch event in the test environment
         } catch (Throwable $e) {
             $meta = [
                 'error' => $e->getMessage(),
@@ -36,10 +34,11 @@ final class FinalizeActionMiddleware
 
             event(new ActionsError($action::class, payload: $action->payload, runWorkflowId: $runWorkflowId, meta: $meta));
 
-            $action->fail($e);
-
+            // Re-throw without calling $action->fail(): marking the job as failed here makes
+            // Laravel's Worker skip its retry path, silently breaking $tries/backoff() on
+            // queued actions. Letting the exception bubble up lets the Worker release the job
+            // for retry (or fail it terminally once attempts are exhausted).
             throw $e;
-            // @codeCoverageIgnoreEnd
         }
     }
 }

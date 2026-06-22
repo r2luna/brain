@@ -29,8 +29,6 @@ final class FinalizeTaskMiddleware
             $next($task);
 
             $task->finalize();
-            // @codeCoverageIgnoreStart
-            // The coverage is ignored because the event doesn't dispatch event in the test environment
         } catch (Throwable $e) {
             $meta = [
                 'error' => $e->getMessage(),
@@ -40,10 +38,11 @@ final class FinalizeTaskMiddleware
 
             event(new TasksError($task::class, payload: $task->payload, runProcessId: $runProcessId, meta: $meta));
 
-            $task->fail($e);
-
+            // Re-throw without calling $task->fail(): marking the job as failed here makes
+            // Laravel's Worker skip its retry path, silently breaking $tries/backoff() on
+            // queued tasks. Letting the exception bubble up lets the Worker release the job
+            // for retry (or fail it terminally once attempts are exhausted).
             throw $e;
-            // @codeCoverageIgnoreEnd
         }
     }
 }

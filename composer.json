@@ -18,7 +18,7 @@
     ],
     "require": {
         "php": "^8.3.0 || ^8.4.0 || ^8.5.0",
-        "laravel/framework": "^11.37|^12.0|^13.0",
+        "laravel/framework": "^12.0|^13.0",
         "phpdocumentor/reflection": "^6.1"
     },
     "require-dev": {
@@ -27,7 +27,7 @@
         "laradumps/laradumps": "^5",
         "laravel/pint": "^1.21",
         "mockery/mockery": "^1.6.12",
-        "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "orchestra/testbench": "^10.0|^11.0",
         "peckphp/peck": "^0.1.2",
         "pestphp/pest": "^3.7",
         "pestphp/pest-plugin-type-coverage": "^3.3",

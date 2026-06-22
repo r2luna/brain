@@ -23,15 +23,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         php: ["8.3", "8.4", "8.5"]
-        laravel: [ 13.*, 12.*, 11.* ]
+        laravel: [ 13.*, 12.* ]
         dependency-version: [prefer-lowest, prefer-stable]
         include:
           - laravel: 13.*
             testbench: 11.*
           - laravel: 12.*
             testbench: 10.*
-          - laravel: 11.*
-            testbench: 9.*
 
     name: Tests P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.os }}
 

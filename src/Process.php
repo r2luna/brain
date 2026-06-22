@@ -209,6 +209,15 @@ class Process
 
         try {
             foreach ($this->tasks as $task) {
+                if (
+                    isset($payload->cancelProcess)
+                    && $payload->cancelProcess
+                ) {
+                    event(new Cancelled($task, payload: $payload, runProcessId: $this->uuid));
+
+                    break;
+                }
+
                 $reflectionClass = new ReflectionClass($task);
 
                 if ($reflectionClass->hasMethod('runIf')) {
@@ -223,15 +232,6 @@ class Process
                             continue;
                         }
                     }
-                }
-
-                if (
-                    isset($payload->cancelProcess)
-                    && $payload->cancelProcess
-                ) {
-                    event(new Cancelled($task, payload: $payload, runProcessId: $this->uuid));
-
-                    break;
                 }
 
                 if ($reflectionClass->implementsInterface(ShouldQueue::class)) {

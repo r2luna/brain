@@ -28,7 +28,7 @@
         "laravel/pint": "^1.21",
         "mockery/mockery": "^1.6.12",
         "orchestra/testbench": "^10.0|^11.0",
-        "peckphp/peck": "^0.1.2",
+        "peckphp/peck": "^0.1.2 || ^0.3.0",
         "pestphp/pest": "^4.0",
         "pestphp/pest-plugin-type-coverage": "^4.0",
         "phpstan/phpstan": "^2.1",

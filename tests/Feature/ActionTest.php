@@ -7,6 +7,7 @@ use Brain\Actions\Events\Processed;
 use Brain\Actions\Middleware\FinalizeActionMiddleware;
 use Brain\Exceptions\InvalidPayload;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\Job;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Bus\PendingDispatch;
@@ -477,6 +478,39 @@ it('FinalizeActionMiddleware triggers finalize and dispatches Processed event', 
     $middleware->handle($action, fn ($a) => $a);
 
     Event::assertDispatched(Processed::class);
+});
+
+it('does not fail the job itself when a queued action throws so the worker honors $tries and backoff', function (): void {
+    class RetryableQueuedAction extends Action implements ShouldQueue
+    {
+        public int $tries = 3;
+
+        /** @return array<int, int> */
+        public function backoff(): array
+        {
+            return [1, 1, 1];
+        }
+
+        public function handle(): self
+        {
+            throw new RuntimeException('transient failure');
+        }
+    }
+
+    $job = Mockery::spy(Job::class);
+
+    $action = new RetryableQueuedAction([]);
+    $action->setJob($job);
+
+    $middleware = new FinalizeActionMiddleware;
+
+    expect(fn (): mixed => $middleware->handle($action, fn (Action $a): Action => $a->handle()))
+        ->toThrow(RuntimeException::class, 'transient failure');
+
+    // The middleware must let the exception bubble up to Laravel's Worker so it can
+    // release the job for retry. Calling fail() here marks the job as failed and the
+    // Worker skips its retry path, silently breaking $tries/backoff().
+    $job->shouldNotHaveReceived('fail');
 });
 
 it('workflow calls finalize on action instances and fires Processed event', function (): void {

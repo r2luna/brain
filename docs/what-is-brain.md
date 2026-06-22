@@ -45,4 +45,4 @@ $user = GetUserByEmail::run('john@example.com');
 ## Requirements
 
 - PHP 8.3+
-- Laravel 11.37+ or 12.0+
+- Laravel 12.0+ or 13.0+

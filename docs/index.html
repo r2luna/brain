@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brain — Workflow-Driven Architecture for Laravel</title>
+<meta name="description" content="A Laravel package that organizes business logic with Workflows, Actions, and Queries.">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<button class="menu-toggle" aria-label="Toggle menu">☰</button>
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <a class="brand" href="#top"><img src="logo.svg" alt="Brain logo">Brain</a>
+  <h5>Introduction</h5>
+  <ul>
+    <li><a href="#what-is-brain">What is Brain?</a></li>
+    <li><a href="#getting-started">Getting Started</a></li>
+    <li><a href="#configuration">Configuration</a></li>
+  </ul>
+  <h5>Core Concepts</h5>
+  <ul>
+    <li><a href="#workflows">Workflows</a></li>
+    <li><a href="#actions">Actions</a></li>
+    <li><a href="#queries">Queries</a></li>
+  </ul>
+  <h5>Features</h5>
+  <ul>
+    <li><a href="#queues">Queues</a></li>
+    <li><a href="#events">Events &amp; Logging</a></li>
+    <li><a href="#sensitive">Sensitive Data</a></li>
+  </ul>
+  <h5>CLI</h5>
+  <ul>
+    <li><a href="#commands">Commands</a></li>
+  </ul>
+  <h5>Upgrading</h5>
+  <ul>
+    <li><a href="#upgrading">Upgrade Guide</a></li>
+    <li><a href="#changelog">Changelog</a></li>
+  </ul>
+  <h5>Project</h5>
+  <ul>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="https://github.com/r2luna/brain" target="_blank" rel="noopener">GitHub</a></li>
+    <li><a href="https://packagist.org/packages/r2luna/brain" target="_blank" rel="noopener">Packagist</a></li>
+  </ul>
+</nav>
+<main class="content">
+  <header class="hero" id="top">
+    <img src="logo.svg" alt="Brain logo">
+    <h1>Brain</h1>
+    <p class="tagline">Workflow-Driven Architecture for Laravel — organize your business logic with Workflows, Actions, and Queries.</p>
+    <div class="cta">
+      <a class="btn brand" href="#getting-started">Get Started</a>
+      <a class="btn alt" href="https://github.com/r2luna/brain" target="_blank" rel="noopener">View on GitHub</a>
+    </div>
+    <div class="features">
+      <div class="feature"><div class="icon">🎯</div><h3>Domain-Driven Structure</h3><p>Organize your application into clear domains with proper architecture — optional and flexible.</p></div>
+      <div class="feature"><div class="icon">🔄</div><h3>Workflow Orchestration</h3><p>Chain multiple actions in a database transaction. Queues, sub-workflows, and conditional execution.</p></div>
+      <div class="feature"><div class="icon">⚡</div><h3>Reusable Actions</h3><p>Build small, focused units of work. Reuse them across workflows, validate inputs, and queue when needed.</p></div>
+      <div class="feature"><div class="icon">🔍</div><h3>Query Objects</h3><p>Dedicated read-only classes for fetching data. Clean, testable, and easy to invoke.</p></div>
+      <div class="feature"><div class="icon">📊</div><h3>Built-in Observability</h3><p>Track execution with events, logging, and the brain:show command to visualize your architecture.</p></div>
+      <div class="feature"><div class="icon">🔒</div><h3>Sensitive Data Protection</h3><p>Mark payload properties as sensitive — automatically redacted in logs, JSON, and debug output.</p></div>
+    </div>
+  </header>
+<section id="what-is-brain" class="doc-section">
+<h2 id="what-is-brain">What is Brain?</h2>
+<p><strong>Brain</strong> is a Laravel package that helps you organize your application's business logic using three core building blocks: <strong>Workflows</strong>, <strong>Actions</strong>, and <strong>Queries</strong>.</p>
+<p>Instead of scattering business logic across controllers, models, and services, Brain gives you a clear, consistent structure that scales with your application.</p>
+<h3 id="what-is-brain-core-concepts">Core Concepts</h3>
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>Purpose</th>
+<th>Invocation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Workflow</td>
+<td>Orchestrates a sequence of actions in a transaction</td>
+<td><code>MyWorkflow::run($payload)</code></td>
+</tr>
+<tr>
+<td>Action</td>
+<td>A single unit of work that mutates state</td>
+<td><code>MyAction::run($payload)</code></td>
+</tr>
+<tr>
+<td>Query</td>
+<td>A read-only operation that returns data</td>
+<td><code>MyQuery::run($args)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="what-is-brain-why-brain">Why Brain?</h3>
+<ul>
+<li><strong>Code Reusability</strong> — Actions can be shared across different workflows, reducing duplication.</li>
+<li><strong>Clear Domain Understanding</strong> — A structured approach makes it easy to understand what each domain does.</li>
+<li><strong>Improved Maintainability</strong> — Well-defined boundaries make updates straightforward.</li>
+<li><strong>Built-in Safeguards</strong> — Database transactions, validation, conditional execution, and sensitive data redaction out of the box.</li>
+</ul>
+<h3 id="what-is-brain-quick-example">Quick Example</h3>
+<pre><code class="language-php">// Define a workflow with its actions
+class CreateUser extends Workflow
+{
+    protected array $actions = [
+        RegisterUser::class,
+        SendWelcomeEmail::class,
+        NotifyStaff::class,
+    ];
+}
+
+// Run it
+CreateUser::run([
+    'name'  =&gt; 'John Doe',
+    'email' =&gt; 'john@example.com',
+]);
+
+// Or use a query
+$user = GetUserByEmail::run('john@example.com');</code></pre>
+<h3 id="what-is-brain-requirements">Requirements</h3>
+<ul>
+<li>PHP 8.3+</li>
+<li>Laravel 12.0+ or 13.0+</li>
+</ul>
+</section>
+<section id="getting-started" class="doc-section">
+<h2 id="getting-started">Getting Started</h2>
+<h3 id="getting-started-installation">Installation</h3>
+<p>Install Brain via Composer:</p>
+<pre><code class="language-bash">composer require r2luna/brain</code></pre>
+<h3 id="getting-started-publish-configuration">Publish Configuration</h3>
+<p>Optionally publish the configuration file to customize Brain's behavior:</p>
+<pre><code class="language-bash">php artisan vendor:publish --provider="Brain\BrainServiceProvider"</code></pre>
+<p>This creates <code>config/brain.php</code> where you can adjust all settings.</p>
+<h3 id="getting-started-create-your-first-workflow">Create Your First Workflow</h3>
+<pre><code class="language-bash">php artisan make:workflow CreateUser</code></pre>
+<p>This generates a Workflow class at <code>app/Brain/Workflows/CreateUser.php</code>:</p>
+<pre><code class="language-php">&lt;?php
+
+namespace App\Brain\Workflows;
+
+use Brain\Workflow;
+
+class CreateUser extends Workflow
+{
+    protected array $actions = [
+        //
+    ];
+}</code></pre>
+<h3 id="getting-started-create-your-first-action">Create Your First Action</h3>
+<pre><code class="language-bash">php artisan make:action RegisterUser</code></pre>
+<p>This generates an Action class at <code>app/Brain/Actions/RegisterUser.php</code>:</p>
+<pre><code class="language-php">&lt;?php
+
+namespace App\Brain\Actions;
+
+use Brain\Action;
+
+/**
+ * @property-read string $name
+ * @property-read string $email
+ */
+class RegisterUser extends Action
+{
+    public function handle(): self
+    {
+        // Your business logic here
+
+        return $this;
+    }
+}</code></pre>
+<h3 id="getting-started-wire-them-together">Wire Them Together</h3>
+<p>Add the action to your workflow:</p>
+<pre><code class="language-php">class CreateUser extends Workflow
+{
+    protected array $actions = [
+        RegisterUser::class,
+    ];
+}</code></pre>
+<h3 id="getting-started-run">Run</h3>
+<pre><code class="language-php">CreateUser::run([
+    'name'  =&gt; 'John Doe',
+    'email' =&gt; 'john@example.com',
+]);</code></pre>
+<p>That's it! The workflow will run <code>RegisterUser</code> inside a database transaction. If any action throws an exception, the entire transaction is rolled back.</p>
+<h3 id="getting-started-next-steps">Next Steps</h3>
+<ul>
+<li>Learn about <a href="#configuration">Configuration</a> options</li>
+<li>Dive into <a href="#workflows">Workflows</a>, <a href="#actions">Actions</a>, and <a href="#queries">Queries</a></li>
+<li>Explore <a href="#queues">Queue support</a> for async execution</li>
+</ul>
+</section>
+<section id="configuration" class="doc-section">
+<h2 id="configuration">Configuration</h2>
+<p>Brain is configured via environment variables or by publishing the config file.</p>
+<h3 id="configuration-publishing-the-config">Publishing the Config</h3>
+<pre><code class="language-bash">php artisan vendor:publish --provider=&quot;Brain\BrainServiceProvider&quot;</code></pre>
+<h3 id="configuration-options">Options</h3>
+<h4 id="configuration-root-directory">Root Directory</h4>
+<p>Defines the main directory where workflows, actions, and queries are created.</p>
+<pre><code class="language-bash">BRAIN_ROOT=Brain</code></pre>
+<table>
+<thead>
+<tr><th>Value</th><th>Result</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Brain</code></td><td><code>app/Brain/Workflows/CreateUser.php</code></td></tr>
+<tr><td><code>Domain</code></td><td><code>app/Domain/Workflows/CreateUser.php</code></td></tr>
+<tr><td><em>(empty)</em></td><td><code>app/Workflows/CreateUser.php</code></td></tr>
+</tbody>
+</table>
+<p>Default: <code>Brain</code></p>
+<h4 id="configuration-use-domains">Use Domains</h4>
+<p>Organizes code into domain-specific subdirectories.</p>
+<pre><code class="language-bash">BRAIN_USE_DOMAINS=false</code></pre>
+<p>When enabled:</p>
+<pre><code class="language-text">app/Brain/Users/Workflows/CreateUser.php
+app/Brain/Users/Actions/RegisterUser.php
+app/Brain/Payments/Workflows/ChargeCustomer.php</code></pre>
+<p>When disabled (default):</p>
+<pre><code class="language-text">app/Brain/Workflows/CreateUser.php
+app/Brain/Actions/RegisterUser.php</code></pre>
+<h4 id="configuration-use-suffix">Use Suffix</h4>
+<p>Automatically appends type suffixes to class names.</p>
+<pre><code class="language-bash">BRAIN_USE_SUFFIX=false</code></pre>
+<p>When enabled, <code>CreateUser</code> becomes <code>CreateUserWorkflow</code>, <code>RegisterUser</code> becomes <code>RegisterUserAction</code>, etc.</p>
+<h4 id="configuration-custom-suffixes">Custom Suffixes</h4>
+<p>Customize the suffix per type when <code>use_suffix</code> is enabled:</p>
+<pre><code class="language-bash">BRAIN_WORKFLOW_SUFFIX=Workflow
+BRAIN_ACTION_SUFFIX=Action
+BRAIN_QUERY_SUFFIX=Query</code></pre>
+<h4 id="configuration-logging">Logging</h4>
+<p>Enables logging for all workflows and actions. See <a href="#events">Events &amp; Logging</a> for details.</p>
+<pre><code class="language-bash">BRAIN_LOG_ENABLED=false</code></pre>
+<h3 id="configuration-full-config-file">Full Config File</h3>
+<pre><code class="language-php">&lt;?php
+
+return [
+    'root'        =&gt; env('BRAIN_ROOT', 'Brain'),
+    'use_domains' =&gt; env('BRAIN_USE_DOMAINS', false),
+    'use_suffix'  =&gt; env('BRAIN_USE_SUFFIX', false),
+    'suffixes'    =&gt; [
+        'workflow' =&gt; env('BRAIN_WORKFLOW_SUFFIX', 'Workflow'),
+        'action'  =&gt; env('BRAIN_ACTION_SUFFIX', 'Action'),
+        'query'   =&gt; env('BRAIN_QUERY_SUFFIX', 'Query'),
+    ],
+    'log'         =&gt; env('BRAIN_LOG_ENABLED', false),
+];</code></pre>
+</section>
+<section id="workflows" class="doc-section">
+<h2 id="workflows">Workflows</h2>
+<p>A <strong>Workflow</strong> orchestrates a sequence of actions, running them in order within a database transaction.</p>
+<h3 id="workflows-creating-a-workflow">Creating a Workflow</h3>
+<pre><code class="language-bash">php artisan make:workflow CreateUser</code></pre>
+<h3 id="workflows-basic-structure">Basic Structure</h3>
+<pre><code class="language-php">&lt;?php
+
+namespace App\Brain\Workflows;
+
+use Brain\Workflow;
+
+class CreateUser extends Workflow
+{
+    protected array $actions = [
+        RegisterUser::class,
+        SendWelcomeEmail::class,
+        NotifyStaff::class,
+    ];
+}</code></pre>
+<h3 id="workflows-running">Running</h3>
+<pre><code class="language-php">// Synchronous (within a transaction)
+CreateUser::run([
+    'name'  =&gt; 'John Doe',
+    'email' =&gt; 'john@example.com',
+]);
+
+// Asynchronous (queued)
+CreateUser::dispatch([
+    'name'  =&gt; 'John Doe',
+    'email' =&gt; 'john@example.com',
+]);</code></pre>
+<h3 id="workflows-transaction-behavior">Transaction Behavior</h3>
+<p>Every action inside a workflow executes within a database transaction by default. If any action throws an exception, the entire transaction is rolled back.</p>
+<blockquote><p>Queued actions run outside the workflow transaction scope. Only synchronous actions are wrapped in the transaction.</p></blockquote>
+<h3 id="workflows-dynamic-actions">Dynamic Actions</h3>
+<p>You can add actions dynamically using <code>addAction()</code>:</p>
+<pre><code class="language-php">class CreateUser extends Workflow
+{
+    protected array $actions = [
+        RegisterUser::class,
+    ];
+
+    public function __construct(array $payload = [])
+    {
+        parent::__construct($payload);
+
+        if ($payload['send_welcome'] ?? false) {
+            $this-&gt;addAction(SendWelcomeEmail::class);
+        }
+    }
+}</code></pre>
+<h3 id="workflows-sub-workflows">Sub-Workflows</h3>
+<p>Workflows can be nested by adding a Workflow class to the <code>$actions</code> array:</p>
+<pre><code class="language-php">class OnboardUser extends Workflow
+{
+    protected array $actions = [
+        CreateUser::class,          // another Workflow
+        SetupBilling::class,        // an Action
+        SendOnboardingEmail::class, // an Action
+    ];
+}</code></pre>
+<h3 id="workflows-chaining-queued">Chaining (Queued)</h3>
+<p>When <code>$chain = true</code>, queued actions are dispatched as a Laravel Bus chain instead of being dispatched individually:</p>
+<pre><code class="language-php">class SyncData extends Workflow
+{
+    protected bool $chain = true;
+
+    protected array $actions = [
+        FetchExternalData::class,  // ShouldQueue
+        TransformData::class,      // ShouldQueue
+        SaveData::class,           // ShouldQueue
+    ];
+}</code></pre>
+</section>
+<section id="actions" class="doc-section">
+<h2 id="actions">Actions</h2>
+<p>An <strong>Action</strong> is a single unit of work that receives a payload and implements a <code>handle()</code> method.</p>
+<h3 id="actions-creating-an-action">Creating an Action</h3>
+<pre><code class="language-bash">php artisan make:action RegisterUser</code></pre>
+<h3 id="actions-basic-structure">Basic Structure</h3>
+<pre><code class="language-php">&lt;?php
+
+namespace App\Brain\Actions;
+
+use Brain\Action;
+
+/**
+ * @property-read string $name
+ * @property-read string $email
+ */
+class RegisterUser extends Action
+{
+    public function handle(): self
+    {
+        $user = User::create([
+            'name'  =&gt; $this-&gt;name,
+            'email' =&gt; $this-&gt;email,
+        ]);
+
+        // Pass data to subsequent actions
+        $this-&gt;userId = $user-&gt;id;
+
+        return $this;
+    }
+}</code></pre>
+<h3 id="actions-payload">Payload</h3>
+<h4 id="actions-accessing-properties">Accessing Properties</h4>
+<p>Payload properties are accessed via magic methods:</p>
+<pre><code class="language-php">$this-&gt;name;   // reads from payload
+$this-&gt;email;  // reads from payload</code></pre>
+<h4 id="actions-documenting-properties">Documenting Properties</h4>
+<p>Use <code>@property-read</code> for input properties and <code>@property</code> for output properties:</p>
+<pre><code class="language-php">/**
+ * @property-read string $name       ← input (required)
+ * @property-read string $email      ← input (required)
+ * @property int $userId             ← output (set during handle)
+ */</code></pre>
+<p>Brain validates that at least one expected key exists in the payload at construction.</p>
+<h4 id="actions-passing-data-between-actions">Passing Data Between Actions</h4>
+<p>Set new properties on the action to make them available to subsequent actions in a workflow:</p>
+<pre><code class="language-php">class RegisterUser extends Action
+{
+    public function handle(): self
+    {
+        $user = User::create([...]);
+        $this-&gt;userId = $user-&gt;id; // available in next action
+        return $this;
+    }
+}
+
+class SendWelcomeEmail extends Action
+{
+    public function handle(): self
+    {
+        $userId = $this-&gt;userId; // set by RegisterUser
+        // ...
+        return $this;
+    }
+}</code></pre>
+<h3 id="actions-standalone-usage">Standalone Usage</h3>
+<p>Actions can be run independently, outside of a workflow:</p>
+<pre><code class="language-php">RegisterUser::run([
+    'name'  =&gt; 'John Doe',
+    'email' =&gt; 'john@example.com',
+]);</code></pre>
+<h3 id="actions-conditional-execution">Conditional Execution</h3>
+<p>Use <code>runIf()</code> to conditionally skip an action within a workflow:</p>
+<pre><code class="language-php">/**
+ * @property-read int $amount
+ */
+class ApplyDiscount extends Action
+{
+    protected function runIf(): bool
+    {
+        return $this-&gt;amount &gt; 200;
+    }
+
+    public function handle(): self
+    {
+        // only runs if amount &gt; 200
+        return $this;
+    }
+}</code></pre>
+<p>When <code>runIf()</code> returns <code>false</code>, the action is skipped and a <code>Skipped</code> event is dispatched.</p>
+<h3 id="actions-validation">Validation</h3>
+<p>Define validation rules for the payload using the <code>rules()</code> method:</p>
+<pre><code class="language-php">/**
+ * @property-read User $user
+ * @property string $message
+ */
+class SendNotification extends Action
+{
+    public function rules(): array
+    {
+        return [
+            'user'    =&gt; 'required',
+            'message' =&gt; 'required|string|max:255',
+        ];
+    }
+
+    public function handle(): self
+    {
+        // ...
+        return $this;
+    }
+}</code></pre>
+<p>Rules override the default validation based on <code>@property-read</code> annotations.</p>
+<h3 id="actions-cancel-workflow">Cancel Workflow</h3>
+<p>From inside an action, you can cancel the entire workflow:</p>
+<pre><code class="language-php">class CheckEligibility extends Action
+{
+    public function handle(): self
+    {
+        if ($this-&gt;user-&gt;isBanned()) {
+            $this-&gt;cancelProcess();
+        }
+
+        return $this;
+    }
+}</code></pre>
+<blockquote>
+<p><code>cancelProcess()</code> does not work with queued actions — only synchronous actions within a workflow.</p>
+</blockquote>
+<h3 id="actions-helper-methods">Helper Methods</h3>
+<ul>
+<li><code>toArray()</code> — Returns the action payload as an array.</li>
+</ul>
+<pre><code class="language-php">$action = RegisterUser::run(['name' =&gt; 'John', 'email' =&gt; 'john@example.com']);
+$action-&gt;toArray(); // ['name' =&gt; 'John', 'email' =&gt; 'john@example.com']</code></pre>
+</section>
+<section id="queries" class="doc-section">
+<h2 id="queries">Queries</h2>
+<p>A <strong>Query</strong> is a read-only class for fetching data. Constructor parameters define inputs, and <code>handle()</code> returns the result.</p>
+<h3 id="queries-creating-a-query">Creating a Query</h3>
+<pre><code class="language-bash">php artisan make:query GetUserByEmail</code></pre>
+<p>You can optionally specify a model:</p>
+<pre><code class="language-bash">php artisan make:query GetUserByEmail
+# When prompted, enter: User</code></pre>
+<h3 id="queries-basic-structure">Basic Structure</h3>
+<pre><code class="language-php">&lt;?php
+
+namespace App\Brain\Queries;
+
+use App\Models\User;
+use Brain\Query;
+
+class GetUserByEmail extends Query
+{
+    public function __construct(
+        private readonly string $email,
+    ) {}
+
+    public function handle(): ?User
+    {
+        return User::where('email', $this-&gt;email)-&gt;first();
+    }
+}</code></pre>
+<h3 id="queries-invocation">Invocation</h3>
+<p>Queries are invoked using the static <code>run()</code> method with named arguments:</p>
+<pre><code class="language-php">$user = GetUserByEmail::run(email: 'john@example.com');</code></pre>
+<h3 id="queries-examples">Examples</h3>
+<h4 id="queries-with-multiple-parameters">With Multiple Parameters</h4>
+<pre><code class="language-php">class GetOrders extends Query
+{
+    public function __construct(
+        private readonly int $userId,
+        private readonly string $status = 'completed',
+        private readonly int $limit = 10,
+    ) {}
+
+    public function handle(): Collection
+    {
+        return Order::where('user_id', $this-&gt;userId)
+            -&gt;where('status', $this-&gt;status)
+            -&gt;limit($this-&gt;limit)
+            -&gt;get();
+    }
+}
+
+// Usage
+$orders = GetOrders::run(userId: 42);
+$orders = GetOrders::run(userId: 42, status: 'pending', limit: 5);</code></pre>
+<h4 id="queries-returning-aggregates">Returning Aggregates</h4>
+<pre><code class="language-php">class GetMonthlyRevenue extends Query
+{
+    public function __construct(
+        private readonly int $year,
+        private readonly int $month,
+    ) {}
+
+    public function handle(): float
+    {
+        return Payment::whereYear('created_at', $this-&gt;year)
+            -&gt;whereMonth('created_at', $this-&gt;month)
+            -&gt;sum('amount');
+    }
+}
+
+$revenue = GetMonthlyRevenue::run(year: 2025, month: 11);</code></pre>
+</section>
+<section id="queues" class="doc-section">
+<h2 id="queues">Queues</h2>
+<p>Brain integrates with Laravel's queue system. Actions and Workflows can be dispatched to the queue by implementing <code>ShouldQueue</code>.</p>
+<h3 id="queues-queueable-actions">Queueable Actions</h3>
+<p>Implement <code>ShouldQueue</code> on your action:</p>
+<pre><code class="language-php">use Brain\Action;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class SendWelcomeEmail extends Action implements ShouldQueue
+{
+    public function handle(): self
+    {
+        // runs on the queue
+        return $this;
+    }
+}</code></pre>
+<h3 id="queues-delayed-execution">Delayed Execution</h3>
+<p>Use the <code>runIn()</code> method to delay a queued action:</p>
+<pre><code class="language-php">class SendFollowUp extends Action implements ShouldQueue
+{
+    protected function runIn(): int|Carbon|null
+    {
+        return now()-&gt;addDays(2);
+    }
+
+    public function handle(): self
+    {
+        // ...
+        return $this;
+    }
+}</code></pre>
+<h3 id="queues-setting-a-queue-with-onqueue">Setting a Queue with <code>#[OnQueue]</code></h3>
+<p>Use the <code>#[OnQueue]</code> attribute to assign a specific queue:</p>
+<pre><code class="language-php">use Brain\Attributes\OnQueue;
+use Brain\Action;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+#[OnQueue('emails')]
+class SendWelcomeEmail extends Action implements ShouldQueue
+{
+    public function handle(): self
+    {
+        return $this;
+    }
+}</code></pre>
+<blockquote>
+<p>Do <strong>not</strong> declare <code>public string $queue = 'my-queue'</code> on an Action — this causes a PHP fatal error because Laravel's <code>Queueable</code> trait already declares <code>$queue</code> without a type hint. Always use <code>#[OnQueue]</code> instead.</p>
+</blockquote>
+<h3 id="queues-workflow-level-queue">Workflow-Level Queue</h3>
+<p>When <code>#[OnQueue]</code> is applied to a Workflow:</p>
+<ol>
+<li>The Workflow itself is dispatched to that queue (if it implements <code>ShouldQueue</code>)</li>
+<li>All queued child actions <strong>inherit</strong> the Workflow queue — unless the action defines its own <code>#[OnQueue]</code></li>
+</ol>
+<pre><code class="language-php">#[OnQueue('strava')]
+class SyncActivities extends Workflow implements ShouldQueue
+{
+    protected array $actions = [
+        FetchActivities::class,   // ShouldQueue → runs on "strava" (inherited)
+        SaveActivities::class,    // sync action → unaffected
+        NotifyUser::class,        // #[OnQueue('emails')] → runs on "emails"
+    ];
+}</code></pre>
+<blockquote>
+<p>An action's own <code>#[OnQueue]</code> always takes precedence over the workflow-level queue.</p>
+</blockquote>
+<h3 id="queues-execution-patterns">Execution Patterns</h3>
+<h4 id="queues-all-actions-on-the-same-queue">All actions on the same queue</h4>
+<p>The workflow and every queued action run on <code>strava</code>:</p>
+<pre><code class="language-mermaid">flowchart LR
+    D((Dispatch)) --&gt; Q[strava queue]
+
+    subgraph Q[strava queue]
+        direction LR
+        P[SyncActivities] --&gt; T1[FetchActivities]
+        T1 --&gt; T2[TransformData]
+        T2 --&gt; T3[SaveActivities]
+    end</code></pre>
+<h4 id="queues-workflow-queued-actions-synchronous">Workflow queued, actions synchronous</h4>
+<p>The workflow is queued, but actions run synchronously inside the job:</p>
+<pre><code class="language-mermaid">flowchart LR
+    D((Dispatch)) --&gt; Q
+
+    subgraph Q[strava queue]
+        subgraph P[SyncActivities]
+            direction LR
+            T1[FetchActivities] --&gt; T2[TransformData] --&gt; T3[SaveActivities]
+        end
+    end</code></pre>
+<h4 id="queues-mixed-sync-and-queued">Mixed sync and queued</h4>
+<p>Some actions run inside the workflow, others are dispatched to queues:</p>
+<pre><code class="language-mermaid">flowchart LR
+    D((Dispatch)) --&gt; Q
+
+    subgraph Q[strava queue]
+        subgraph P[SyncActivities]
+            direction LR
+            T1[FetchActivities] --&gt; T2[TransformData]
+        end
+        T2 --&gt; T3[SaveActivities]
+    end
+
+    T3 -.-&gt; E[emails queue]
+
+    subgraph E[emails queue]
+        T4[NotifyUser]
+    end</code></pre>
+</section>
+<section id="events" class="doc-section">
+  <h2 id="events">Events &amp; Logging</h2>
+  <p>Brain dispatches events throughout the lifecycle of workflows and actions. These can be used for logging, monitoring, or triggering additional logic.</p>
+  <h3 id="events-enabling-logging">Enabling Logging</h3>
+  <pre><code class="language-bash">BRAIN_LOG_ENABLED=true</code></pre>
+  <p>Or in <code>config/brain.php</code>:</p>
+  <pre><code class="language-php">'log' =&gt; env('BRAIN_LOG_ENABLED', true),</code></pre>
+  <h3 id="events-workflow-events">Workflow Events</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Event</th>
+        <th>When</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>Brain\Workflows\Events\Processing</code></td>
+        <td>Workflow starts executing</td>
+      </tr>
+      <tr>
+        <td><code>Brain\Workflows\Events\Processed</code></td>
+        <td>Workflow completes successfully</td>
+      </tr>
+      <tr>
+        <td><code>Brain\Workflows\Events\Error</code></td>
+        <td>Workflow encounters an error</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Each event contains:</p>
+  <ul>
+    <li><code>process</code> — The workflow class name</li>
+    <li><code>runProcessId</code> — A unique ID for this execution</li>
+    <li><code>payload</code> — The data passed to the workflow</li>
+    <li><code>meta</code> — Additional metadata</li>
+  </ul>
+  <h3 id="events-action-events">Action Events</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Event</th>
+        <th>When</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>Brain\Actions\Events\Processing</code></td>
+        <td>Action starts executing</td>
+      </tr>
+      <tr>
+        <td><code>Brain\Actions\Events\Processed</code></td>
+        <td>Action completes successfully</td>
+      </tr>
+      <tr>
+        <td><code>Brain\Actions\Events\Cancelled</code></td>
+        <td>Action is cancelled via <code>cancelProcess()</code></td>
+      </tr>
+      <tr>
+        <td><code>Brain\Actions\Events\Skipped</code></td>
+        <td>Action is skipped (<code>runIf()</code> returns false)</td>
+      </tr>
+      <tr>
+        <td><code>Brain\Actions\Events\Error</code></td>
+        <td>Action encounters an error</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Each event contains:</p>
+  <ul>
+    <li><code>task</code> — The action class name</li>
+    <li><code>payload</code> — The data passed to the action</li>
+    <li><code>process</code> — The parent workflow class name (if applicable)</li>
+    <li><code>runProcessId</code> — The workflow execution ID (if applicable)</li>
+    <li><code>meta</code> — Additional metadata</li>
+  </ul>
+  <h3 id="events-custom-listeners">Custom Listeners</h3>
+  <p>Register listeners in your <code>EventServiceProvider</code>:</p>
+  <pre><code class="language-php">use Brain\Workflows\Events\Processed as WorkflowCompleted;
+use Brain\Actions\Events\Error as ActionFailed;
+
+protected $listen = [
+    WorkflowCompleted::class =&gt; [
+        NotifyAdmin::class,
+    ],
+    ActionFailed::class =&gt; [
+        AlertOpsTeam::class,
+    ],
+];</code></pre>
+  <p>Or use closures:</p>
+  <pre><code class="language-php">use Brain\Actions\Events\Processed;
+
+Event::listen(Processed::class, function ($event) {
+    logger()-&gt;info('Action completed', [
+        'task'    =&gt; $event-&gt;task,
+        'process' =&gt; $event-&gt;process,
+    ]);
+});</code></pre>
+</section>
+<section id="sensitive" class="doc-section">
+<h2 id="sensitive">Sensitive Data</h2>
+<p>Use the <code>#[Sensitive]</code> attribute to mark payload properties that should be automatically redacted in logs, JSON serialization, and debug output.</p>
+<h3 id="sensitive-usage">Usage</h3>
+<pre><code class="language-php">use Brain\Attributes\Sensitive;
+use Brain\Action;
+
+/**
+ * @property-read string $email
+ * @property string $password
+ * @property string $credit_card
+ */
+#[Sensitive('password', 'credit_card')]
+class CreateUser extends Action
+{
+    public function handle(): self
+    {
+        // $this-&gt;password returns the real value inside handle()
+        // but logs, JSON, and debug output show "**********"
+        return $this;
+    }
+}</code></pre>
+<h3 id="sensitive-how-it-works">How It Works</h3>
+<p>Sensitive values are internally wrapped in a <code>SensitiveValue</code> object:</p>
+<ul>
+<li><strong>Inside the action</strong> — <code>$this-&gt;password</code> returns the real value transparently</li>
+<li><strong>In logs</strong> — Replaced with <code>**********</code></li>
+<li><strong>In JSON</strong> — Replaced with <code>**********</code></li>
+<li><strong>In debug output</strong> — Replaced with <code>**********</code></li>
+<li><strong>In <code>brain:show -vv</code></strong> — Shows a <code>[sensitive]</code> indicator</li>
+</ul>
+<h3 id="sensitive-workflow-level-inheritance">Workflow-Level Inheritance</h3>
+<p>When <code>#[Sensitive]</code> is applied to a Workflow, <strong>all child actions</strong> automatically inherit the sensitive keys — even if the actions themselves don't declare the attribute:</p>
+<pre><code class="language-php">use Brain\Attributes\Sensitive;
+use Brain\Workflow;
+
+#[Sensitive('password', 'credit_card')]
+class CreateUser extends Workflow
+{
+    protected array $actions = [
+        ValidateInput::class,     // password &amp; credit_card redacted
+        ChargeCustomer::class,    // password &amp; credit_card redacted
+        SendConfirmation::class,  // password &amp; credit_card redacted
+    ];
+}</code></pre>
+<p>Action-level and workflow-level keys are merged and deduplicated. An action can define additional sensitive keys beyond what the workflow specifies:</p>
+<pre><code class="language-php">#[Sensitive('password')]
+class CreateUser extends Workflow
+{
+    protected array $actions = [
+        ChargeCustomer::class, // has #[Sensitive('cvv')] → both password and cvv are redacted
+    ];
+}</code></pre>
+<blockquote><p>The <code>brain:show -vv</code> command displays a <code>[sensitive]</code> indicator next to sensitive properties, making it easy to verify your configuration.</p></blockquote>
+</section>
+<section id="commands" class="doc-section">
+<h2 id="commands">Commands</h2>
+<p>Brain provides several Artisan commands for scaffolding and inspecting your architecture.</p>
+<h3 id="commands-scaffolding">Scaffolding</h3>
+<h4 id="commands-make-workflow"><code>make:workflow</code></h4>
+<p>Create a new Workflow class:</p>
+<pre><code class="language-bash">php artisan make:workflow CreateUser</code></pre>
+<p>With domains enabled, you'll be prompted for a domain name.</p>
+<h4 id="commands-make-action"><code>make:action</code></h4>
+<p>Create a new Action class:</p>
+<pre><code class="language-bash">php artisan make:action RegisterUser</code></pre>
+<h4 id="commands-make-query"><code>make:query</code></h4>
+<p>Create a new Query class:</p>
+<pre><code class="language-bash">php artisan make:query GetUserByEmail</code></pre>
+<p>You can optionally specify a model when prompted.</p>
+<h3 id="commands-visualization">Visualization</h3>
+<h4 id="commands-brain-show"><code>brain:show</code></h4>
+<p>Visualize your entire Brain structure in the terminal:</p>
+<pre><code class="language-bash">php artisan brain:show</code></pre>
+<pre><code class="language-text">WKFL    CreateUserWorkflow ······································
+WKFL    PaymentSucceededWorkflow ······················· chained
+ACTN    NotifyStaffAction ································ queued
+ACTN    RegisterUserAction ·····································
+ACTN    SendWelcomeEmailAction ·································
+QERY    GetPaymentQuery ········································
+QERY    GetUserByEmailQuery ····································</code></pre>
+<h4 id="commands-filtering-by-type">Filtering by Type</h4>
+<pre><code class="language-bash">php artisan brain:show -w              # only workflows
+php artisan brain:show -a              # only actions
+php artisan brain:show -Q              # only queries
+php artisan brain:show -w -a           # workflows and actions</code></pre>
+<h4 id="commands-filtering-by-name">Filtering by Name</h4>
+<pre><code class="language-bash">php artisan brain:show --filter=User
+php artisan brain:show -w --filter=Payment</code></pre>
+<p>When combining <code>-w</code> with <code>--filter</code>, matching sub-action names show the parent workflow with only the matching sub-actions. Matching workflow names show all sub-actions.</p>
+<h4 id="commands-verbosity">Verbosity</h4>
+<pre><code class="language-bash">php artisan brain:show -v              # show sub-actions inside workflows
+php artisan brain:show -vv             # also show action properties</code></pre>
+<pre><code class="language-text">WKFL    PaymentSucceededWorkflow ······················· chained
+        ├── 1. A SavePaymentAction ······················ queued
+        └── 2. A InviteUserAction ······························
+ACTN    CreateCommentAction ····································
+           → user_id: int
+           ← comment: \Comment|null
+QERY    ExampleQuery ···········································</code></pre>
+<ul>
+<li><code>→</code> — input property (<code>@property-read</code>)</li>
+<li><code>←</code> — output property (<code>@property</code>)</li>
+</ul>
+<h3 id="commands-execution">Execution</h3>
+<h4 id="commands-brain-run"><code>brain:run</code></h4>
+<p>Interactively execute a Workflow or Action from the terminal:</p>
+<pre><code class="language-bash">php artisan brain:run</code></pre>
+<p>The command guides you through:</p>
+<ol>
+<li><strong>Select a target</strong> — Search and pick any Workflow or Action</li>
+<li><strong>Choose dispatch mode</strong> — Sync or Async</li>
+<li><strong>Fill payload</strong> — Enter values for required properties</li>
+<li><strong>Preview</strong> — Review before executing</li>
+<li><strong>Execute</strong> — Run and see the result</li>
+</ol>
+<h4 id="commands-rerunning-previous-executions">Rerunning Previous Executions</h4>
+<p>Every successful run is saved to history. Use <code>--rerun</code> to replay:</p>
+<pre><code class="language-bash">php artisan brain:run --rerun</code></pre>
+<p>Search through past runs, preview the saved payload, and re-execute.</p>
+<h3 id="commands-migration">Migration</h3>
+<h4 id="commands-brain-migrate"><code>brain:migrate</code></h4>
+<p>Automatically migrate your codebase from Process/Task naming to Workflow/Action naming:</p>
+<pre><code class="language-bash">php artisan brain:migrate</code></pre>
+<p>The command scans your Brain directory and applies the following changes:</p>
+<ul>
+<li><strong>Imports</strong> — <code>use Brain\Process</code> → <code>use Brain\Workflow</code>, <code>use Brain\Task</code> → <code>use Brain\Action</code></li>
+<li><strong>Class inheritance</strong> — <code>extends Process</code> → <code>extends Workflow</code>, <code>extends Task</code> → <code>extends Action</code></li>
+<li><strong>Task arrays</strong> — <code>protected array $tasks = [</code> → <code>protected array $actions = [</code></li>
+<li><strong>Namespaces</strong> — <code>\Processes\</code> → <code>\Workflows\</code>, <code>\Tasks\</code> → <code>\Actions\</code></li>
+<li><strong>File suffixes</strong> — <code>CreateOrderProcess.php</code> → <code>CreateOrderWorkflow.php</code>, <code>ChargeUserTask.php</code> → <code>ChargeUserAction.php</code></li>
+<li><strong>Class references</strong> — Updates all <code>::class</code> references across files</li>
+<li><strong>Directories</strong> — Renames <code>Processes/</code> → <code>Workflows/</code>, <code>Tasks/</code> → <code>Actions/</code></li>
+</ul>
+<p>All replacements are case-insensitive, so <code>extends task</code> and <code>extends Task</code> are both handled.</p>
+<h4 id="commands-preview-mode">Preview Mode</h4>
+<p>Use <code>--dry-run</code> to preview all planned changes without applying them:</p>
+<pre><code class="language-bash">php artisan brain:migrate --dry-run</code></pre>
+<pre><code class="language-text"> Brain Migration: Process/Task → Workflow/Action
+ ─────────────────────────────────────────────────
+ Directory: /app/Brain
+ Mode: dry-run (no changes will be made)
+
+ Files to update:
+   • Processes/CreateOrder.php
+   • Tasks/ChargeUser.php
+
+ Files to rename:
+   • CreateOrderProcess.php → CreateOrderWorkflow.php
+
+ Directories to rename:
+   • Processes → Workflows
+   • Tasks → Actions
+
+ Dry-run complete. No changes were made.</code></pre>
+<p>The command works with all configuration modes: root directory, flat structure (<code>root: null</code>), and domain-based organization.</p>
+<h3 id="commands-deprecated-commands">Deprecated Commands</h3>
+<p>The following commands still work but are deprecated in favor of the new naming:</p>
+<table>
+<thead>
+<tr><th>Deprecated</th><th>Use Instead</th></tr>
+</thead>
+<tbody>
+<tr><td><code>make:process</code></td><td><code>make:workflow</code></td></tr>
+<tr><td><code>make:task</code></td><td><code>make:action</code></td></tr>
+</tbody>
+</table>
+</section>
+<section id="upgrading" class="doc-section">
+  <h2 id="upgrading">Upgrading</h2>
+
+  <h3 id="upgrading-upgrading-to-v3-0">Upgrading to v3.0</h3>
+  <p>Version 3.0 renames the core concepts from <strong>Process/Task</strong> to <strong>Workflow/Action</strong> for better clarity.</p>
+
+  <h4 id="upgrading-breaking-changes">Breaking Changes</h4>
+
+  <h4 id="upgrading-naming-convention">Naming Convention</h4>
+  <p>The primary class names have changed:</p>
+  <table>
+    <thead>
+      <tr>
+        <th>v2.x</th>
+        <th>v3.0</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>Process</code></td>
+        <td><code>Workflow</code></td>
+      </tr>
+      <tr>
+        <td><code>Task</code></td>
+        <td><code>Action</code></td>
+      </tr>
+      <tr>
+        <td><code>$tasks</code> array</td>
+        <td><code>$actions</code> array</td>
+      </tr>
+      <tr>
+        <td><code>Processes/</code> directory</td>
+        <td><code>Workflows/</code> directory</td>
+      </tr>
+      <tr>
+        <td><code>Tasks/</code> directory</td>
+        <td><code>Actions/</code> directory</td>
+      </tr>
+      <tr>
+        <td><code>make:process</code></td>
+        <td><code>make:workflow</code></td>
+      </tr>
+      <tr>
+        <td><code>make:task</code></td>
+        <td><code>make:action</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4 id="upgrading-static-run-method">Static <code>run()</code> Method</h4>
+  <p>Workflows and Actions now have a static <code>run()</code> method that wraps <code>dispatchSync()</code>:</p>
+  <pre><code class="language-php">// v2.x
+CreateUser::dispatchSync($payload);
+RegisterUser::dispatchSync($payload);
+
+// v3.0
+CreateUser::run($payload);
+RegisterUser::run($payload);</code></pre>
+  <p><code>dispatchSync()</code> still works, but <code>run()</code> is the recommended way to execute synchronously.</p>
+
+  <h4 id="upgrading-configuration-suffixes">Configuration Suffixes</h4>
+  <pre><code class="language-php">// v2.x
+'suffixes' =&gt; [
+    'process' =&gt; 'Process',
+    'task'    =&gt; 'Task',
+],
+
+// v3.0
+'suffixes' =&gt; [
+    'workflow' =&gt; 'Workflow',
+    'action'  =&gt; 'Action',
+],</code></pre>
+  <p>The old suffix keys (<code>process</code>, <code>task</code>) still work but are deprecated.</p>
+
+  <h4 id="upgrading-automatic-migration">Automatic Migration</h4>
+  <p>Use the built-in migration command to automatically update your codebase:</p>
+  <pre><code class="language-bash">php artisan brain:migrate --dry-run   # preview changes first
+php artisan brain:migrate             # apply the migration</code></pre>
+  <p>This renames directories, files, imports, class references, and namespaces. See <a href="#commands">Commands</a> for full details.</p>
+
+  <h4 id="upgrading-backwards-compatibility">Backwards Compatibility</h4>
+  <p>The old <code>Process</code> and <code>Task</code> base classes still work as deprecated aliases. You can migrate gradually, but we recommend running <code>brain:migrate</code> to update everything at once.</p>
+
+  <h3 id="upgrading-upgrading-to-v2-0">Upgrading to v2.0</h3>
+  <p>Version 2.0 introduces new configuration options and enhanced flexibility for organizing your Brain components.</p>
+
+  <h4 id="upgrading-breaking-changes">Breaking Changes</h4>
+
+  <h4 id="upgrading-configuration-file">Configuration File</h4>
+  <p>The configuration file has been completely restructured. If you've published the config in v1.x, republish it:</p>
+  <pre><code class="language-bash">php artisan vendor:publish --provider="Brain\BrainServiceProvider" --force</code></pre>
+
+  <h4 id="upgrading-default-behavior">Default Behavior</h4>
+  <p><strong>Domain Organization</strong> — In v1.x, Brain automatically organized components into domain subdirectories. In v2.0, this is <strong>opt-in</strong>:</p>
+  <pre><code class="language-php">// v1.x (automatic domains)
+app/Brain/Users/Processes/CreateUser.php
+
+// v2.0 default (flat structure)
+app/Brain/Processes/CreateUser.php
+
+// v2.0 with BRAIN_USE_DOMAINS=true
+app/Brain/Users/Processes/CreateUser.php</code></pre>
+
+  <h4 id="upgrading-migration-guide">Migration Guide</h4>
+  <p>To keep v1.x behavior, add this to your <code>.env</code>:</p>
+  <pre><code class="language-bash">BRAIN_USE_DOMAINS=true</code></pre>
+
+  <h4 id="upgrading-new-features-in-v2-0">New Features in v2.0</h4>
+
+  <h4 id="upgrading-flexible-root-directory">Flexible Root Directory</h4>
+  <pre><code class="language-bash">BRAIN_ROOT=Domain  # app/Domain instead of app/Brain</code></pre>
+
+  <h4 id="upgrading-optional-class-suffixes">Optional Class Suffixes</h4>
+  <pre><code class="language-bash">BRAIN_USE_SUFFIX=true
+# php artisan make:workflow CreateUser → CreateUserWorkflow.php</code></pre>
+
+  <h4 id="upgrading-enhanced-logging">Enhanced Logging</h4>
+  <p>Built-in event system for tracking execution. See <a href="#events">Events &amp; Logging</a>.</p>
+</section>
+<section id="changelog" class="doc-section">
+<h2 id="changelog">Changelog</h2>
+<p>All notable changes to Brain are documented here.</p>
+<h3 id="changelog-2-2-0">2.2.0 - 2026-02-13</h3>
+<h4 id="changelog-added">Added</h4>
+<ul>
+<li><code>#[Sensitive]</code> attribute for automatic payload redaction in logs, JSON, and debug output. Process-level inheritance supported.</li>
+<li><code>#[OnQueue]</code> attribute for setting a specific queue on Tasks and Processes.</li>
+<li><code>brain:run</code> command for interactive Process/Task execution with <code>--rerun</code> option.</li>
+<li><code>brain:eject</code> command with recursive sub-process expansion.</li>
+<li><code>brain:show</code> redesigned with tree-style output and filtering.</li>
+<li>PHP 8.5 support.</li>
+</ul>
+<h4 id="changelog-fixed">Fixed</h4>
+<ul>
+<li>Use <code>Context::add()</code> to prevent tasks linking to wrong process.</li>
+<li><code>FinalizeTaskMiddleware</code> ensures tasks are finalized before next middleware.</li>
+<li>Prevent stale sensitive keys from leaking between processes.</li>
+<li>Redact sensitive values in run history and re-prompt on rerun.</li>
+</ul>
+<h3 id="changelog-2-1-0">2.1.0 - 2025-11-10</h3>
+<h4 id="changelog-added">Added</h4>
+<ul>
+<li>Enhanced process and task event logging with class name, process ID, and return output.</li>
+</ul>
+<h4 id="changelog-changed">Changed</h4>
+<ul>
+<li>Removed unused <code>getName</code> method from <code>Process</code> and simplified <code>fireEvent</code>.</li>
+</ul>
+<h3 id="changelog-2-0-0">2.0.0 - 2025-11-10</h3>
+<h4 id="changelog-added">Added</h4>
+<ul>
+<li>Configuration option for <code>root</code> directory to customize base namespace.</li>
+<li>Configuration option for <code>use_domains</code> for domain subdirectories.</li>
+</ul>
+<h4 id="changelog-changed">Changed</h4>
+<ul>
+<li>Simplified service provider registration.</li>
+<li>Updated command namespace logic for domain organization.</li>
+</ul>
+<h3 id="changelog-1-8-0">1.8.0 - 2025-10-29</h3>
+<h4 id="changelog-added">Added</h4>
+<ul>
+<li>Logging configuration and event listeners.</li>
+<li>Event dispatching for skipped and cancelled tasks.</li>
+<li>Queue dispatch when <code>ShouldQueue</code> is implemented.</li>
+</ul>
+<h3 id="changelog-1-7-0">1.7.0 - 2025-10-11</h3>
+<h4 id="changelog-added">Added</h4>
+<ul>
+<li>Validation rules for task properties via <code>rules()</code> method.</li>
+</ul>
+<h3 id="changelog-1-6-0">1.6.0 - 2025-09-23</h3>
+<h4 id="changelog-added">Added</h4>
+<ul>
+<li><code>toArray</code> method for task payloads.</li>
+</ul>
+<h3 id="changelog-1-5-0">1.5.0 - 2025-07-18</h3>
+<h4 id="changelog-added">Added</h4>
+<ul>
+<li><code>make:test</code> command with custom stub support.</li>
+</ul>
+<h3 id="changelog-1-4-0">1.4.0 - 2025-07-08</h3>
+<h4 id="changelog-added">Added</h4>
+<ul>
+<li><code>runIf</code> method for conditional task execution.</li>
+</ul>
+<h3 id="changelog-1-3-0">1.3.0 - 2025-06-02</h3>
+<h4 id="changelog-added">Added</h4>
+<ul>
+<li>Configurable suffixes for tasks, queries, and processes.</li>
+</ul>
+<h3 id="changelog-1-2-0">1.2.0 - 2025-04-07</h3>
+<h4 id="changelog-added">Added</h4>
+<ul>
+<li>Task and process type identification in <code>BrainMap</code>.</li>
+<li>Task properties in <code>brain:show</code> verbose output.</li>
+</ul>
+<h3 id="changelog-1-1-0">1.1.0 - 2025-03-10</h3>
+<h4 id="changelog-added">Added</h4>
+<ul>
+<li><code>brain:show</code> command.</li>
+</ul>
+<h3 id="changelog-1-0-0">1.0.0 - 2025-03-06</h3>
+<ul>
+<li>Initial release.</li>
+</ul>
+</section>
+<section id="contributing" class="doc-section">
+<h2 id="contributing">Contributing</h2>
+<p>Contributions are welcome and accepted via pull requests.</p>
+<h3 id="contributing-process">Process</h3>
+<ol>
+<li>Fork the project</li>
+<li>Create a new branch</li>
+<li>Code, test, commit and push</li>
+<li>Open a pull request detailing your changes</li>
+</ol>
+<h3 id="contributing-guidelines">Guidelines</h3>
+<ul>
+<li>Ensure code style passes: <code>composer lint</code></li>
+<li>Send a coherent commit history — each commit should be meaningful</li>
+<li>You may need to <a href="https://git-scm.com/book/en/v2/Git-Branching-Rebasing" target="_blank" rel="noopener">rebase</a> to avoid merge conflicts</li>
+<li>We follow <a href="http://semver.org/" target="_blank" rel="noopener">SemVer</a></li>
+</ul>
+<h3 id="contributing-setup">Setup</h3>
+<p>Clone your fork, then install dependencies:</p>
+<pre><code class="language-bash">composer install</code></pre>
+<h3 id="contributing-commands">Commands</h3>
+<pre><code class="language-bash">composer lint          # Fix code style
+composer test          # Run full test suite
+composer test:types    # Static analysis
+composer test:unit     # Unit tests with coverage</code></pre>
+</section>
+  <footer class="footer">
+    <p>Released under the MIT License. Copyright © 2025 Rafael Lunardelli.</p>
+  </footer>
+</main>
+</div>
+<script>
+  // Sidebar toggle (mobile)
+  var toggle = document.querySelector('.menu-toggle');
+  var sidebar = document.getElementById('sidebar');
+  toggle.addEventListener('click', function () { sidebar.classList.toggle('open'); });
+  sidebar.addEventListener('click', function (e) {
+    if (e.target.tagName === 'A') sidebar.classList.remove('open');
+  });
+
+  // Scrollspy: highlight the sidebar link of the section in view
+  var links = Array.prototype.slice.call(document.querySelectorAll('.sidebar a[href^="#"]'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        links.forEach(function (a) { a.classList.remove('active'); });
+        var link = byId[entry.target.id];
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px' });
+  document.querySelectorAll('.doc-section').forEach(function (s) { observer.observe(s); });
+</script>
+</body>
+</html>

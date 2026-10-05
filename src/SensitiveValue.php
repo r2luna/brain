@@ -39,9 +39,16 @@ class SensitiveValue implements JsonSerializable, Stringable
         return ['value' => Crypt::encrypt($this->value)];
     }
 
+    /**
+     * Jobs queued before encryption was added store the plain private property.
+     */
     public function __unserialize(array $data): void
     {
-        $this->value = Crypt::decrypt($data['value']);
+        $legacyKey = "\0".self::class."\0value";
+
+        $this->value = array_key_exists($legacyKey, $data)
+            ? $data[$legacyKey]
+            : Crypt::decrypt($data['value']);
     }
 
     /**

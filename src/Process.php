@@ -100,8 +100,6 @@ class Process
     /**
      * Add new task to be run, always to the end
      * of the process
-     *
-     * @return $this
      */
     public function addTask(string $class): self
     {

@@ -370,9 +370,7 @@ abstract class Action
      */
     private function standardizePayload(): void
     {
-        if (is_null($this->payload)) {
-            $this->payload = [];
-        }
+        $this->payload ??= [];
 
         if (is_array($this->payload)) {
             $this->payload = (object) $this->payload;

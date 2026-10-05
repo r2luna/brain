@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Brain\Tests\Console;
 
 use Illuminate\Foundation\Console\TestMakeCommand;
-use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Command to generate a new test class for Brain.
@@ -13,20 +12,20 @@ use Symfony\Component\Console\Input\InputOption;
 class MakeTestCommand extends TestMakeCommand
 {
     /**
-     * The name of the command.
+     * The name and signature of the command.
+     *
+     * Laravel's TestMakeCommand defines a $signature, which takes precedence
+     * over $name and getOptions(), so the full signature is declared again here.
      *
      * @var string
      */
-    protected $name = 'brain:make:test';
-
-    /** Get the console command options, including the stub type. */
-    protected function getOptions(): array
-    {
-        return array_merge(
-            parent::getOptions(),
-            [['stub', null, InputOption::VALUE_NONE, 'Stub type to be generated']]
-        );
-    }
+    protected $signature = 'brain:make:test
+                    {name : The name of the test}
+                    {--f|force : Create the test even if the test already exists}
+                    {--u|unit : Create a unit test}
+                    {--pest : Create a Pest test}
+                    {--phpunit : Create a PHPUnit test}
+                    {--stub= : Stub type to be generated}';
 
     /** Get the default namespace for the generated test class. */
     protected function getDefaultNamespace($rootNamespace): string

@@ -118,8 +118,6 @@ class Workflow
     /**
      * Add new action to be run, always to the end
      * of the workflow
-     *
-     * @return $this
      */
     public function addAction(string $class): self
     {

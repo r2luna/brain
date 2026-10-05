@@ -222,53 +222,19 @@ class Process
 
                 $reflectionClass = new ReflectionClass($task);
 
-                if ($reflectionClass->hasMethod('runIf')) {
-                    $method = $reflectionClass->getMethod('runIf');
-
-                    if ($method->getDeclaringClass()->getName() === $reflectionClass->getName()) {
-                        $instance = new $task($payload);
-
-                        if (! $method->invoke($instance)) {
-                            event(new Skipped($task, payload: $payload, runProcessId: $this->uuid));
-
-                            continue;
-                        }
-                    }
-                }
-
-                if ($reflectionClass->implementsInterface(ShouldQueue::class)) {
-                    $processQueue = $this->resolveQueue();
-                    $instance = new $task($payload);
-
-                    if ($instance->queue === null && $processQueue !== null) {
-                        $instance->onQueue($processQueue);
-                    }
-
-                    dispatch($instance);
+                if ($this->shouldSkip($reflectionClass, $payload)) {
+                    event(new Skipped($task, payload: $payload, runProcessId: $this->uuid));
 
                     continue;
                 }
 
-                try {
-                    $temp = $task::dispatchSync($payload);
-                    if ($temp instanceof Task) {
-                        // finalize() will be no-op if middleware already finalized
-                        $temp->finalize();
-                        $payload = $temp->payload;
-                    } else {
-                        $payload = $temp;
-                    }
-                } catch (Throwable $e) {
-                    $meta = [
-                        'error' => SensitiveValue::redact($e->getMessage(), $payload),
-                        'line' => $e->getLine(),
-                        'file' => $e->getFile(),
-                    ];
+                if ($reflectionClass->implementsInterface(ShouldQueue::class)) {
+                    $this->dispatchQueued($task, $payload);
 
-                    event(new TasksError($task, payload: $payload, runProcessId: $this->uuid, meta: $meta));
-
-                    throw $e;
+                    continue;
                 }
+
+                $payload = $this->runSync($task, $payload);
 
                 // If the task is a Process, we need to remove the cancelProcess key from the payload.
                 // Because the cancel process is only valid for the current process.
@@ -305,6 +271,73 @@ class Process
             ...Sensitive::keysFor(static::class),
             ...Sensitive::keysForAll($this->tasks),
         ]));
+    }
+
+    /**
+     * Check if the task declares its own runIf() and it returns false.
+     *
+     * @param  ReflectionClass<object>  $reflectionClass
+     *
+     * @throws ReflectionException
+     */
+    private function shouldSkip(ReflectionClass $reflectionClass, array|object|null $payload): bool
+    {
+        if (! $reflectionClass->hasMethod('runIf')) {
+            return false;
+        }
+
+        $method = $reflectionClass->getMethod('runIf');
+
+        if ($method->getDeclaringClass()->getName() !== $reflectionClass->getName()) {
+            return false;
+        }
+
+        return ! $method->invoke($reflectionClass->newInstance($payload));
+    }
+
+    /**
+     * Dispatch a queued task, falling back to the Process queue when the task has none.
+     */
+    private function dispatchQueued(string $task, array|object|null $payload): void
+    {
+        $processQueue = $this->resolveQueue();
+        $instance = new $task($payload);
+
+        if ($instance->queue === null && $processQueue !== null) {
+            $instance->onQueue($processQueue);
+        }
+
+        dispatch($instance);
+    }
+
+    /**
+     * Run the task synchronously and return the payload for the next task.
+     *
+     * @throws Throwable
+     */
+    private function runSync(string $task, array|object|null $payload): mixed
+    {
+        try {
+            $temp = $task::dispatchSync($payload);
+            if ($temp instanceof Task) {
+                // finalize() will be no-op if middleware already finalized
+                $temp->finalize();
+
+                return $temp->payload;
+            }
+
+            return $temp;
+        } catch (Throwable $e) {
+            $meta = [
+                'error' => SensitiveValue::redact($e->getMessage(), $payload),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+            ];
+
+            event(new TasksError($task, payload: $payload, runProcessId: $this->uuid, meta: $meta));
+
+            throw $e;
+        }
     }
 
     /**

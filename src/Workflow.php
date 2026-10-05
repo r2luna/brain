@@ -220,53 +220,19 @@ class Workflow
 
                 $reflectionClass = new ReflectionClass($action);
 
-                if ($reflectionClass->hasMethod('runIf')) {
-                    $method = $reflectionClass->getMethod('runIf');
-
-                    if ($method->getDeclaringClass()->getName() === $reflectionClass->getName()) {
-                        $instance = new $action($payload);
-
-                        if (! $method->invoke($instance)) {
-                            event(new Skipped($action, payload: $payload, runWorkflowId: $this->uuid));
-
-                            continue;
-                        }
-                    }
-                }
-
-                if ($reflectionClass->implementsInterface(ShouldQueue::class)) {
-                    $workflowQueue = $this->resolveQueue();
-                    $instance = new $action($payload);
-
-                    if ($instance->queue === null && $workflowQueue !== null) {
-                        $instance->onQueue($workflowQueue);
-                    }
-
-                    dispatch($instance);
+                if ($this->shouldSkip($reflectionClass, $payload)) {
+                    event(new Skipped($action, payload: $payload, runWorkflowId: $this->uuid));
 
                     continue;
                 }
 
-                try {
-                    $temp = $action::dispatchSync($payload);
-                    if ($temp instanceof Action) {
-                        // finalize() will be no-op if middleware already finalized
-                        $temp->finalize();
-                        $payload = $temp->payload;
-                    } else {
-                        $payload = $temp;
-                    }
-                } catch (Throwable $e) {
-                    $meta = [
-                        'error' => SensitiveValue::redact($e->getMessage(), $payload),
-                        'line' => $e->getLine(),
-                        'file' => $e->getFile(),
-                    ];
+                if ($reflectionClass->implementsInterface(ShouldQueue::class)) {
+                    $this->dispatchQueued($action, $payload);
 
-                    event(new ActionsError($action, payload: $payload, runWorkflowId: $this->uuid, meta: $meta));
-
-                    throw $e;
+                    continue;
                 }
+
+                $payload = $this->runSync($action, $payload);
 
                 // If the action is a Workflow, we need to remove the cancelWorkflow key from the payload.
                 // Because the cancel workflow is only valid for the current workflow.
@@ -303,6 +269,73 @@ class Workflow
             ...Sensitive::keysFor(static::class),
             ...Sensitive::keysForAll($this->actions),
         ]));
+    }
+
+    /**
+     * Check if the action declares its own runIf() and it returns false.
+     *
+     * @param  ReflectionClass<object>  $reflectionClass
+     *
+     * @throws ReflectionException
+     */
+    private function shouldSkip(ReflectionClass $reflectionClass, array|object|null $payload): bool
+    {
+        if (! $reflectionClass->hasMethod('runIf')) {
+            return false;
+        }
+
+        $method = $reflectionClass->getMethod('runIf');
+
+        if ($method->getDeclaringClass()->getName() !== $reflectionClass->getName()) {
+            return false;
+        }
+
+        return ! $method->invoke($reflectionClass->newInstance($payload));
+    }
+
+    /**
+     * Dispatch a queued action, falling back to the Workflow queue when the action has none.
+     */
+    private function dispatchQueued(string $action, array|object|null $payload): void
+    {
+        $workflowQueue = $this->resolveQueue();
+        $instance = new $action($payload);
+
+        if ($instance->queue === null && $workflowQueue !== null) {
+            $instance->onQueue($workflowQueue);
+        }
+
+        dispatch($instance);
+    }
+
+    /**
+     * Run the action synchronously and return the payload for the next action.
+     *
+     * @throws Throwable
+     */
+    private function runSync(string $action, array|object|null $payload): mixed
+    {
+        try {
+            $temp = $action::dispatchSync($payload);
+            if ($temp instanceof Action) {
+                // finalize() will be no-op if middleware already finalized
+                $temp->finalize();
+
+                return $temp->payload;
+            }
+
+            return $temp;
+        } catch (Throwable $e) {
+            $meta = [
+                'error' => SensitiveValue::redact($e->getMessage(), $payload),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+            ];
+
+            event(new ActionsError($action, payload: $payload, runWorkflowId: $this->uuid, meta: $meta));
+
+            throw $e;
+        }
     }
 
     /**

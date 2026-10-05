@@ -350,6 +350,12 @@ it('F4: encrypts sensitive values when serialized', function (): void {
         ->and(unserialize($serialized)->value())->toBe('secret123');
 });
 
+it('F4: unserializes values queued before encryption was added', function (): void {
+    $legacy = 'O:20:"Brain\SensitiveValue":1:{s:27:"'."\0Brain\SensitiveValue\0value".'";s:9:"secret123";}';
+
+    expect(unserialize($legacy)->value())->toBe('secret123');
+});
+
 it('F4: does not store sensitive payload values in plain text in queued jobs', function (array $flow): void {
     $payload = ['email' => 'john@example.com', 'password' => 'secret123'];
 

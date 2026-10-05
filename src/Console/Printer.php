@@ -14,6 +14,22 @@ use Illuminate\Support\Str;
 class Printer
 {
     /**
+     * Element types mapped to their key in the domain data, in display order.
+     */
+    private const array DOMAIN_SECTIONS = [
+        'workflow' => 'workflows',
+        'action' => 'actions',
+        'process' => 'processes',
+        'task' => 'tasks',
+        'query' => 'queries',
+    ];
+
+    /**
+     * Column where sub-task names start, relative to the parent prefix.
+     */
+    private const int NESTED_TASK_NAME_COL = 7;
+
+    /**
      * Colors that represent the different elements.
      */
     private array $elemColors = [
@@ -158,73 +174,44 @@ class Printer
     {
         $items = [];
 
-        if ($this->shouldCollect('workflow')) {
-            foreach (data_get($domainData, 'workflows', []) as $workflow) {
-                if ($this->matchesFilter($workflow['name'])) {
-                    $items[] = ['type' => 'workflow', 'data' => $workflow];
-
-                    continue;
-                }
-
-                if ($this->filter !== null) {
-                    $matchingActions = array_values(array_filter(
-                        data_get($workflow, 'tasks', []),
-                        fn (array $action): bool => $this->matchesFilter($action['name'])
-                    ));
-
-                    if ($matchingActions !== []) {
-                        $items[] = ['type' => 'workflow', 'data' => [...$workflow, 'tasks' => $matchingActions]];
-                    }
-                }
+        foreach (self::DOMAIN_SECTIONS as $type => $section) {
+            if (! $this->shouldCollect($type)) {
+                continue;
             }
-        }
 
-        if ($this->shouldCollect('action')) {
-            foreach (data_get($domainData, 'actions', []) as $action) {
-                if ($this->matchesFilter($action['name'])) {
-                    $items[] = ['type' => 'action', 'data' => $action];
-                }
-            }
-        }
+            foreach (data_get($domainData, $section, []) as $element) {
+                $data = $this->filterElement($type, $element);
 
-        if ($this->shouldCollect('process')) {
-            foreach (data_get($domainData, 'processes', []) as $process) {
-                if ($this->matchesFilter($process['name'])) {
-                    $items[] = ['type' => 'process', 'data' => $process];
-
-                    continue;
-                }
-
-                if ($this->filter !== null) {
-                    $matchingTasks = array_values(array_filter(
-                        data_get($process, 'tasks', []),
-                        fn (array $task): bool => $this->matchesFilter($task['name'])
-                    ));
-
-                    if ($matchingTasks !== []) {
-                        $items[] = ['type' => 'process', 'data' => [...$process, 'tasks' => $matchingTasks]];
-                    }
-                }
-            }
-        }
-
-        if ($this->shouldCollect('task')) {
-            foreach (data_get($domainData, 'tasks', []) as $task) {
-                if ($this->matchesFilter($task['name'])) {
-                    $items[] = ['type' => 'task', 'data' => $task];
-                }
-            }
-        }
-
-        if ($this->shouldCollect('query')) {
-            foreach (data_get($domainData, 'queries', []) as $query) {
-                if ($this->matchesFilter($query['name'])) {
-                    $items[] = ['type' => 'query', 'data' => $query];
+                if ($data !== null) {
+                    $items[] = ['type' => $type, 'data' => $data];
                 }
             }
         }
 
         return $items;
+    }
+
+    /**
+     * Returns the element when its name matches the filter. A workflow or process
+     * that does not match is kept with only its matching children, or dropped
+     * when none match.
+     */
+    private function filterElement(string $type, array $element): ?array
+    {
+        if ($this->matchesFilter($element['name'])) {
+            return $element;
+        }
+
+        if (! in_array($type, ['workflow', 'process'], true)) {
+            return null;
+        }
+
+        $matchingChildren = array_values(array_filter(
+            data_get($element, 'tasks', []),
+            fn (array $child): bool => $this->matchesFilter($child['name'])
+        ));
+
+        return $matchingChildren === [] ? null : [...$element, 'tasks' => $matchingChildren];
     }
 
     /** Determine if the given element type should be collected. */
@@ -267,49 +254,52 @@ class Printer
     /** Render items, grouping by subdirectory when present. */
     private function renderGroupedItems(array $items, bool $useDomains): void
     {
-        $ungrouped = array_values(array_filter($items, fn (array $item): bool => data_get($item, 'data.group') === null));
+        $ungrouped = [];
         $grouped = [];
 
         foreach ($items as $item) {
             $group = data_get($item, 'data.group');
 
-            if ($group !== null) {
+            if ($group === null) {
+                $ungrouped[] = $item;
+            } else {
                 $grouped[$group][] = $item;
             }
         }
 
-        $totalUngrouped = count($ungrouped);
-        $hasGroups = $grouped !== [];
+        $this->renderItemList($ungrouped, $grouped === [], $useDomains);
 
-        foreach ($ungrouped as $index => $item) {
-            $isLast = ($index === $totalUngrouped - 1) && ! $hasGroups;
-            $this->addItemLine($item, $isLast, $useDomains);
-        }
-
-        if ($ungrouped !== [] && $hasGroups) {
+        if ($ungrouped !== [] && $grouped !== []) {
             $this->addNewLine();
         }
 
-        $groupNames = array_keys($grouped);
-        $totalGroups = count($groupNames);
+        $this->renderGroups($grouped, $useDomains);
+    }
 
-        foreach ($groupNames as $groupIndex => $groupName) {
-            $groupItems = $grouped[$groupName];
-            $isLastGroup = ($groupIndex === $totalGroups - 1);
+    /** Render each subdirectory group under its own label. */
+    private function renderGroups(array $grouped, bool $useDomains): void
+    {
+        $indent = $useDomains ? '  ' : '';
+        $lastGroupName = array_key_last($grouped);
 
-            $indent = $useDomains ? '  ' : '';
+        foreach ($grouped as $groupName => $groupItems) {
             $this->lines[] = [sprintf('%s<fg=%s;options=bold>%s</>', $indent, $this->elemColors['DOMAIN'], $this->formatDomainLabel((string) $groupName))];
 
-            $totalGroupItems = count($groupItems);
+            $this->renderItemList($groupItems, true, true);
 
-            foreach ($groupItems as $itemIndex => $item) {
-                $isLast = ($itemIndex === $totalGroupItems - 1);
-                $this->addItemLine($item, $isLast, true);
-            }
-
-            if (! $isLastGroup) {
+            if ($groupName !== $lastGroupName) {
                 $this->addNewLine();
             }
+        }
+    }
+
+    /** Render a list of items, closing the tree on the last one when requested. */
+    private function renderItemList(array $items, bool $closeTree, bool $useDomains): void
+    {
+        $lastIndex = count($items) - 1;
+
+        foreach ($items as $index => $item) {
+            $this->addItemLine($item, $closeTree && $index === $lastIndex, $useDomains);
         }
     }
 
@@ -422,49 +412,64 @@ class Printer
     private function addProcessTasks(array $process, string $parentChildPrefix, int $prefixVisualWidth): void
     {
         $tasks = data_get($process, 'tasks', []);
-        $totalTasks = count($tasks);
+        $lastIndex = count($tasks) - 1;
+        $indentSpaces = str_repeat(' ', self::NESTED_TASK_NAME_COL);
 
         foreach ($tasks as $taskIndex => $task) {
-            $num = $taskIndex + 1;
-            $isLastTask = ($taskIndex === $totalTasks - 1);
+            $isLastTask = $taskIndex === $lastIndex;
 
-            $connector = $isLastTask ? '└── ' : '├── ';
-
-            $nameCol = 7;
-            $indentSpaces = str_repeat(' ', $nameCol);
-
-            [$color, $type] = match ($task['type']) {
-                'workflow' => [$this->elemColors['FLOW'], 'W'],
-                'process' => [$this->elemColors['PROC'], 'P'],
-                'action' => [$this->elemColors['ACTN'], 'A'],
-                default => [$this->elemColors['TASK'], 'T'],
-            };
-
-            $status = $task['queue'] ? ' queued' : '';
-            $taskName = $task['name'];
-
-            // Full visual length including prefix width for proper right-alignment
-            $visualLen = $prefixVisualWidth + $nameCol + 4 + mb_strlen("{$num}. ") + 1 + 1 + mb_strlen((string) $taskName) + 1 + mb_strlen($status);
-            $dotCount = max($this->terminalWidth - $visualLen, 0);
-            $dots = str_repeat('·', $dotCount);
-
-            $this->lines[] = [
-                sprintf(
-                    '%s%s<fg=#6C7280>%s</><fg=white>%s</><fg=%s;options=bold>%s</> <fg=white>%s</><fg=#6C7280> %s%s</>',
-                    $parentChildPrefix, $indentSpaces, $connector,
-                    "{$num}. ", $color, $type, $taskName, $dots, $status
-                ),
-            ];
+            $this->addNestedTaskLine($task, $taskIndex + 1, $isLastTask, $parentChildPrefix, $prefixVisualWidth);
 
             $continuation = $isLastTask ? '    ' : '<fg=#6C7280>│</>   ';
-            $subtaskChildPrefix = $parentChildPrefix.$indentSpaces.$continuation;
-            $subtaskPrefixVisualWidth = $prefixVisualWidth + $nameCol + 4;
 
-            if (($task['type'] === 'process' || $task['type'] === 'workflow') && ! empty($task['tasks'])) {
-                $this->addProcessTasks($task, $subtaskChildPrefix, $subtaskPrefixVisualWidth);
-            } elseif ($this->output->isVeryVerbose()) {
-                $this->addProperties($task, $subtaskChildPrefix, 3);
-            }
+            $this->addNestedTaskChildren(
+                $task,
+                $parentChildPrefix.$indentSpaces.$continuation,
+                $prefixVisualWidth + self::NESTED_TASK_NAME_COL + 4
+            );
+        }
+    }
+
+    /**
+     * Adds a single numbered sub-task line with its tree connector.
+     */
+    private function addNestedTaskLine(array $task, int $position, bool $isLastTask, string $parentChildPrefix, int $prefixVisualWidth): void
+    {
+        $connector = $isLastTask ? '└── ' : '├── ';
+
+        [$color, $type] = match ($task['type']) {
+            'workflow' => [$this->elemColors['FLOW'], 'W'],
+            'process' => [$this->elemColors['PROC'], 'P'],
+            'action' => [$this->elemColors['ACTN'], 'A'],
+            default => [$this->elemColors['TASK'], 'T'],
+        };
+
+        $status = $task['queue'] ? ' queued' : '';
+        $taskName = $task['name'];
+
+        // Full visual length including prefix width for proper right-alignment
+        $visualLen = $prefixVisualWidth + self::NESTED_TASK_NAME_COL + 4 + mb_strlen("{$position}. ") + 1 + 1 + mb_strlen((string) $taskName) + 1 + mb_strlen($status);
+        $dotCount = max($this->terminalWidth - $visualLen, 0);
+        $dots = str_repeat('·', $dotCount);
+
+        $this->lines[] = [
+            sprintf(
+                '%s%s<fg=#6C7280>%s</><fg=white>%s</><fg=%s;options=bold>%s</> <fg=white>%s</><fg=#6C7280> %s%s</>',
+                $parentChildPrefix, str_repeat(' ', self::NESTED_TASK_NAME_COL), $connector,
+                "{$position}. ", $color, $type, $taskName, $dots, $status
+            ),
+        ];
+    }
+
+    /**
+     * Adds the nested tasks of a sub-workflow, or the properties of a leaf task.
+     */
+    private function addNestedTaskChildren(array $task, string $childPrefix, int $prefixVisualWidth): void
+    {
+        if (in_array($task['type'], ['process', 'workflow'], true) && ! empty($task['tasks'])) {
+            $this->addProcessTasks($task, $childPrefix, $prefixVisualWidth);
+        } elseif ($this->output->isVeryVerbose()) {
+            $this->addProperties($task, $childPrefix, 3);
         }
     }
 

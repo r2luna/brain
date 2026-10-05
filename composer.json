@@ -51,7 +51,12 @@
         "test:typos": "peck",
         "test:lint": "pint --test",
         "test:types": "phpstan analyse --ansi src/",
-        "test:unit": "pest --colors=always --coverage --min=99 --compact",
+        "test:unit": [
+            "@putenv XDEBUG_MODE=coverage",
+            "pest --colors=always --coverage --min=99 --compact --coverage-crap4j=.phpunit.cache/crap4j.xml"
+        ],
+        "test:crap": "php scripts/quality/crap.php",
+        "test:complexity": "php scripts/quality/complexity.php",
         "test:debug": "laradumps check --dir=src,tests --text=dump,dd",
         "test": [
             "@test:debug",
@@ -59,7 +64,8 @@
             "@test:lint",
             "@test:types",
             "@test:typos",
-            "@test:unit"
+            "@test:unit",
+            "@test:crap"
         ]
     },
     "config": {

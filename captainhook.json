@@ -11,6 +11,9 @@
         "enabled": true,
         "actions": [
             {
+                "action": "php scripts/quality/complexity.php --staged"
+            },
+            {
                 "action": "composer test"
             }
         ]

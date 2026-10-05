@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Brain\Console\Support\PropertyInput;
+use Laravel\Prompts\PasswordPrompt;
+use Laravel\Prompts\Prompt;
+use Laravel\Prompts\TextPrompt;
 
 describe('isNullable', function (): void {
     it('detects nullable types', function (): void {
@@ -86,5 +89,18 @@ describe('castValue', function (): void {
     it('does not return null for empty non-nullable values', function (): void {
         expect(PropertyInput::castValue('', 'string', false))->toBe('');
         expect(PropertyInput::castValue('', 'int', false))->toBe(0);
+    });
+});
+
+describe('prompt', function (): void {
+    it('F9: uses a hidden input only for sensitive properties', function (): void {
+        Prompt::fallbackWhen(true);
+        PasswordPrompt::fallbackUsing(fn (PasswordPrompt $prompt): string => 'hidden');
+        TextPrompt::fallbackUsing(fn (TextPrompt $prompt): string => 'visible');
+
+        $property = ['name' => 'token', 'type' => 'string', 'direction' => 'output'];
+
+        expect(PropertyInput::prompt([...$property, 'sensitive' => true]))->toBe('hidden')
+            ->and(PropertyInput::prompt([...$property, 'sensitive' => false]))->toBe('visible');
     });
 });

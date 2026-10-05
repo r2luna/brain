@@ -54,8 +54,8 @@ abstract class Task
         $startTime = microtime(true);
 
         $this->standardizePayload();
-        $this->validate();
         $this->wrapSensitiveKeys();
+        $this->validate();
 
         $this->fireEvent(Processing::class, [
             'microtime' => $startTime,
@@ -101,11 +101,9 @@ abstract class Task
      */
     public function __set(string $property, mixed $value): void
     {
-        if (! $value instanceof SensitiveValue && in_array($property, static::getSensitiveKeys(), true)) {
-            $value = new SensitiveValue($value);
-        }
-
         $this->payload->$property = $value;
+
+        $this->wrapSensitiveKeys();
     }
 
     /**
@@ -147,12 +145,7 @@ abstract class Task
     /** Returns the list of sensitive keys declared via the #[Sensitive] attribute, merged with process-level keys. */
     public static function getSensitiveKeys(): array
     {
-        $taskKeys = self::$sensitiveKeysCache[static::class] ??= (function (): array {
-            $attributes = (new ReflectionClass(static::class))
-                ->getAttributes(Sensitive::class);
-
-            return $attributes !== [] ? $attributes[0]->newInstance()->keys : [];
-        })();
+        $taskKeys = self::$sensitiveKeysCache[static::class] ??= Sensitive::keysFor(static::class);
 
         $processKeys = Context::get('brain.sensitive_keys', []);
 
@@ -292,7 +285,7 @@ abstract class Task
         $rules = $this->rules();
         if (filled($rules)) {
             Validator::make(
-                (array) $this->payload,
+                SensitiveValue::unwrap((array) $this->payload),
                 $rules
             )->validate();
         }
@@ -340,11 +333,7 @@ abstract class Task
     /** Wraps sensitive payload keys in SensitiveValue for automatic redaction. */
     private function wrapSensitiveKeys(): void
     {
-        foreach (static::getSensitiveKeys() as $key) {
-            if (isset($this->payload->$key) && ! $this->payload->$key instanceof SensitiveValue) {
-                $this->payload->$key = new SensitiveValue($this->payload->$key);
-            }
-        }
+        SensitiveValue::wrap($this->payload, static::getSensitiveKeys());
     }
 
     /**

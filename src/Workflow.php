@@ -74,6 +74,14 @@ class Workflow
 
         $this->name = (new ReflectionClass($this))->getName();
 
+        if (is_array($this->payload)) {
+            $this->payload = (object) $this->payload;
+        }
+
+        if (is_object($this->payload)) {
+            SensitiveValue::wrap($this->payload, $this->sensitiveKeys());
+        }
+
         Context::add('workflow', [$this->name, $this->uuid]);
 
         $onQueue = (new ReflectionClass(static::class))
@@ -142,18 +150,14 @@ class Workflow
      */
     public function handle(): object|array|null
     {
-        if (is_array($this->payload)) {
-            $this->payload = (object) $this->payload;
-        }
-
         $previousKeys = Context::get('brain.sensitive_keys', []);
+        $sensitiveKeys = $this->sensitiveKeys();
 
-        $sensitiveAttr = (new ReflectionClass(static::class))
-            ->getAttributes(Sensitive::class);
+        Context::add('brain.sensitive_keys', $sensitiveKeys);
 
-        Context::add('brain.sensitive_keys', $sensitiveAttr !== []
-            ? $sensitiveAttr[0]->newInstance()->keys
-            : []);
+        if (is_object($this->payload)) {
+            SensitiveValue::wrap($this->payload, $sensitiveKeys);
+        }
 
         $this->fireEvent(Processing::class, [
             'timestamp' => microtime(true),
@@ -169,7 +173,7 @@ class Workflow
             ]);
         } catch (Exception $e) {
             $this->fireEvent(Error::class, [
-                'error' => $e->getMessage(),
+                'error' => SensitiveValue::redact($e->getMessage(), $this->payload),
                 'line' => $e->getLine(),
                 'file' => $e->getFile(),
             ]);
@@ -276,7 +280,7 @@ class Workflow
                     }
                 } catch (Throwable $e) {
                     $meta = [
-                        'error' => $e->getMessage(),
+                        'error' => SensitiveValue::redact($e->getMessage(), $payload),
                         'line' => $e->getLine(),
                         'file' => $e->getFile(),
                     ];
@@ -306,6 +310,21 @@ class Workflow
         }
 
         return $payload;
+    }
+
+    /**
+     * Sensitive keys inherited from the parent context merged with the ones
+     * declared on this class, its parents and every action it runs.
+     *
+     * @return string[]
+     */
+    private function sensitiveKeys(): array
+    {
+        return array_values(array_unique([
+            ...Context::get('brain.sensitive_keys', []),
+            ...Sensitive::keysFor(static::class),
+            ...Sensitive::keysForAll($this->actions),
+        ]));
     }
 
     /**

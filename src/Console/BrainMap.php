@@ -369,8 +369,7 @@ class BrainMap
             return [];
         }
 
-        $sensitiveAttr = $reflection->getAttributes(Sensitive::class);
-        $sensitiveKeys = $sensitiveAttr !== [] ? $sensitiveAttr[0]->newInstance()->keys : [];
+        $sensitiveKeys = Sensitive::keysFor($reflection->name);
 
         $classDocBlock = $docBlockFactory->create($docBlock);
 

@@ -6,6 +6,7 @@ namespace Brain\Actions\Middleware;
 
 use Brain\Action;
 use Brain\Actions\Events\Error as ActionsError;
+use Brain\SensitiveValue;
 use Illuminate\Support\Facades\Context;
 use Throwable;
 
@@ -27,7 +28,7 @@ final class FinalizeActionMiddleware
             $action->finalize();
         } catch (Throwable $e) {
             $meta = [
-                'error' => $e->getMessage(),
+                'error' => SensitiveValue::redact($e->getMessage(), $action->payload),
                 'line' => $e->getLine(),
                 'file' => $e->getFile(),
             ];

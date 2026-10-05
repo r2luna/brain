@@ -17,7 +17,8 @@
             "subdirectory",
             "formatters",
             "unparseable",
-            "dispatchable"
+            "dispatchable",
+            "unserialize"
         ],
         "paths": []
     }

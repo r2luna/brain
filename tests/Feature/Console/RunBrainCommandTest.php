@@ -11,6 +11,9 @@ use Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask2;
 use Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask3;
 use Tests\Feature\Fixtures\Brain\Example\Tasks\ExampleTask4;
 use Tests\Feature\Fixtures\Brain\Example2\Processes\ExampleProcess2;
+use Tests\Feature\Fixtures\RunBrain\Tasks\SecretTask;
+use Tests\Feature\Fixtures\RunBrainSensitive\Actions\LeakyLoginAction;
+use Tests\Feature\Fixtures\RunBrainSensitive\Workflows\LoginWorkflow;
 
 beforeEach(function (): void {
     config()->set('brain.use_domains', true);
@@ -209,16 +212,16 @@ it('prompts bool with confirm for bool-typed properties', function (): void {
         ->assertExitCode(0);
 });
 
-it('prompts sensitive properties as regular text input', function (): void {
+it('prompts sensitive properties with hidden input', function (): void {
     config()->set('brain.use_domains', false);
     config()->set('brain.root', __DIR__.'/../Fixtures/RunBrain');
 
     $this->artisan('brain:run')
         ->expectsSearch(
             'What do you want to run?',
-            Tests\Feature\Fixtures\RunBrain\Tasks\SecretTask::class,
+            SecretTask::class,
             'SecretTask',
-            [Tests\Feature\Fixtures\RunBrain\Tasks\SecretTask::class => 'TASK  SecretTask'],
+            [SecretTask::class => 'TASK  SecretTask'],
         )
         ->expectsChoice('How should it be dispatched?', 'sync', [
             'sync' => 'Sync (dispatchSync)',
@@ -249,9 +252,9 @@ it('catches exceptions and displays error gracefully', function (): void {
         ->assertExitCode(1);
 });
 
-it('unwraps SensitiveValue in formatValue', function (): void {
+it('F7: keeps SensitiveValue redacted in formatValue', function (): void {
     $sensitive = new Brain\SensitiveValue('s3cret');
-    expect(RunBrainCommand::formatValue($sensitive))->toBe('s3cret');
+    expect(RunBrainCommand::formatValue($sensitive))->toBe('**********');
 });
 
 it('formats null values as string', function (): void {
@@ -394,9 +397,9 @@ it('redacts sensitive values in history', function (): void {
     $this->artisan('brain:run')
         ->expectsSearch(
             'What do you want to run?',
-            Tests\Feature\Fixtures\RunBrain\Tasks\SecretTask::class,
+            SecretTask::class,
             'SecretTask',
-            [Tests\Feature\Fixtures\RunBrain\Tasks\SecretTask::class => 'TASK  SecretTask'],
+            [SecretTask::class => 'TASK  SecretTask'],
         )
         ->expectsChoice('How should it be dispatched?', 'sync', [
             'sync' => 'Sync (dispatchSync)',
@@ -417,7 +420,7 @@ it('redacts sensitive values in history', function (): void {
 it('reruns with sensitive data re-prompts for sensitive values', function (): void {
     $history = RunHistory::default();
     $history->record(
-        ['class' => Tests\Feature\Fixtures\RunBrain\Tasks\SecretTask::class, 'type' => 'task'],
+        ['class' => SecretTask::class, 'type' => 'task'],
         ['username' => 'admin', 'token' => '********'],
         true,
         ['token'],
@@ -458,4 +461,96 @@ it('does not save cancelled runs to history', function (): void {
         ->assertExitCode(0);
 
     expect(RunHistory::default()->all())->toBe([]);
+});
+
+it('F8: marks workflow properties sensitive from the workflow attribute and nested children', function (): void {
+    config()->set('brain.use_domains', false);
+    config()->set('brain.root', __DIR__.'/../Fixtures/RunBrainSensitive');
+
+    $this->artisan('brain:run')
+        ->expectsSearch(
+            'What do you want to run?',
+            LoginWorkflow::class,
+            'LoginWorkflow',
+            [LoginWorkflow::class => 'WORKFLOW  LoginWorkflow'],
+        )
+        ->expectsChoice('How should it be dispatched?', 'sync', [
+            'sync' => 'Sync (dispatchSync)',
+            'async' => 'Async (dispatch)',
+        ])
+        ->expectsQuestion('email', 'john@example.com')
+        ->expectsQuestion('password', 'pass-s3cret')
+        ->expectsQuestion('token', 'token-s3cret')
+        ->expectsConfirmation('Execute?', 'yes')
+        ->doesntExpectOutputToContain('pass-s3cret')
+        ->doesntExpectOutputToContain('token-s3cret')
+        ->assertExitCode(0);
+
+    $entries = RunHistory::default()->all();
+    expect($entries[0]['payload'])->toBe([
+        'email' => 'john@example.com',
+        'password' => '********',
+        'token' => '********',
+    ])->and($entries[0]['sensitiveKeys'])->toBe(['password', 'token']);
+});
+
+it('F9: masks re-entered sensitive values in the rerun preview', function (): void {
+    $history = RunHistory::default();
+    $history->record(
+        ['class' => SecretTask::class, 'type' => 'task'],
+        ['username' => 'admin', 'token' => '********'],
+        true,
+        ['token'],
+    );
+
+    $label = 'TASK  SecretTask (sync) — '.$history->all()[0]['timestamp'];
+
+    $this->artisan('brain:run --rerun')
+        ->expectsSearch('Select a previous run:', $label, 'SecretTask', [0 => $label])
+        ->expectsQuestion('token', 'new-s3cret')
+        ->expectsConfirmation('Execute?', 'no')
+        ->doesntExpectOutputToContain('new-s3cret')
+        ->assertExitCode(0);
+});
+
+it('F10: redacts sensitive values from the error message', function (): void {
+    config()->set('brain.use_domains', false);
+    config()->set('brain.root', __DIR__.'/../Fixtures/RunBrainSensitive');
+
+    $this->artisan('brain:run')
+        ->expectsSearch(
+            'What do you want to run?',
+            LeakyLoginAction::class,
+            'LeakyLoginAction',
+            [LeakyLoginAction::class => 'ACTION  LeakyLoginAction'],
+        )
+        ->expectsChoice('How should it be dispatched?', 'sync', [
+            'sync' => 'Sync (dispatchSync)',
+            'async' => 'Async (dispatch)',
+        ])
+        ->expectsQuestion('password', 'pass-s3cret')
+        ->expectsConfirmation('Execute?', 'yes')
+        ->expectsOutputToContain('Invalid credentials: **********')
+        ->doesntExpectOutputToContain('pass-s3cret')
+        ->assertExitCode(1);
+});
+
+it('F10: redacts re-entered sensitive values from the rerun error message', function (): void {
+    $history = RunHistory::default();
+    $history->record(
+        ['class' => LeakyLoginAction::class, 'type' => 'action'],
+        ['password' => '********'],
+        true,
+        ['password'],
+    );
+
+    $label = 'ACTION  LeakyLoginAction (sync) — '.$history->all()[0]['timestamp'];
+
+    $this->artisan('brain:run --rerun')
+        ->expectsSearch('Select a previous run:', $label, 'LeakyLoginAction', [0 => $label])
+        ->expectsQuestion('password', 'pass-s3cret')
+        ->expectsConfirmation('Execute?', 'yes')
+        ->expectsOutputToContain('Invalid credentials: **********')
+        ->doesntExpectOutputToContain('pass-s3cret')
+        ->assertExitCode(1);
 });

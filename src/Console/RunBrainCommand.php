@@ -154,7 +154,7 @@ class RunBrainCommand extends Command
         return $targets;
     }
 
-    /** Aggregate unique properties from all sub-tasks of a process, plus the process's own properties. */
+    /** Aggregate unique properties from all sub-tasks of a process, plus the properties of the process itself. */
     private function aggregateProcessProperties(array $process): array
     {
         $properties = [];

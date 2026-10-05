@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Brain\Console;
 
 use Brain\Action;
+use Brain\Attributes\Sensitive;
 use Brain\Console\Support\PropertyInput;
 use Brain\Console\Support\RunHistory;
 use Brain\Process;
@@ -18,11 +19,11 @@ use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\error;
 use function Laravel\Prompts\info;
 use function Laravel\Prompts\note;
+use function Laravel\Prompts\password;
 use function Laravel\Prompts\search;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\spin;
 use function Laravel\Prompts\table;
-use function Laravel\Prompts\text;
 use function Laravel\Prompts\warning;
 
 /** Interactive command to select and run a Brain Process or Task. */
@@ -34,11 +35,11 @@ class RunBrainCommand extends Command
     /** @var string */
     protected $description = 'Interactively run a Brain Process or Task';
 
-    /** Format a value for table display, unwrapping sensitive values. */
+    /** Format a value for table display, keeping sensitive values redacted. */
     public static function formatValue(mixed $value): string
     {
         if ($value instanceof SensitiveValue) {
-            $value = $value->value();
+            return (string) $value;
         }
 
         if (is_null($value)) {
@@ -85,7 +86,7 @@ class RunBrainCommand extends Command
             $result = $this->runTarget($target, $payload, $sync);
         } catch (Throwable $e) {
             error($e::class);
-            warning($e->getMessage());
+            warning($this->redactMessage($e->getMessage(), $payload, $this->sensitiveKeysOf($target)));
 
             return self::FAILURE;
         }
@@ -154,26 +155,37 @@ class RunBrainCommand extends Command
         return $targets;
     }
 
-    /** Aggregate unique properties from all sub-tasks of a process, plus the properties of the process itself. */
+    /**
+     * Aggregate unique properties from the process and all of its nested sub-tasks.
+     * A property is sensitive when any child flags it or when the process tree declares it.
+     */
     private function aggregateProcessProperties(array $process): array
     {
+        $sensitiveKeys = Sensitive::keysForAll([$process['fullName']]);
         $properties = [];
-        $seen = [];
 
-        foreach ($process['properties'] ?? [] as $prop) { // @codeCoverageIgnoreStart
-            if (! isset($seen[$prop['name']])) {
-                $properties[] = $prop;
-                $seen[$prop['name']] = true;
+        foreach ($this->collectProcessProperties($process) as $prop) {
+            $sensitive = ($prop['sensitive'] ?? false) || in_array($prop['name'], $sensitiveKeys, true);
+
+            if (isset($properties[$prop['name']])) {
+                $properties[$prop['name']]['sensitive'] = $properties[$prop['name']]['sensitive'] || $sensitive;
+
+                continue;
             }
-        } // @codeCoverageIgnoreEnd
+
+            $properties[$prop['name']] = [...$prop, 'sensitive' => $sensitive];
+        }
+
+        return array_values($properties);
+    }
+
+    /** Collect the properties of a process and of all of its nested sub-tasks, in order. */
+    private function collectProcessProperties(array $process): array
+    {
+        $properties = $process['properties'] ?? [];
 
         foreach ($process['tasks'] ?? [] as $task) {
-            foreach ($task['properties'] ?? [] as $prop) { // @codeCoverageIgnoreStart
-                if (! isset($seen[$prop['name']])) {
-                    $properties[] = $prop;
-                    $seen[$prop['name']] = true;
-                }
-            } // @codeCoverageIgnoreEnd
+            $properties = [...$properties, ...$this->collectProcessProperties($task)];
         }
 
         return $properties;
@@ -253,13 +265,13 @@ class RunBrainCommand extends Command
     }
 
     /** Show a preview of the dispatch call and ask for confirmation. */
-    private function preview(array $target, array $payload, bool $sync): bool
+    private function preview(array $target, array $payload, bool $sync, array $sensitiveKeys = []): bool
     {
         $method = $sync ? 'dispatchSync' : 'dispatch';
         $shortClass = class_basename($target['class']);
 
         if ($payload !== []) {
-            $displayPayload = $this->maskSensitiveValues($target, $payload);
+            $displayPayload = $this->maskSensitiveValues($target, $payload, $sensitiveKeys);
             $rows = array_map(
                 fn (string $key, mixed $value): array => [$key, self::formatValue($value)],
                 array_keys($displayPayload),
@@ -333,16 +345,11 @@ class RunBrainCommand extends Command
     }
 
     /** Replace sensitive property values with asterisks for preview display. */
-    private function maskSensitiveValues(array $target, array $payload): array
+    private function maskSensitiveValues(array $target, array $payload, array $sensitiveKeys = []): array
     {
-        $sensitiveKeys = collect($target['properties'] ?? [])
-            ->filter(fn (array $p): bool => $p['sensitive'] ?? false)
-            ->pluck('name')
-            ->all();
-
         $masked = $payload;
 
-        foreach ($sensitiveKeys as $key) {
+        foreach ($this->sensitiveKeysOf($target, $sensitiveKeys) as $key) {
             if (array_key_exists($key, $masked)) {
                 $masked[$key] = '********';
             }
@@ -376,7 +383,7 @@ class RunBrainCommand extends Command
             $payload = $this->collectSensitivePayload($payload, $sensitiveKeys);
         }
 
-        if (! $this->preview($target, $payload, $sync)) {
+        if (! $this->preview($target, $payload, $sync, $sensitiveKeys)) {
             note('Cancelled.');
 
             return self::SUCCESS;
@@ -386,7 +393,7 @@ class RunBrainCommand extends Command
             $result = $this->runTarget($target, $payload, $sync);
         } catch (Throwable $e) {
             error($e::class);
-            warning($e->getMessage());
+            warning($this->redactMessage($e->getMessage(), $payload, $sensitiveKeys));
 
             return self::FAILURE;
         }
@@ -404,7 +411,7 @@ class RunBrainCommand extends Command
 
         foreach ($sensitiveKeys as $key) {
             if (array_key_exists($key, $payload)) {
-                $payload[$key] = text(label: $key, required: true);
+                $payload[$key] = password(label: $key, required: true);
             }
         }
 
@@ -448,10 +455,7 @@ class RunBrainCommand extends Command
     private function saveToHistory(array $target, array $payload, bool $sync, array $sensitiveKeys = []): void
     {
         if ($sensitiveKeys === []) {
-            $sensitiveKeys = collect($target['properties'] ?? [])
-                ->filter(fn (array $p): bool => $p['sensitive'] ?? false)
-                ->pluck('name')
-                ->all();
+            $sensitiveKeys = $this->sensitiveKeysOf($target);
         }
 
         $redacted = $payload;
@@ -463,5 +467,22 @@ class RunBrainCommand extends Command
         }
 
         RunHistory::default()->record($target, $redacted, $sync, $sensitiveKeys);
+    }
+
+    /** Names of the target's sensitive properties merged with the given extra keys. */
+    private function sensitiveKeysOf(array $target, array $extraKeys = []): array
+    {
+        $keys = collect($target['properties'] ?? [])
+            ->filter(fn (array $p): bool => $p['sensitive'] ?? false)
+            ->pluck('name')
+            ->all();
+
+        return array_values(array_unique([...$keys, ...$extraKeys]));
+    }
+
+    /** Remove the sensitive values of the payload from an error message. */
+    private function redactMessage(string $message, array $payload, array $sensitiveKeys): string
+    {
+        return SensitiveValue::redact($message, SensitiveValue::wrap((object) $payload, $sensitiveKeys));
     }
 }

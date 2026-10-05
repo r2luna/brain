@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Brain\Tasks\Middleware;
 
+use Brain\SensitiveValue;
 use Brain\Task;
 use Brain\Tasks\Events\Error as TasksError;
 use Illuminate\Support\Facades\Context;
@@ -31,7 +32,7 @@ final class FinalizeTaskMiddleware
             $task->finalize();
         } catch (Throwable $e) {
             $meta = [
-                'error' => $e->getMessage(),
+                'error' => SensitiveValue::redact($e->getMessage(), $task->payload),
                 'line' => $e->getLine(),
                 'file' => $e->getFile(),
             ];

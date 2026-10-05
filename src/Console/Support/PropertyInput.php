@@ -7,6 +7,7 @@ namespace Brain\Console\Support;
 use Illuminate\Database\Eloquent\Model;
 
 use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\password;
 use function Laravel\Prompts\search;
 use function Laravel\Prompts\text;
 
@@ -34,7 +35,9 @@ class PropertyInput
         }
 
         $label = $baseType === 'array' ? "{$name} (JSON)" : $name;
-        $value = text(label: $label, required: ! $nullable);
+        $value = ($property['sensitive'] ?? false)
+            ? password(label: $label, required: ! $nullable)
+            : text(label: $label, required: ! $nullable);
 
         return self::castValue($value, $baseType, $nullable);
     }

@@ -19,14 +19,17 @@ Brain (`r2luna/brain`) organizes business logic into three core concepts: **Work
 - Create a Workflow: `{{ $assist->artisanCommand('make:workflow CreateOrder') }}`
 - Create an Action: `{{ $assist->artisanCommand('make:action ChargeCustomer') }}`
 - Create a Query: `{{ $assist->artisanCommand('make:query GetOrdersByUser') }}`
-- Create a Test: `{{ $assist->artisanCommand('make:test CreateOrderTest --stub=workflow') }}`
+- Create a class with its test: add `--pest`, `--phpunit` or `--test` to any make command, e.g. `{{ $assist->artisanCommand('make:action ChargeCustomer --pest') }}`
 - Visualize structure: `{{ $assist->artisanCommand('brain:show') }}`
 - Run interactively: `{{ $assist->artisanCommand('brain:run') }}`
 - Rerun a previous execution: `{{ $assist->artisanCommand('brain:run --rerun') }}`
+- Migrate deprecated Process/Task classes: `{{ $assist->artisanCommand('brain:migrate --dry-run') }}`, then run it without `--dry-run`
 
 When `brain.use_domains` is enabled, pass a domain as the second argument:
 
 `{{ $assist->artisanCommand('make:action ChargeCustomer Orders') }}`
+
+`Brain\Process` and `Brain\Task` (and `make:process`, `make:task`) are deprecated aliases of Workflow and Action. Never use them in new code.
 
 ---
 
@@ -306,6 +309,23 @@ class SendConfirmation extends Action implements ShouldQueue
 </code-snippet>
 @endverbatim
 
+**Choosing the queue with `#[OnQueue]`:** Set the queue on an Action or a Workflow. A Workflow's queue applies to its queued actions that don't declare their own, and to chained workflows.
+
+@verbatim
+<code-snippet name="OnQueue" lang="php">
+use Brain\Attributes\OnQueue;
+
+#[OnQueue('payments')]
+class ChargeCustomer extends Action implements ShouldQueue
+{
+    public function handle(): self
+    {
+        return $this;
+    }
+}
+</code-snippet>
+@endverbatim
+
 **Sensitive properties with `#[Sensitive]`:** Mark payload properties that should be automatically redacted in logs, JSON, and debug output. Sensitive values are wrapped in `SensitiveValue` — accessible inside the action via `$this->key`, but replaced with `**********` everywhere else.
 
 @verbatim
@@ -330,7 +350,7 @@ class CreateUser extends Action
 </code-snippet>
 @endverbatim
 
-**Workflow-level sensitive inheritance:** When `#[Sensitive]` is applied to a Workflow, all child actions automatically inherit the sensitive keys — even if the actions don't declare the attribute themselves. Action-level and workflow-level keys are merged and deduplicated.
+**Workflow-level sensitive inheritance:** When `#[Sensitive]` is applied to a Workflow, all child actions automatically inherit the sensitive keys — even if the actions don't declare the attribute themselves. Action-level and workflow-level keys are merged and deduplicated. Keys declared by any action also apply to the whole workflow, and nested workflows inherit the keys of their parent.
 
 @verbatim
 <code-snippet name="Sensitive Workflow" lang="php">
@@ -347,6 +367,14 @@ class CreateUserWorkflow extends Workflow
 }
 </code-snippet>
 @endverbatim
+
+**Sensitive rules:**
+- Read sensitive values with `$this->key`. `$this->payload->key` and workflow results return the `SensitiveValue` object; call `->value()` for the real value.
+- `#[Sensitive]` on a parent class applies to its child classes.
+- Use dot notation for nested keys: `#[Sensitive('user.password')]`, read with `$this->{'user.password'}`. Wildcards (`*`) are not supported.
+- `rules()` validates the real values.
+- Sensitive values are encrypted with `APP_KEY` in queued jobs and redacted from error messages in failure events. No configuration is needed.
+- Never `var_export()` or cast a `SensitiveValue` to `(array)`: both expose the real value.
 
 ---
 
@@ -462,7 +490,7 @@ Use `{{ $assist->artisanCommand('brain:show') }}` to see a map of all workflows,
 - `--filter=Name` — Filter by class name
 - `--domain=Name` — Filter by domain (when `use_domains=true`)
 - `-v` — Show sub-actions inside workflows
-- `-vv` — Also show action properties (input/output)
+- `-vv` — Also show action properties (input/output), with a `[sensitive]` indicator on sensitive ones
 
 **Mixing helpers with Brain components:** It's safe to keep helper classes (interfaces, traits, factories, DTOs, formatters) inside `Workflows/`, `Actions/`, `Queries/`, including in subdirectories like `Actions/Formatters/`. `brain:show` skips any file whose class doesn't extend the matching Brain base, so non-Brain code stays organized without polluting the map.
 
@@ -478,7 +506,7 @@ Every successful run is saved to history (`storage/brain/run-history.json`, max 
 
 ### Best Practices
 
-- **Workflows wrap actions in a DB transaction** — actions that throw will roll back all previous work in the workflow. Keep side-effects (emails, API calls) in queueable actions so they run after commit.
+- **Workflows wrap actions in a DB transaction** — actions that throw will roll back all previous work in the workflow. Queued actions are dispatched during the transaction: set `public $afterCommit = true;` on them (or `after_commit` on the queue connection) so side-effects (emails, API calls) only run after commit.
 - **Payload flows between actions** — each action receives the payload from the previous one. Set new properties on `$this` to pass data forward.
 - **Return `$this` from `handle()`** — this ensures the payload (with any new properties) continues to the next action.
 - **Use `@property-read` docblocks** — they document expected payload shape, enable IDE autocompletion, and Brain validates their presence.

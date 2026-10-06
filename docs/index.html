@@ -768,9 +768,14 @@ class CreateUser extends Action
 <li><strong>Inside the action</strong> — <code>$this-&gt;password</code> returns the real value transparently</li>
 <li><strong>In logs</strong> — Replaced with <code>**********</code></li>
 <li><strong>In JSON</strong> — Replaced with <code>**********</code></li>
-<li><strong>In debug output</strong> — Replaced with <code>**********</code></li>
+<li><strong>In debug output</strong> — Replaced with <code>**********</code> in <code>dump()</code>, <code>dd()</code>, <code>var_dump()</code> and <code>print_r()</code></li>
+<li><strong>In error messages</strong> — Sensitive values are replaced with <code>**********</code> in the <code>error</code> meta of failure events</li>
+<li><strong>In queued jobs</strong> — Encrypted with your <code>APP_KEY</code>, so the queue and <code>failed_jobs</code> never store them in plain text</li>
+<li><strong>In validation</strong> — <code>rules()</code> receives the real values</li>
 <li><strong>In <code>brain:show -vv</code></strong> — Shows a <code>[sensitive]</code> indicator</li>
+<li><strong>In <code>brain:run</code></strong> — Typed with hidden input, masked in the preview, the result table and the run history</li>
 </ul>
+<p>Only <code>$this-&gt;password</code> returns the real value. Reading <code>$this-&gt;payload-&gt;password</code> directly, or a property from a workflow result, returns the <code>SensitiveValue</code> object. Call <code>-&gt;value()</code> on it when you need the real value.</p>
 <h3 id="sensitive-workflow-level-inheritance">Workflow-Level Inheritance</h3>
 <p>When <code>#[Sensitive]</code> is applied to a Workflow, <strong>all child actions</strong> automatically inherit the sensitive keys — even if the actions themselves don't declare the attribute:</p>
 <pre><code class="language-php">use Brain\Attributes\Sensitive;
@@ -785,14 +790,42 @@ class CreateUser extends Workflow
         SendConfirmation::class,  // password &amp; credit_card redacted
     ];
 }</code></pre>
-<p>Action-level and workflow-level keys are merged and deduplicated. An action can define additional sensitive keys beyond what the workflow specifies:</p>
+<p>Action-level and workflow-level keys are merged and deduplicated. Keys declared by any action apply to the whole workflow, so they are redacted from the start, including in the events of earlier, skipped and cancelled actions:</p>
 <pre><code class="language-php">#[Sensitive('password')]
 class CreateUser extends Workflow
 {
     protected array $actions = [
-        ChargeCustomer::class, // has #[Sensitive('cvv')] → both password and cvv are redacted
+        ValidateInput::class,  // password and cvv redacted
+        ChargeCustomer::class, // has #[Sensitive('cvv')]
     ];
 }</code></pre>
+<p>Nested workflows inherit the keys of their parent workflow.</p>
+<h3 id="sensitive-class-inheritance">Class Inheritance</h3>
+<p><code>#[Sensitive]</code> declared on a parent class applies to every child class:</p>
+<pre><code class="language-php">#[Sensitive('password')]
+abstract class AuthAction extends Action {}
+
+class Login extends AuthAction {} // password redacted</code></pre>
+<h3 id="sensitive-nested-keys">Nested Keys</h3>
+<p>Use dot notation to redact a key inside an array or object in the payload:</p>
+<pre><code class="language-php">#[Sensitive('user.password')]
+class CreateUser extends Action
+{
+    public function handle(): self
+    {
+        $this-&gt;{'user.password'}; // real value
+        $this-&gt;user['password'];  // SensitiveValue
+
+        return $this;
+    }
+}</code></pre>
+<h3 id="sensitive-queues">Queues and APP_KEY</h3>
+<p>Sensitive values are encrypted with your <code>APP_KEY</code> when a job is serialized and decrypted when the worker runs it. No configuration is needed. If you rotate <code>APP_KEY</code>, keep the old key in <code>APP_PREVIOUS_KEYS</code> until the jobs queued with it are processed.</p>
+<h3 id="sensitive-limitations">Limitations</h3>
+<ul>
+<li><code>var_export()</code> and <code>(array)</code> casts of a <code>SensitiveValue</code> still expose the real value.</li>
+<li>Wildcard keys such as <code>cards.*.number</code> are not supported.</li>
+</ul>
 <blockquote><p>The <code>brain:show -vv</code> command displays a <code>[sensitive]</code> indicator next to sensitive properties, making it easy to verify your configuration.</p></blockquote>
 </section>
 <section id="commands" class="doc-section">

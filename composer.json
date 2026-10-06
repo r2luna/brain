@@ -53,7 +53,7 @@
         "test:types": "phpstan analyse --ansi src/",
         "test:unit": [
             "@putenv XDEBUG_MODE=coverage",
-            "pest --colors=always --coverage --min=99 --compact --coverage-crap4j=.phpunit.cache/crap4j.xml"
+            "pest --colors=always --coverage --min=100 --compact --coverage-crap4j=.phpunit.cache/crap4j.xml"
         ],
         "test:crap": "php scripts/quality/crap.php",
         "test:complexity": "php scripts/quality/complexity.php",

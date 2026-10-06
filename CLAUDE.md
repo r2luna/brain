@@ -79,7 +79,7 @@ tests/
 
 ```bash
 composer test          # Run full test suite (debug, refactor, lint, types, typos, unit)
-composer test:unit     # Run Pest tests with coverage (min 99%)
+composer test:unit     # Run Pest tests with coverage (min 100%)
 composer test:types    # Run PHPStan static analysis
 composer test:lint     # Run Pint code style check
 composer test:refactor # Run Rector dry-run
@@ -93,7 +93,7 @@ composer refactor      # Apply Rector refactorings
 - Tests use **Pest** with **Orchestra Testbench**.
 - Feature tests live in `tests/Feature/`.
 - Test fixtures (fake Actions, Workflows, Queries) live in `tests/Feature/Fixtures/`.
-- Minimum coverage requirement: **99%**.
+- Minimum coverage requirement: **100%**.
 
 ### Code Quality
 

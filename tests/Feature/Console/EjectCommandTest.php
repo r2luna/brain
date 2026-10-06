@@ -195,6 +195,15 @@ test('it accepts namespace via option', function (): void {
     File::deleteDirectory(base_path('app/Custom'));
 });
 
+test('it asks for the namespace when the option is not provided', function (): void {
+    $this->artisan('brain:eject')
+        ->expectsQuestion('What namespace should the ejected files use?', 'App\\Brain')
+        ->expectsConfirmation('Do you want to proceed with the eject?', 'yes')
+        ->assertExitCode(0);
+
+    expect(File::get($this->targetBase.'/Process.php'))->toContain('namespace App\\Brain;');
+});
+
 test('it works with a custom namespace for all replacements', function (): void {
     $customTarget = base_path('app/MyApp/Core');
 

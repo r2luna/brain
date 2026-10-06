@@ -457,6 +457,19 @@ class CreateUserProcess extends Process
 }
 ```
 
+Keys declared by any task also apply to the whole process, and nested processes inherit the keys of their parent.
+
+More rules:
+
+- Only `$this->key` returns the real value. `$this->payload->key` and process results return the `SensitiveValue` object; call `->value()` on it.
+- `#[Sensitive]` on a parent class applies to its child classes.
+- Use dot notation for nested keys: `#[Sensitive('user.password')]`. Wildcards (`*`) are not supported.
+- `rules()` validates the real values.
+- Sensitive values are redacted from error messages in failure events.
+- Queued jobs store sensitive values encrypted with your `APP_KEY`. No configuration is needed. If you rotate `APP_KEY`, keep the old key in `APP_PREVIOUS_KEYS` until the jobs queued with it are processed.
+- `brain:run` asks for sensitive values with hidden input and masks them in the preview, the result table and the run history.
+- `var_export()` and `(array)` casts of a `SensitiveValue` still expose the real value.
+
 > [!TIP]
 > The `brain:show -vv` command displays a `[sensitive]` indicator next to sensitive properties.
 

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Brain\Action;
+use Brain\Concerns\Middleware\HookLifecycleMiddleware;
 use Brain\Workflow;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Bus;
@@ -61,6 +62,14 @@ class QH_FailingQueuedAction extends Action implements ShouldQueue
         $GLOBALS['__hook_log'][] = 'handle';
 
         throw new RuntimeException('queued boom');
+    }
+}
+
+class QH_ThrowingOnErrorQueuedAction extends QH_FailingQueuedAction
+{
+    public static function onError(Throwable $e, array|object|null $payload): mixed
+    {
+        throw new LogicException('onError boom');
     }
 }
 
@@ -171,4 +180,19 @@ it('always re-throws and ignores onError return in queued context', function ():
         ->and($caught->getMessage())->toBe('queued boom')
         ->and($GLOBALS['__hook_log'])->toContain('onError:queued boom')
         ->and($GLOBALS['__hook_log'])->toContain('finally:queued boom');
+});
+
+it('re-throws the original exception when onError throws in queued context', function (): void {
+    expect(fn () => QH_ThrowingOnErrorQueuedAction::dispatch())
+        ->toThrow(RuntimeException::class, 'queued boom')
+        ->and($GLOBALS['__hook_log'])->toContain('finally:queued boom');
+});
+
+it('passes chained workflows through the hook middleware without firing hooks', function (): void {
+    $workflow = new QH_ChainedWorkflow;
+
+    $result = (new HookLifecycleMiddleware)->handle($workflow, fn (object $job): string => 'next');
+
+    expect($result)->toBe('next')
+        ->and($GLOBALS['__hook_log'])->toBe([]);
 });

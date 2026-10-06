@@ -529,6 +529,14 @@ describe('non-Brain class filtering', function (): void {
         expect($output)->toHaveCount(1)
             ->and($output[0]['name'])->toBe('RealAction');
     });
+
+    it('should skip class files whose class cannot be resolved', function (): void {
+        $method = $this->reflection->getMethod('loadActionsFor');
+        $path = __DIR__.'/../Fixtures/BrainOrphan';
+        $output = $method->invokeArgs($this->object, [$path]);
+
+        expect($output)->toBe([]);
+    });
 });
 
 describe('getTask with workflow class', function (): void {
